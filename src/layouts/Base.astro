@@ -1,0 +1,195 @@
+---
+import "../styles/global.css";
+import "katex/dist/katex.min.css";
+
+interface Props { title: string; description?: string }
+const { title, description = "One quantum concept a week, argued against a comic book." } = Astro.props;
+---
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="alternate" type="application/rss+xml" title="Quantum off the Panels" href="/rss.xml" />
+    <meta name="theme-color" content="#0b0e1a" />
+  </head>
+  <body>
+    <!-- margin bursts — purely decorative page furniture, wide viewports only.
+         Coloured like the Predict reveal (.sfx / .sfx--break): a halftone
+         fill in one process ink, a hard-edged offset copy in a second, the
+         same two-colour "inked hit" the NAILED IT!/NOPE! text uses. Five
+         shapes: three jagged stars (a/b/c) plus two curvier, scalloped
+         ones (d/e, cubic-bezier lobes instead of straight points) so the
+         set doesn't read as one repeated silhouette. -->
+    <div class="bursts" aria-hidden="true">
+      <svg class="burst burst--a" viewBox="-58 -58 116 116">
+        <defs>
+          <pattern id="burstDotsCyan" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--cyan)" />
+          </pattern>
+        </defs>
+        <polygon class="burst__shadow"
+          points="0.0,-58.0 6.5,-22.1 31.4,-48.8 17.4,-15.1 52.8,-24.1 22.8,-3.3 57.4,8.3 20.9,9.6 43.8,38.0 12.4,19.3 16.3,55.7 0.0,23.0 -16.3,55.7 -12.4,19.3 -43.8,38.0 -20.9,9.6 -57.4,8.3 -22.8,-3.3 -52.8,-24.1 -17.4,-15.1 -31.4,-48.8 -6.5,-22.1"
+          fill="var(--magenta)" transform="translate(5,5)" />
+        <polygon
+          points="0.0,-58.0 6.5,-22.1 31.4,-48.8 17.4,-15.1 52.8,-24.1 22.8,-3.3 57.4,8.3 20.9,9.6 43.8,38.0 12.4,19.3 16.3,55.7 0.0,23.0 -16.3,55.7 -12.4,19.3 -43.8,38.0 -20.9,9.6 -57.4,8.3 -22.8,-3.3 -52.8,-24.1 -17.4,-15.1 -31.4,-48.8 -6.5,-22.1"
+          fill="url(#burstDotsCyan)" stroke="var(--cyan)" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <svg class="burst burst--b" viewBox="-34 -34 68 68">
+        <defs>
+          <pattern id="burstDotsMagenta" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--magenta)" />
+          </pattern>
+        </defs>
+        <polygon class="burst__shadow"
+          points="0.0,-34.0 4.4,-12.2 21.9,-26.0 11.3,-6.5 33.5,-5.9 12.8,2.3 29.4,17.0 8.4,10.0 11.6,31.9 0.0,13.0 -11.6,31.9 -8.4,10.0 -29.4,17.0 -12.8,2.3 -33.5,-5.9 -11.3,-6.5 -21.9,-26.0 -4.4,-12.2"
+          fill="var(--cyan)" transform="translate(5,5)" />
+        <polygon
+          points="0.0,-34.0 4.4,-12.2 21.9,-26.0 11.3,-6.5 33.5,-5.9 12.8,2.3 29.4,17.0 8.4,10.0 11.6,31.9 0.0,13.0 -11.6,31.9 -8.4,10.0 -29.4,17.0 -12.8,2.3 -33.5,-5.9 -11.3,-6.5 -21.9,-26.0 -4.4,-12.2"
+          fill="url(#burstDotsMagenta)" stroke="var(--magenta)" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <svg class="burst burst--c" viewBox="-50 -50 100 100">
+        <defs>
+          <pattern id="burstDotsYellow" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--yellow)" />
+          </pattern>
+        </defs>
+        <polygon class="burst__shadow"
+          points="0.0,-50.0 5.4,-12.9 35.4,-35.4 12.9,-5.4 50.0,0.0 12.9,5.4 35.4,35.4 5.4,12.9 0.0,50.0 -5.4,12.9 -35.4,35.4 -12.9,5.4 -50.0,0.0 -12.9,-5.4 -35.4,-35.4 -5.4,-12.9"
+          fill="var(--magenta)" transform="translate(5,5)" />
+        <polygon
+          points="0.0,-50.0 5.4,-12.9 35.4,-35.4 12.9,-5.4 50.0,0.0 12.9,5.4 35.4,35.4 5.4,12.9 0.0,50.0 -5.4,12.9 -35.4,35.4 -12.9,5.4 -50.0,0.0 -12.9,-5.4 -35.4,-35.4 -5.4,-12.9"
+          fill="url(#burstDotsYellow)" stroke="var(--yellow)" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <!-- d: curvier, 7-lobe scalloped burst (cubic beziers, not straight points) -->
+      <svg class="burst burst--d" viewBox="-44 -44 88 88">
+        <defs>
+          <pattern id="burstDotsCyan2" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--cyan)" />
+          </pattern>
+        </defs>
+        <path class="burst__shadow"
+          d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
+          fill="var(--yellow)" transform="translate(5,5)" />
+        <path
+          d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
+          fill="url(#burstDotsCyan2)" stroke="var(--cyan)" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+      <!-- e: curvier, 5-lobe scalloped burst — plumper, fewer/bigger lobes than d -->
+      <svg class="burst burst--e" viewBox="-48 -48 96 96">
+        <defs>
+          <pattern id="burstDotsMagenta2" width="7" height="7" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="var(--magenta)" />
+          </pattern>
+        </defs>
+        <path class="burst__shadow"
+          d="M0.0,-17.0 C14.9,-41.4 34.8,-27.0 16.2,-5.3 C44.0,1.4 36.4,24.7 10.0,13.8 C12.3,42.3 -12.3,42.3 -10.0,13.8 C-36.4,24.7 -44.0,1.4 -16.2,-5.3 C-34.8,-27.0 -14.9,-41.4 -0.0,-17.0 Z"
+          fill="var(--yellow)" transform="translate(5,5)" />
+        <path
+          d="M0.0,-17.0 C14.9,-41.4 34.8,-27.0 16.2,-5.3 C44.0,1.4 36.4,24.7 10.0,13.8 C12.3,42.3 -12.3,42.3 -10.0,13.8 C-36.4,24.7 -44.0,1.4 -16.2,-5.3 C-34.8,-27.0 -14.9,-41.4 -0.0,-17.0 Z"
+          fill="url(#burstDotsMagenta2)" stroke="var(--magenta)" stroke-width="1.5" stroke-linejoin="round" />
+      </svg>
+    </div>
+
+    <header class="site">
+      <div class="wrap site__in">
+        <a href="/" class="site__mark">
+          <span class="site__title">Quantum off the <span class="site__accent">Panels</span></span>
+          <span class="site__by">by Mihir Koduri</span>
+        </a>
+        <nav class="site__nav">
+          <a href="/compendium">Compendium</a>
+          <a href="/sims">Simulations</a>
+          <a href="/rss.xml">RSS</a>
+          <button id="theme" class="site__theme" aria-label="Switch to light mode">◐</button>
+        </nav>
+      </div>
+    </header>
+
+    <main><slot /></main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <p class="dim">
+          Written weekly. Simulations run entirely in your browser — nothing is sent anywhere.
+        </p>
+        <p class="site-foot__by">Quantum off the <span class="site__accent">Panels</span>, by Mihir Koduri</p>
+      </div>
+    </footer>
+
+    <script is:inline>
+      // set before paint to avoid a flash; dark is the default
+      const saved = localStorage.getItem("qp:theme");
+      if (saved) document.documentElement.dataset.theme = saved;
+      document.getElementById("theme")?.addEventListener("click", () => {
+        const el = document.documentElement;
+        const next = el.dataset.theme === "light" ? "dark" : "light";
+        el.dataset.theme = next;
+        localStorage.setItem("qp:theme", next);
+      });
+    </script>
+
+    <style>
+      .site { border-bottom: var(--panel-line) solid var(--gutter); background: var(--ink); position: sticky; top: 0; z-index: 20; }
+      .site__in { display: flex; justify-content: space-between; align-items: center; gap: 1rem 1.5rem; padding: 0.85rem 0; flex-wrap: wrap; }
+      .site__mark {
+        display: flex; flex-direction: column; gap: 0.15rem;
+        text-decoration: none; line-height: 1.1;
+      }
+      .site__title {
+        font-family: var(--font-sfx); font-size: clamp(0.86rem, 2.6vw, 1.05rem);
+        color: var(--paper); letter-spacing: 0.015em;
+      }
+      .site__accent { color: var(--cyan); }
+      .site__by {
+        font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--paper-dim);
+      }
+      .site__mark:hover .site__title { color: var(--yellow); }
+      .site__mark:hover { background: none; }
+      .site__nav { display: flex; gap: 1.1rem; align-items: center; }
+      .site__nav a {
+        font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+        text-transform: uppercase; color: var(--paper-dim); text-decoration: none;
+      }
+      .site__nav a:hover { color: var(--cyan); background: none; }
+      .site__theme {
+        background: none; border: none; color: var(--paper-dim); cursor: pointer;
+        font-size: 1rem; min-height: 44px; min-width: 44px;
+      }
+      .site-foot { border-top: var(--panel-line) solid var(--gutter); margin-top: 5rem; padding: 2rem 0 3rem; font-size: 0.85rem; }
+      .site-foot__by {
+        font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--paper-dim); margin: 0.6rem 0 0;
+      }
+      main { padding: 2.5rem 0 0; }
+
+      /* margin bursts — decorative, wide viewports only. Each one is
+         positioned by the same formula: (actual margin past .wrap's 68rem)
+         minus a per-shape depth, staggered so they don't line up in a
+         column. Rather than guess a pixel breakpoint where every shape is
+         guaranteed to fit (which has been wrong twice now, in both
+         directions), .bursts is a fixed full-viewport frame with
+         overflow: hidden and the shapes are absolutely positioned inside
+         it — so a shape that doesn't fit is simply clipped by the real
+         viewport edge instead of vanishing outright or overlapping
+         content. It self-corrects at any width; there's no number to
+         re-tune. The media query below is only a cheap skip for phones/
+         tablets, where there's never going to be margin to fill. */
+      .bursts { position: fixed; inset: 0; overflow: hidden; pointer-events: none; display: none; }
+      .burst { position: absolute; height: auto; opacity: 0.6; }
+      .burst__shadow { opacity: 0.65; }
+      .burst--a { top: 5rem; left: calc((100vw - 68rem) / 2 - 7.2rem); width: 6.2rem; transform: rotate(-6deg); }
+      .burst--b { bottom: 5rem; right: calc((100vw - 68rem) / 2 - 5.8rem); width: 4.8rem; transform: rotate(11deg); }
+      .burst--c { bottom: 9rem; left: calc((100vw - 68rem) / 2 - 7.3rem); width: 4.3rem; transform: rotate(-10deg); }
+      .burst--d { top: 9rem; right: calc((100vw - 68rem) / 2 - 10.5rem); width: 5.5rem; transform: rotate(15deg); }
+      /* off-centre on purpose, not a mechanical 50% — breaks up the column with a and c */
+      .burst--e { top: 38%; left: calc((100vw - 68rem) / 2 - 10.3rem); width: 5.3rem; transform: translateY(-50%) rotate(6deg); }
+      @media (min-width: 60rem) {
+        .bursts { display: block; }
+      }
+    </style>
+  </body>
+</html>

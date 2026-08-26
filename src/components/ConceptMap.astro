@@ -1,0 +1,129 @@
+---
+/**
+ * THE CONCEPT MAP — hand-authored.
+ *
+ * ── HOW TO EDIT ────────────────────────────────────────────────────────────
+ * Unpublished weeks do not get a node here at all — the map only ever shows
+ * what a reader can actually open. To publish a week:
+ *   1. add its <g class="node is-live"> at its grid position (below)
+ *   2. wrap it in <a href="/posts/week-NN-slug"> … </a>, text reads READ →
+ *   3. reconnect the spine line to/from whichever adjacent weeks are also
+ *      live, and re-add any callback edge that now has both ends published
+ * Everything else is literal coordinates you can move freely.
+ *
+ * ── THE GRID ───────────────────────────────────────────────────────────────
+ * Serpentine, 4 across. Week order reads continuously: → → → ↓ ← ← ← ↓ → → →
+ *   columns x = 0, 216, 432, 648   (nodes are 176 wide)
+ *   rows    y = 0, 162, 324        (nodes are 108 tall)
+ *
+ * ── EDGE PHILOSOPHY ────────────────────────────────────────────────────────
+ * Solid line = the spine. Just week N to week N+1, in reading order.
+ * Dashed arc = a callback: a week that reaches back to a non-adjacent one.
+ * There are only three callbacks, once every week is live, and they are the
+ * three moments where the arc closes a loop. Do NOT draw every prerequisite
+ * here — the full dependency list lives in concepts.ts and renders as text
+ * on each post. A map that draws twenty edges communicates less than one
+ * that draws four. The three callback paths (kept for reference, currently
+ * unused since their far end isn't published yet):
+ *   wk2 interference → wk7 decoherence   M304,108 C304,140 304,150 304,156
+ *   wk4 entanglement → wk11 two-qubit gates  M824,108 C848,200 848,300 760,340
+ *   wk2 interference → wk12 Deutsch–Jozsa    M260,108 C200,240 300,440 640,412
+ */
+import { published, CONCEPTS } from "../data/concepts";
+
+// scoped to arc 1 — issue 0 (arc 0) is the project's intro, not a physics
+// concept, and doesn't belong on this grid. See concepts.ts for why.
+const arc1 = CONCEPTS.filter((c) => c.arc === 1);
+const live = published().filter((c) => c.arc === 1);
+---
+
+<figure class="map">
+  <figcaption class="map__cap">
+    <span class="eyebrow">
+      <span class="wk">ARC 1</span>
+      <span class="sep">/</span>
+      <span>{live.length} of {arc1.length} weeks published so far</span>
+    </span>
+  </figcaption>
+
+  <div class="map__scroll">
+    <svg viewBox="-16 -16 208 140" class="map__svg" role="img"
+         aria-label={`Concept map for arc one: ${live.length} of ${arc1.length} weeks published so far, starting with superposition.`}>
+
+      <defs>
+        <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
+                markerWidth="5.5" markerHeight="5.5" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="var(--gutter)" />
+        </marker>
+        <marker id="tip-call" viewBox="0 0 8 8" refX="7" refY="4"
+                markerWidth="5.5" markerHeight="5.5" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="var(--magenta)" />
+        </marker>
+      </defs>
+
+      <!-- ═══ THE SPINE ═══ nothing yet — needs two adjacent published weeks ═══ -->
+      <g class="spine"></g>
+
+      <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
+      <g class="calls"></g>
+
+      <!-- ═══ WEEK 1 ═══ published ═══ -->
+      <a href="/posts/week-01-superposition">
+        <g class="node is-live">
+          <rect x="0" y="0" width="176" height="108" rx="3" />
+          <text class="n-wk"    x="12" y="22">ISSUE 01</text>
+          <text class="n-title" x="12" y="48">Superposition</text>
+          <text class="n-char"  x="12" y="70">Doctor Manhattan</text>
+          <text class="n-state" x="12" y="92">READ →</text>
+        </g>
+      </a>
+
+    </svg>
+  </div>
+</figure>
+
+<style>
+  .map { margin: 0; }
+  .map__cap { margin-bottom: 0.85rem; }
+  .map__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .map__svg { width: 100%; max-width: 260px; height: auto; }
+
+  .spine line { stroke: var(--gutter); stroke-width: 1.5; }
+  .calls path {
+    stroke: var(--magenta);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-dasharray: 4 5;
+    opacity: 0.55;
+  }
+
+  .node rect {
+    fill: var(--ink-2);
+    stroke: var(--gutter);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+  }
+  .node.is-live rect { stroke: var(--cyan); stroke-dasharray: 0; }
+
+  .n-wk {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.12em; fill: var(--yellow);
+  }
+  .n-title {
+    font-family: var(--font-head); font-weight: 900; font-size: 16px;
+    fill: var(--paper); letter-spacing: -0.01em;
+  }
+  .n-char {
+    font-family: var(--font-body); font-size: 13px;
+    font-style: italic; fill: var(--paper-dim);
+  }
+  .n-state {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.14em; fill: var(--gutter);
+  }
+  .node.is-live .n-state { fill: var(--cyan); }
+
+  .map__svg a { text-decoration: none; }
+  .map__svg a:hover .node rect { fill: var(--ink-3); }
+  .map__svg a:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+</style>

@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+import ConceptMap from "../components/ConceptMap.astro";
+import { CONCEPTS, published } from "../data/concepts";
+
+const live = published().sort((a, b) => a.week - b.week);
+const first = live[0];
+const latest = live[live.length - 1];
+
+// the "ARC 1" stat pairs with the concept map below it, so it's scoped to
+// arc 1 the same way — issue 0 (arc 0) is the intro, not one of its weeks.
+const arc1Live = live.filter((c) => c.arc === 1);
+const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
+---
+<Base title="Quantum off the Panels">
+  <section class="hero wrap">
+    <p class="eyebrow">
+      <span class="wk">ARC 1</span><span class="sep">/</span>
+      <span>{arc1Live.length} of {arc1Total} published</span>
+    </p>
+    <h1 class="hero__h">
+      Comics get quantum physics wrong<br />
+      <span class="hero__em">in interesting ways.</span>
+    </h1>
+    <p class="hero__sub">
+      One concept a week, argued against the comic that made me curious about it
+      in the first place. Every post comes with something you can take apart
+      yourself — including a few things the universe won't let you do.
+    </p>
+    {first && (
+      <div class="hero__ctas">
+        <a class="hero__cta btn btn--go" href={`/posts/${first.slug}`}>
+          Start it from the top
+        </a>
+        {latest.slug !== first.slug && (
+          <a class="hero__cta btn" href={`/posts/${latest.slug}`}>
+            Check out the latest issue
+          </a>
+        )}
+      </div>
+    )}
+  </section>
+
+  <section class="wrap mapsec">
+    <ConceptMap />
+  </section>
+
+  <style>
+    .hero { padding: 3rem 0 3.5rem; max-width: 52rem; }
+    .hero__h { margin: 1rem 0; font-size: clamp(2.2rem, 7vw, 4.1rem); }
+    .hero__em { color: var(--cyan); }
+    .hero__sub { font-size: 1.15rem; max-width: 36rem; color: var(--paper); }
+    .hero__ctas { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 1.5rem; }
+    .hero__cta { display: inline-block; text-decoration: none; padding: 0.8rem 1.3rem; }
+    .mapsec { padding-bottom: 4rem; }
+  </style>
+</Base>

@@ -1,0 +1,154 @@
+import { useMemo, useState } from "react";
+import { CONCEPTS, edges, type Concept } from "../data/concepts";
+
+/**
+ * TACTIC 5. Generated from the manifest, so adding a week to concepts.ts
+ * adds a node and its prerequisite arrows here with no further edits.
+ *
+ * Unpublished weeks are shown, greyed. Readers seeing the shape of what's
+ * coming is the point — it's the argument that this is a course, not a feed.
+ */
+
+const COLS = 4;
+const CW = 176;
+const CH = 108;
+const GAPX = 40;
+const GAPY = 54;
+
+export default function ConceptMap() {
+  const [hover, setHover] = useState<string | null>(null);
+
+  const { pos, w, h } = useMemo(() => {
+    const pos = new Map<string, { x: number; y: number }>();
+    CONCEPTS.forEach((c, i) => {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      // serpentine: rows alternate direction so week order reads continuously
+      const x = (row % 2 ? COLS - 1 - col : col) * (CW + GAPX);
+      pos.set(c.id, { x, y: row * (CH + GAPY) });
+    });
+    const rows = Math.ceil(CONCEPTS.length / COLS);
+    return {
+      pos,
+      w: COLS * CW + (COLS - 1) * GAPX,
+      h: rows * CH + (rows - 1) * GAPY,
+    };
+  }, []);
+
+  const active = (c: Concept) =>
+    !hover || hover === c.id || c.prereqs.includes(hover) || (CONCEPTS.find(x => x.id === hover)?.prereqs ?? []).includes(c.id);
+
+  return (
+    <figure className="map">
+      <figcaption className="map__cap">
+        <span className="eyebrow">
+          <span className="wk">ARC 1</span>
+          <span className="sep">/</span>
+          <span>twelve weeks · lines are prerequisites</span>
+        </span>
+      </figcaption>
+
+      <div className="map__scroll">
+        <svg
+          viewBox={`-14 -14 ${w + 28} ${h + 28}`}
+          className="map__svg"
+          role="img"
+          aria-label="Concept map for arc one. Twelve weeks, connected by prerequisite links."
+        >
+          <defs>
+            <marker id="arw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="var(--gutter)" />
+            </marker>
+          </defs>
+
+          {edges().map(([from, to]) => {
+            const a = pos.get(from)!;
+            const b = pos.get(to)!;
+            const lit = hover === from || hover === to;
+            const x1 = a.x + CW / 2, y1 = a.y + CH;
+            const x2 = b.x + CW / 2, y2 = b.y;
+            const my = (y1 + y2) / 2;
+            return (
+              <path
+                key={`${from}-${to}`}
+                d={`M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`}
+                fill="none"
+                stroke={lit ? "var(--cyan)" : "var(--gutter)"}
+                strokeWidth={lit ? 2.5 : 1.5}
+                markerEnd="url(#arw)"
+                opacity={hover && !lit ? 0.25 : 1}
+              />
+            );
+          })}
+
+          {CONCEPTS.map((c) => {
+            const p = pos.get(c.id)!;
+            const on = c.published;
+            const faded = hover && !active(c);
+            const Tag = on ? "a" : "g";
+            return (
+              <Tag
+                key={c.id}
+                {...(on ? { href: `/posts/${c.slug}` } : {})}
+                className={`node${on ? " is-live" : ""}`}
+                opacity={faded ? 0.28 : 1}
+                onMouseEnter={() => setHover(c.id)}
+                onMouseLeave={() => setHover(null)}
+                onFocus={() => setHover(c.id)}
+                onBlur={() => setHover(null)}
+              >
+                <rect
+                  x={p.x} y={p.y} width={CW} height={CH} rx="3"
+                  fill="var(--ink-2)"
+                  stroke={on ? "var(--cyan)" : "var(--gutter)"}
+                  strokeWidth="2"
+                  strokeDasharray={on ? "0" : "5 4"}
+                />
+                <text x={p.x + 12} y={p.y + 22} className="node__wk">
+                  WK {String(c.week).padStart(2, "0")}
+                </text>
+                <text x={p.x + 12} y={p.y + 48} className="node__title">
+                  {c.title.length > 20 ? c.title.slice(0, 19) + "…" : c.title}
+                </text>
+                <text x={p.x + 12} y={p.y + 70} className="node__char">
+                  {c.character}
+                </text>
+                <text x={p.x + 12} y={p.y + 92} className="node__state">
+                  {on ? "READ →" : "SOON"}
+                </text>
+              </Tag>
+            );
+          })}
+        </svg>
+      </div>
+
+      <style>{`
+        .map { margin: 0; }
+        .map__cap { margin-bottom: 0.85rem; }
+        .map__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .map__svg { width: 100%; min-width: 620px; height: auto; }
+        .node { cursor: default; }
+        .node.is-live { cursor: pointer; }
+        .node.is-live:hover rect { fill: var(--ink-3); }
+        .node__wk {
+          font-family: var(--font-mono); font-size: 11px;
+          letter-spacing: 0.12em; fill: var(--yellow);
+        }
+        .node__title {
+          font-family: var(--font-head); font-weight: 900; font-size: 16px;
+          fill: var(--paper); letter-spacing: -0.01em;
+        }
+        .node__char {
+          font-family: var(--font-body); font-size: 13px; fill: var(--paper-dim);
+          font-style: italic;
+        }
+        .node__state {
+          font-family: var(--font-mono); font-size: 10px;
+          letter-spacing: 0.14em; fill: var(--gutter);
+        }
+        .node.is-live .node__state { fill: var(--cyan); }
+        .map__svg a { text-decoration: none; }
+      `}</style>
+    </figure>
+  );
+}

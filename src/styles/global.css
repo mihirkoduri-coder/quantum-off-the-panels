@@ -1,0 +1,318 @@
+/* ============================================================
+   Four-colour process, inverted.
+   Comics are printed in CMYK halftone; dot density IS a
+   probability distribution. That's the whole visual thesis.
+   Cyan = amplitude. Magenta = phase. Yellow = the reader's input.
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Bungee&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..600&family=Space+Mono:wght@400;700&display=swap");
+
+:root {
+  /* ground — ink navy, not black. black is a default; this is a choice. */
+  --ink: #0b0e1a;
+  --ink-2: #131829;
+  --ink-3: #1d2440;
+  --gutter: #2b3358;
+
+  /* paper, used as text on ink */
+  --paper: #ece7d9;
+  --paper-dim: #9aa0b8;
+
+  /* process inks — these carry meaning, not decoration */
+  --cyan: #22c4f0;
+  --magenta: #ff3d8b;
+  --yellow: #ffd23f;
+
+  --cyan-soft: rgba(34, 196, 240, 0.14);
+  --magenta-soft: rgba(255, 61, 139, 0.14);
+
+  --font-sfx: "Bungee", system-ui, sans-serif;
+  --font-head: "Archivo", system-ui, sans-serif;
+  --font-body: "Newsreader", Georgia, serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+
+  --panel-line: 2px;
+  --radius: 3px; /* comic panels are rectangles. barely round anything. */
+  --panel-gutter: 1.65rem; /* the gap between panels — unprinted paper, not empty CSS margin */
+
+  --measure: 34rem;
+}
+
+/* Light mode exists but ink is the default and the better one. */
+:root[data-theme="light"] {
+  --ink: #ece7d9;
+  --ink-2: #e2dcca;
+  --ink-3: #d5cdb6;
+  --gutter: #b3a98c;
+  --paper: #11131f;
+  --paper-dim: #565b70;
+  --cyan: #0a7fa8;
+  --magenta: #c81f63;
+  --yellow: #a97c00;
+  --cyan-soft: rgba(10, 127, 168, 0.12);
+  --magenta-soft: rgba(200, 31, 99, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+
+  /* ambient halftone — the ground itself is a dot screen */
+  background-image: radial-gradient(var(--gutter) 0.9px, transparent 0.9px);
+  background-size: 14px 14px;
+  background-position: 0 0;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-head);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 2.4em 0 0.5em;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2.1rem, 6vw, 3.4rem); margin-top: 0; }
+h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); }
+h3 { font-size: 1.2rem; letter-spacing: 0; }
+
+a { color: var(--cyan); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--paper); background: var(--cyan-soft); }
+
+:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 2px;
+}
+
+code, kbd { font-family: var(--font-mono); font-size: 0.9em; }
+
+hr {
+  border: 0;
+  height: var(--panel-line);
+  background: var(--gutter);
+  margin: 3rem 0;
+}
+
+/* ---------- layout ---------- */
+
+.wrap { width: min(100% - 2.5rem, 68rem); margin-inline: auto; }
+.prose { width: min(100% - 2.5rem, var(--measure)); margin-inline: auto; }
+.prose > * { margin-block: 1.15em; }
+
+/* ---------- the eyebrow: week / character / concept ---------- */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.eyebrow .wk { color: var(--yellow); }
+.eyebrow .sep { color: var(--gutter); }
+
+/* ---------- SFX. Sim events only — never in prose. See .sim/.pr scoping. ---------- */
+
+.sfx {
+  font-family: var(--font-sfx);
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  line-height: 1;
+  display: inline-block;
+  color: var(--yellow);
+  transform: rotate(-4deg);
+  /* the classic inked outline, via layered shadows */
+  text-shadow:
+    2px 2px 0 var(--ink), -2px 2px 0 var(--ink), 2px -2px 0 var(--ink), -2px -2px 0 var(--ink),
+    5px 5px 0 var(--magenta);
+  letter-spacing: 0.02em;
+}
+.sfx--break { color: var(--magenta); text-shadow: 2px 2px 0 var(--ink), -2px 2px 0 var(--ink), 2px -2px 0 var(--ink), -2px -2px 0 var(--ink), 5px 5px 0 var(--cyan); }
+
+@keyframes sfx-in {
+  0% { transform: scale(0.4) rotate(-18deg); opacity: 0; }
+  60% { transform: scale(1.12) rotate(-4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-4deg); opacity: 1; }
+}
+.sfx--fire { animation: sfx-in 340ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+
+/* ---------- panels: the structural unit of the whole site ---------- */
+
+.panel {
+  background: var(--ink-2);
+  border: var(--panel-line) solid var(--gutter);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+/* halftone drop shadow — comics print with a dot-screen a hair off register.
+   A dot field sits behind each panel, offset down-right, so it peeks out
+   past the edge like the misprinted plate underneath. Additive: stacks
+   alongside a panel's own background/border classes without touching them,
+   so it's safe to drop onto any boxed element the site already has.
+
+   Paired with a gutter ring: a hairline set outward from the panel's own
+   edge, standing in for the unprinted paper between panels. Unlike a grid
+   gap, this is visible on a panel by itself — it doesn't need a second
+   panel next to it to read as a gutter. */
+.dot-shadow {
+  position: relative;
+  isolation: isolate;
+  outline: var(--panel-line) solid var(--gutter);
+  outline-offset: 11px;
+}
+.dot-shadow::before {
+  content: "";
+  position: absolute;
+  inset: 7px -7px -7px 7px;
+  z-index: -1;
+  border-radius: var(--radius);
+  background-image: radial-gradient(var(--cyan) 1.1px, transparent 1.1px);
+  background-size: 7px 7px;
+  opacity: 0.28;
+}
+
+/* claim = what the comic asserts. Quiet: a hairline rule and a small label.
+   No fill, no heavy border — the reader should register it as a quotation
+   and move on into the prose, not stop and admire the box. */
+.claim {
+  border-left: 2px solid var(--cyan);
+  padding: 0.15rem 0 0.15rem 1.1rem;
+  margin-block: 1.6rem;
+  font-size: 1.05rem;
+  color: var(--paper);
+}
+.claim .who {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+/* verdict = the closing ruling. Still findable at a scroll, but it's a
+   labelled rule rather than a stamped box. The weight lives in the sentence. */
+.verdict {
+  border-top: 2px solid var(--magenta);
+  padding-top: 1.1rem;
+  margin: 3.5rem 0 2rem;
+}
+.verdict::before {
+  content: "VERDICT";
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  color: var(--magenta);
+  margin-bottom: 0.5rem;
+}
+.verdict .ruling {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  margin: 0 0 0.6rem;
+  text-wrap: balance;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  background: var(--ink-3);
+  color: var(--paper);
+  border: var(--panel-line) solid var(--gutter);
+  border-radius: var(--radius);
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: transform 90ms ease, background 90ms ease;
+  min-height: 44px; /* touch target */
+}
+.btn:hover:not(:disabled) { background: var(--gutter); }
+.btn:active:not(:disabled) { transform: translateY(2px); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn--go { background: var(--cyan); color: var(--ink); border-color: var(--cyan); }
+.btn--go:hover:not(:disabled) { background: var(--paper); }
+.btn--break { background: transparent; color: var(--magenta); border-color: var(--magenta); }
+.btn--break:hover:not(:disabled) { background: var(--magenta-soft); }
+
+/* ---------- sliders ---------- */
+
+.ctrl { display: grid; gap: 0.35rem; }
+.ctrl label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--paper-dim);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.ctrl label .val { color: var(--yellow); }
+.ctrl input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 30px;
+  background: transparent;
+  cursor: grab;
+}
+.ctrl input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; background: var(--gutter); border-radius: 2px;
+}
+.ctrl input[type="range"]::-moz-range-track {
+  height: 4px; background: var(--gutter); border-radius: 2px;
+}
+.ctrl input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px; margin-top: -9px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+.ctrl input[type="range"]::-moz-range-thumb {
+  width: 22px; height: 22px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+
+/* ---------- readouts ---------- */
+
+.readout {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--paper-dim);
+}
+.readout b { color: var(--paper); font-weight: 700; }
+
+/* ---------- utility ---------- */
+
+.stack { display: grid; gap: 1rem; }
+.row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+.dim { color: var(--paper-dim); }
+.vh {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}

@@ -1,0 +1,8 @@
+---
+interface Props { ruling: string }
+const { ruling } = Astro.props;
+---
+<aside class="verdict">
+  <p class="ruling">{ruling}</p>
+  <div><slot /></div>
+</aside>

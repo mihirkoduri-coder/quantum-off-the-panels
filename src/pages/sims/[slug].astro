@@ -1,0 +1,25 @@
+---
+import Base from "../../layouts/Base.astro";
+import { allSims } from "../../data/concepts";
+import { SIMS, SIM_TITLES } from "../../sims/registry";
+import SimLoader from "../../components/SimLoader";
+
+export function getStaticPaths() {
+  return allSims()
+    .filter(({ slug }) => slug in SIMS)
+    .map(({ slug, concept }) => ({ params: { slug }, props: { concept } }));
+}
+
+const { slug } = Astro.params;
+const { concept } = Astro.props;
+---
+<Base title={`${SIM_TITLES[slug!] ?? slug} — Quantum off the Panels`}>
+  <div class="wrap" style="max-width: 60rem">
+    <p class="eyebrow">
+      <span class="wk">ISSUE {String(concept.week).padStart(2, "0")}</span>
+      <span class="sep">/</span>
+      <a href={`/posts/${concept.slug}`}>Read the post</a>
+    </p>
+    <SimLoader slug={slug!} client:load />
+  </div>
+</Base>
