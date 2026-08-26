@@ -6,8 +6,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
 export default defineConfig({
-  // TODO: swap for your real domain before launch — RSS and sitemap need it.
-  site: "https://example.vercel.app",
+  site: "https://quantum-off-the-panels.vercel.app",
   integrations: [mdx(), react(), sitemap()],
   markdown: {
     remarkPlugins: [remarkMath],
