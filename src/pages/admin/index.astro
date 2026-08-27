@@ -1,0 +1,18 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+
+// middleware.ts guarantees this is set before this page ever renders
+const session = Astro.locals.session!;
+---
+<Base title="Admin — Quantum off the Panels">
+  <div class="wrap admin">
+    <h1>Admin</h1>
+    <p class="dim">Logged in as <b>{session.login}</b>.</p>
+    <p>
+      This is a checkpoint — login, session, and the GitHub commit path all
+      work, but the actual issue and site-copy editors aren't built yet.
+    </p>
+    <a href="/api/auth/logout">Log out</a>
+  </div>
+</Base>

@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+
+const messages: Record<string, string> = {
+  state_mismatch: "That login attempt expired or didn't match up — try again.",
+  github_error: "GitHub didn't cooperate. Try again in a moment.",
+  not_allowed: "That GitHub account isn't authorized to edit this site.",
+};
+const error = Astro.url.searchParams.get("error");
+const message = error ? (messages[error] ?? "Something went wrong — try again.") : null;
+---
+<Base title="Admin login — Quantum off the Panels">
+  <div class="wrap login">
+    <h1>Admin</h1>
+    {message && <p class="login__err">{message}</p>}
+    <a class="btn btn--go login__go" href="/api/auth/login">Log in with GitHub</a>
+  </div>
+  <style>
+    .login { padding: 3rem 0; max-width: 28rem; }
+    .login__err { color: var(--magenta); }
+    .login__go { display: inline-block; text-decoration: none; margin-top: 1rem; }
+  </style>
+</Base>
