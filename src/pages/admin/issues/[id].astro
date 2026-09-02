@@ -1,0 +1,173 @@
+---
+export const prerender = false;
+import Base from "../../../layouts/Base.astro";
+import { CONCEPTS, byId, type Concept, type Tier } from "../../../data/concepts";
+import { upsertConcept } from "../../../lib/concepts-writer";
+import { serializePost, parsePost, type PostFrontmatter } from "../../../lib/mdx";
+import { commitFile, getFileContent } from "../../../lib/github";
+
+const CONCEPTS_PATH = "src/data/concepts.ts";
+const POSTS_DIR = "src/content/posts";
+
+const id = Astro.params.id!;
+const session = Astro.locals.session!;
+const existing = byId(id);
+
+let notice: string | null = Astro.url.searchParams.get("saved")
+  ? "Saved. Vercel will redeploy in a minute or two."
+  : null;
+let error: string | null = null;
+
+// what the form displays — defaults to whatever's already saved, but gets
+// overridden below with the just-submitted values if a save attempt fails,
+// so a typo in the body text never means retyping the whole thing.
+let displayConcept: Concept | null | undefined = existing;
+let displayFrontmatter: PostFrontmatter | undefined;
+let displayBody = "";
+
+// ---- handle the save ----
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const str = (key: string) => (form.get(key) as string | null)?.trim() || "";
+  const splitList = (key: string) =>
+    str(key).split(",").map((s) => s.trim()).filter(Boolean);
+
+  const week = Number(str("week"));
+  const publishNow = form.get("publishNow") === "on";
+  const slug = str("slug") || `week-${String(week).padStart(2, "0")}-${id}`;
+
+  const concept: Concept = {
+    id,
+    week,
+    arc: Number(str("arc")),
+    title: str("conceptTitle"),
+    blurb: str("blurb"),
+    character: str("character"),
+    tier: str("tier") as Tier,
+    prereqs: splitList("prereqs"),
+    sims: splitList("sims"),
+    published: publishNow,
+    slug,
+  };
+  const frontmatter: PostFrontmatter = {
+    conceptId: id,
+    title: str("postTitle"),
+    subtitle: str("subtitle") || undefined,
+    published: str("publishedDate"),
+    claim: str("claim") || undefined,
+    claimSource: str("claimSource") || undefined,
+    ruling: str("ruling") || undefined,
+    draft: !publishNow,
+  };
+  const body = str("body");
+
+  try {
+    const currentConceptsText = await getFileContent(session.accessToken, CONCEPTS_PATH);
+    if (!currentConceptsText) throw new Error("Could not read concepts.ts from the repo");
+    const newConceptsText = upsertConcept(currentConceptsText, concept);
+
+    await commitFile({
+      accessToken: session.accessToken,
+      path: CONCEPTS_PATH,
+      content: newConceptsText,
+      message: `admin: update concept "${id}" (issue ${week})`,
+    });
+    await commitFile({
+      accessToken: session.accessToken,
+      path: `${POSTS_DIR}/${slug}.mdx`,
+      content: serializePost({ frontmatter, body }),
+      message: `admin: write issue ${week} (${slug})`,
+    });
+    // redirect rather than re-render in place — a fresh GET picks up what
+    // was actually just committed instead of the stale pre-save values,
+    // and a page refresh afterward can't resubmit the form.
+    return Astro.redirect(`/admin/issues/${id}?saved=1`);
+  } catch (err) {
+    console.error(err);
+    error = err instanceof Error ? err.message : "Something went wrong saving this issue.";
+    // keep whatever they typed on screen — don't fall back to the old saved values
+    displayConcept = concept;
+    displayFrontmatter = frontmatter;
+    displayBody = body;
+  }
+}
+
+// ---- GET, or a failed POST falling through to re-render ----
+if (displayFrontmatter === undefined) {
+  const existingPost = existing
+    ? parsePost((await getFileContent(session.accessToken, `${POSTS_DIR}/${existing.slug}.mdx`)) ?? "")
+    : null;
+  displayFrontmatter = existingPost?.frontmatter;
+  displayBody = existingPost?.body ?? "";
+}
+
+const nextWeek = displayConcept?.week ?? Math.max(...CONCEPTS.map((x) => x.week)) + 1;
+const f = displayFrontmatter;
+const c = displayConcept;
+---
+<Base title={`Admin: ${c?.title ?? id} — Quantum off the Panels`}>
+  <div class="wrap admin">
+    <p><a href="/admin/issues">&larr; Issues</a></p>
+    <h1>{c ? c.title : `New: ${id}`}</h1>
+
+    {notice && <p class="admin__notice">{notice}</p>}
+    {error && <p class="admin__error">Error: {error}</p>}
+
+    <form method="POST" class="issue-form">
+      <fieldset>
+        <legend>Concept (drives the map, compendium, prereqs, gallery)</legend>
+        <label>Week <input type="number" name="week" value={nextWeek} required /></label>
+        <label>Arc <input type="number" name="arc" value={c?.arc ?? 1} required /></label>
+        <label>Concept title <input type="text" name="conceptTitle" value={c?.title ?? ""} required /></label>
+        <label>Blurb <textarea name="blurb" rows="2" required>{c?.blurb ?? ""}</textarea></label>
+        <label>Character <input type="text" name="character" value={c?.character ?? ""} required /></label>
+        <label>Tier
+          <select name="tier">
+            {["A", "B", "C"].map((t) => <option value={t} selected={c?.tier === t}>{t}</option>)}
+          </select>
+        </label>
+        <label>Prereqs (comma-separated concept ids) <input type="text" name="prereqs" value={(c?.prereqs ?? []).join(", ")} /></label>
+        <label>Sims (comma-separated slugs — building the actual sim component is still a code task) <input type="text" name="sims" value={(c?.sims ?? []).join(", ")} /></label>
+        <label>Slug (post filename, leave as-is once set) <input type="text" name="slug" value={c?.slug ?? ""} placeholder={`week-${String(nextWeek).padStart(2, "0")}-${id}`} /></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Post</legend>
+        <label>Post title (the headline) <input type="text" name="postTitle" value={f?.title ?? ""} required /></label>
+        <label>Subtitle <input type="text" name="subtitle" value={f?.subtitle ?? ""} /></label>
+        <label>Publish date <input type="date" name="publishedDate" value={f?.published || new Date().toISOString().slice(0, 10)} required /></label>
+        <label>Claim (what the comic asserts — leave blank if there's nothing to debunk) <textarea name="claim" rows="2">{f?.claim ?? ""}</textarea></label>
+        <label>Claim source <input type="text" name="claimSource" value={f?.claimSource ?? ""} /></label>
+        <label>Ruling (the verdict — leave blank along with claim) <input type="text" name="ruling" value={f?.ruling ?? ""} /></label>
+        <label>Body (MDX)
+          <textarea name="body" rows="18" class="body-field">{displayBody}</textarea>
+        </label>
+      </fieldset>
+
+      <label class="publish-row">
+        <input type="checkbox" name="publishNow" checked={c?.published ?? false} />
+        Publish now (unchecked = save as a draft, hidden everywhere reader-facing)
+      </label>
+
+      <button class="btn btn--go" type="submit">Save</button>
+    </form>
+  </div>
+
+  <style>
+    .admin { padding: 2.5rem 0 5rem; max-width: 42rem; }
+    .admin__notice { border-left: 2px solid var(--cyan); padding-left: 0.9rem; color: var(--paper); }
+    .admin__error { border-left: 2px solid var(--magenta); padding-left: 0.9rem; color: var(--magenta); }
+    fieldset { border: var(--panel-line) solid var(--gutter); border-radius: var(--radius); padding: 1.2rem; margin: 1.5rem 0; }
+    legend { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--paper-dim); padding: 0 0.4rem; }
+    .issue-form label { display: block; margin: 0.9rem 0; font-size: 0.85rem; color: var(--paper-dim); }
+    .issue-form input[type="text"], .issue-form input[type="number"], .issue-form input[type="date"],
+    .issue-form select, .issue-form textarea {
+      display: block; width: 100%; margin-top: 0.35rem; background: var(--ink-2); color: var(--paper);
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.55rem 0.7rem; font-family: var(--font-body); font-size: 0.95rem;
+    }
+    .body-field { font-family: var(--font-mono); font-size: 0.85rem; }
+    .publish-row { display: flex; align-items: center; gap: 0.6rem; margin: 1.5rem 0; font-size: 0.9rem; }
+    .publish-row input { min-height: auto; width: auto; }
+  </style>
+</Base>

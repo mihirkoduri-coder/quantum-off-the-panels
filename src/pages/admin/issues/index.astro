@@ -1,0 +1,61 @@
+---
+export const prerender = false;
+import Base from "../../../layouts/Base.astro";
+import { CONCEPTS } from "../../../data/concepts";
+
+// sorted by week — this is the planning order, not necessarily array order
+const sorted = [...CONCEPTS].sort((a, b) => a.week - b.week);
+---
+<Base title="Admin: Issues — Quantum off the Panels">
+  <div class="wrap admin">
+    <p><a href="/admin">&larr; Admin</a></p>
+    <h1>Issues</h1>
+    <p class="dim">
+      Every planned issue lives here, published or not. Click one to write
+      its post and/or publish it. To add something entirely new (not
+      already on the roadmap), type an id that doesn't exist yet below.
+    </p>
+
+    <ul class="issue-list">
+      {sorted.map((c) => (
+        <li class={`issue-row${c.published ? " is-live" : ""}`}>
+          <a href={`/admin/issues/${c.id}`}>
+            <span class="issue-row__wk">ISSUE {String(c.week).padStart(2, "0")}</span>
+            <span class="issue-row__title">{c.title}</span>
+            <span class="issue-row__state">{c.published ? "Published" : "Not published"}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <form action="/admin/issues/new-redirect" method="get" class="new-form">
+      <label for="new-id">New issue id (lowercase, hyphenated, not on the list above)</label>
+      <div class="row">
+        <input id="new-id" name="id" type="text" pattern="[a-z0-9-]+" placeholder="e.g. quantum-teleportation" required />
+        <button class="btn" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+
+  <style>
+    .admin { padding: 2.5rem 0 4rem; max-width: 40rem; }
+    .issue-list { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; gap: 0.6rem; }
+    .issue-row a {
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.8rem 1rem; text-decoration: none; background: var(--ink-2);
+    }
+    .issue-row.is-live a { border-color: var(--cyan); }
+    .issue-row__wk { font-family: var(--font-mono); font-size: 0.75rem; color: var(--paper-dim); }
+    .issue-row__title { flex: 1; font-weight: 700; }
+    .issue-row__state { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; color: var(--paper-dim); }
+    .issue-row.is-live .issue-row__state { color: var(--cyan); }
+    .new-form { margin-top: 2.5rem; border-top: var(--panel-line) solid var(--gutter); padding-top: 1.5rem; }
+    .new-form label { display: block; font-size: 0.85rem; color: var(--paper-dim); margin-bottom: 0.5rem; }
+    .new-form .row { display: flex; gap: 0.6rem; }
+    .new-form input {
+      flex: 1; background: var(--ink-2); color: var(--paper); border: var(--panel-line) solid var(--gutter);
+      border-radius: var(--radius); padding: 0.6rem 0.8rem; font-family: var(--font-mono);
+    }
+  </style>
+</Base>

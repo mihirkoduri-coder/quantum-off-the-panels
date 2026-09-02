@@ -37,6 +37,21 @@ export async function fetchGithubLogin(accessToken: string): Promise<string> {
   return data.login as string;
 }
 
+/** Read a file's current text straight from the repo (not the bundled
+ *  build) — needed before any read-modify-write edit, so a save is always
+ *  based on what's actually in git right now. Returns null if it doesn't
+ *  exist yet (that's a normal case, not an error, for a not-yet-written post). */
+export async function getFileContent(accessToken: string, path: string): Promise<string | null> {
+  const res = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?ref=${REPO_BRANCH}`,
+    { headers: { authorization: `Bearer ${accessToken}`, accept: "application/vnd.github+json" } },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub file lookup failed: ${res.status}`);
+  const data = await res.json();
+  return Buffer.from(data.content, "base64").toString("utf-8");
+}
+
 /** Create or update one file in the repo as a real commit. */
 export async function commitFile(opts: {
   accessToken: string;

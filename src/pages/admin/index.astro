@@ -9,10 +9,10 @@ const session = Astro.locals.session!;
   <div class="wrap admin">
     <h1>Admin</h1>
     <p class="dim">Logged in as <b>{session.login}</b>.</p>
-    <p>
-      This is a checkpoint — login, session, and the GitHub commit path all
-      work, but the actual issue and site-copy editors aren't built yet.
-    </p>
+    <ul>
+      <li><a href="/admin/issues">Issues</a> — publish a planned week, write its post, or add a new one</li>
+    </ul>
+    <p class="dim">Site-copy editing (nav labels, hero text, footer) isn't built yet.</p>
     <a href="/api/auth/logout">Log out</a>
   </div>
 </Base>
