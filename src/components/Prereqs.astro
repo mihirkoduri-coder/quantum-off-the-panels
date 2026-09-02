@@ -11,8 +11,8 @@ const items = ids.map(byId).filter(Boolean);
       {items.map((c) => (
         <li>
           {c!.published
-            ? <a href={`/posts/${c!.slug}`}>Issue {c!.week} · {c!.title}</a>
-            : <span class="dim">Issue {c!.week} · {c!.title} (not out yet)</span>}
+            ? <a href={`/posts/${c!.slug}`}>{c!.week !== null ? `Issue ${c!.week} · ` : ""}{c!.title}</a>
+            : <span class="dim">{c!.week !== null ? `Issue ${c!.week} · ` : ""}{c!.title} (not out yet)</span>}
         </li>
       ))}
     </ul>

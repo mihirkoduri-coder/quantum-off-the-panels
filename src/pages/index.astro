@@ -3,7 +3,10 @@ import Base from "../layouts/Base.astro";
 import ConceptMap from "../components/ConceptMap.astro";
 import { CONCEPTS, published } from "../data/concepts";
 
-const live = published().sort((a, b) => a.week - b.week);
+// published implies grouped (see isGrouped() in concepts.ts) — the ?? 0
+// never actually fires, it's just satisfying the type for concepts that
+// technically could still be ungrouped drafts elsewhere in the manifest.
+const live = published().sort((a, b) => (a.week ?? 0) - (b.week ?? 0));
 const first = live[0];
 const latest = live[live.length - 1];
 

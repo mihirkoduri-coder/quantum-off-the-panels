@@ -24,7 +24,7 @@ const { prev, next } = neighbours(c.id);
       <div class="cover dot-shadow">
         <div class="cover__badge">
           <span class="cover__badgeLabel">Issue</span>
-          <span class="cover__badgeNum">{String(c.week).padStart(2, "0")}</span>
+          <span class="cover__badgeNum">{c.week !== null ? String(c.week).padStart(2, "0") : "—"}</span>
         </div>
         <p class="eyebrow cover__eyebrow">
           <span>{c.title}</span><span class="sep">/</span><span>{c.character}</span>
@@ -53,8 +53,8 @@ const { prev, next } = neighbours(c.id);
       )}
 
       <nav class="post__nav">
-        {prev ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← Issue {prev.week}</a> : <span />}
-        {next && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}>Issue {next.week} →</a>}
+        {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← Issue {prev.week}</a> : <span />}
+        {next && next.week !== null && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}>Issue {next.week} →</a>}
       </nav>
     </div>
   </article>

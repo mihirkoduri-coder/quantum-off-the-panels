@@ -9,6 +9,15 @@
  *   - the simulations gallery (and what's locked)
  *
  * Nothing else should hardcode week numbers or ordering.
+ *
+ * week/arc are nullable on purpose: writing a concept and slotting it into
+ * a numbered place in the reading order are two separate decisions. An
+ * entry with week/arc still null is a real, editable draft that just
+ * hasn't been grouped into the roadmap yet — see isGrouped() below. The
+ * one rule the admin panel enforces: published implies grouped, since
+ * "ISSUE —" isn't a real label. Nothing reader-facing should ever see a
+ * published concept with a null week/arc; if you do, that's a bug in
+ * whatever wrote it, not something to render around.
  */
 
 export type Tier = "A" | "B" | "C";
@@ -16,8 +25,12 @@ export type Tier = "A" | "B" | "C";
 export interface Concept {
   /** stable id — used for prereq edges and post frontmatter. never change it. */
   id: string;
-  week: number;
-  arc: number;
+  /** null = not yet slotted into a reading order. see isGrouped(). */
+  week: number | null;
+  /** null = not yet assigned to an arc. a concept can exist and even be
+   *  drafted long before you decide which arc (or a brand new one) it
+   *  belongs to. */
+  arc: number | null;
   title: string;
   /** one line, shown on map hover and compendium cards */
   blurb: string;
@@ -32,6 +45,9 @@ export interface Concept {
   /** matches the .mdx filename in src/content/posts/ */
   slug: string;
 }
+
+export const isGrouped = (c: Concept): c is Concept & { week: number; arc: number } =>
+  c.week !== null && c.arc !== null;
 
 export const CONCEPTS: Concept[] = [
   {
@@ -217,7 +233,7 @@ export const bySlug = (slug: string) => CONCEPTS.find((c) => c.slug === slug);
 
 export const published = () => CONCEPTS.filter((c) => c.published);
 
-export const arcs = () => [...new Set(CONCEPTS.map((c) => c.arc))].sort();
+export const arcs = () => [...new Set(CONCEPTS.map((c) => c.arc).filter((a): a is number => a !== null))].sort();
 
 /** every sim slug that exists anywhere in the manifest, with its owning concept */
 export const allSims = () =>

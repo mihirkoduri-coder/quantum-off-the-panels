@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import Base from "../../../layouts/Base.astro";
-import { CONCEPTS, byId, type Concept, type Tier } from "../../../data/concepts";
+import { byId, type Concept, type Tier } from "../../../data/concepts";
 import { upsertConcept } from "../../../lib/concepts-writer";
 import { serializePost, parsePost, type PostFrontmatter } from "../../../lib/mdx";
 import { commitFile, getFileContent } from "../../../lib/github";
@@ -32,14 +32,15 @@ if (Astro.request.method === "POST") {
   const splitList = (key: string) =>
     str(key).split(",").map((s) => s.trim()).filter(Boolean);
 
-  const week = Number(str("week"));
+  const week = str("week") ? Number(str("week")) : null;
+  const arc = str("arc") ? Number(str("arc")) : null;
   const publishNow = form.get("publishNow") === "on";
-  const slug = str("slug") || `week-${String(week).padStart(2, "0")}-${id}`;
+  const slug = str("slug") || (week !== null ? `week-${String(week).padStart(2, "0")}-${id}` : id);
 
   const concept: Concept = {
     id,
     week,
-    arc: Number(str("arc")),
+    arc,
     title: str("conceptTitle"),
     blurb: str("blurb"),
     character: str("character"),
@@ -61,34 +62,38 @@ if (Astro.request.method === "POST") {
   };
   const body = str("body");
 
-  try {
-    const currentConceptsText = await getFileContent(session.accessToken, CONCEPTS_PATH);
-    if (!currentConceptsText) throw new Error("Could not read concepts.ts from the repo");
-    const newConceptsText = upsertConcept(currentConceptsText, concept);
+  displayConcept = concept;
+  displayFrontmatter = frontmatter;
+  displayBody = body;
 
-    await commitFile({
-      accessToken: session.accessToken,
-      path: CONCEPTS_PATH,
-      content: newConceptsText,
-      message: `admin: update concept "${id}" (issue ${week})`,
-    });
-    await commitFile({
-      accessToken: session.accessToken,
-      path: `${POSTS_DIR}/${slug}.mdx`,
-      content: serializePost({ frontmatter, body }),
-      message: `admin: write issue ${week} (${slug})`,
-    });
-    // redirect rather than re-render in place — a fresh GET picks up what
-    // was actually just committed instead of the stale pre-save values,
-    // and a page refresh afterward can't resubmit the form.
-    return Astro.redirect(`/admin/issues/${id}?saved=1`);
-  } catch (err) {
-    console.error(err);
-    error = err instanceof Error ? err.message : "Something went wrong saving this issue.";
-    // keep whatever they typed on screen — don't fall back to the old saved values
-    displayConcept = concept;
-    displayFrontmatter = frontmatter;
-    displayBody = body;
+  if (publishNow && (week === null || arc === null)) {
+    error = "This needs a week and an arc before it can publish — a reader-facing issue can't have no number. Leave \"Publish now\" unchecked to save it as a grouped-later draft instead.";
+  } else {
+    try {
+      const currentConceptsText = await getFileContent(session.accessToken, CONCEPTS_PATH);
+      if (!currentConceptsText) throw new Error("Could not read concepts.ts from the repo");
+      const newConceptsText = upsertConcept(currentConceptsText, concept);
+
+      await commitFile({
+        accessToken: session.accessToken,
+        path: CONCEPTS_PATH,
+        content: newConceptsText,
+        message: `admin: update concept "${id}"${week !== null ? ` (issue ${week})` : ""}`,
+      });
+      await commitFile({
+        accessToken: session.accessToken,
+        path: `${POSTS_DIR}/${slug}.mdx`,
+        content: serializePost({ frontmatter, body }),
+        message: `admin: write "${id}" (${slug})`,
+      });
+      // redirect rather than re-render in place — a fresh GET picks up what
+      // was actually just committed instead of the stale pre-save values,
+      // and a page refresh afterward can't resubmit the form.
+      return Astro.redirect(`/admin/issues/${id}?saved=1`);
+    } catch (err) {
+      console.error(err);
+      error = err instanceof Error ? err.message : "Something went wrong saving this issue.";
+    }
   }
 }
 
@@ -101,7 +106,9 @@ if (displayFrontmatter === undefined) {
   displayBody = existingPost?.body ?? "";
 }
 
-const nextWeek = displayConcept?.week ?? Math.max(...CONCEPTS.map((x) => x.week)) + 1;
+// deliberately no auto-suggested "next" week/arc — a new entry starts
+// ungrouped by default. Fill these in whenever you're ready to slot it
+// into a reading order, not necessarily now.
 const f = displayFrontmatter;
 const c = displayConcept;
 ---
@@ -116,8 +123,14 @@ const c = displayConcept;
     <form method="POST" class="issue-form">
       <fieldset>
         <legend>Concept (drives the map, compendium, prereqs, gallery)</legend>
-        <label>Week <input type="number" name="week" value={nextWeek} required /></label>
-        <label>Arc <input type="number" name="arc" value={c?.arc ?? 1} required /></label>
+        <label>
+          Week <span class="hint">(leave blank — group this into a reading order whenever you're ready)</span>
+          <input type="number" name="week" value={c?.week ?? ""} />
+        </label>
+        <label>
+          Arc <span class="hint">(leave blank too — a new arc doesn't need the last one finished first)</span>
+          <input type="number" name="arc" value={c?.arc ?? ""} />
+        </label>
         <label>Concept title <input type="text" name="conceptTitle" value={c?.title ?? ""} required /></label>
         <label>Blurb <textarea name="blurb" rows="2" required>{c?.blurb ?? ""}</textarea></label>
         <label>Character <input type="text" name="character" value={c?.character ?? ""} required /></label>
@@ -128,7 +141,7 @@ const c = displayConcept;
         </label>
         <label>Prereqs (comma-separated concept ids) <input type="text" name="prereqs" value={(c?.prereqs ?? []).join(", ")} /></label>
         <label>Sims (comma-separated slugs — building the actual sim component is still a code task) <input type="text" name="sims" value={(c?.sims ?? []).join(", ")} /></label>
-        <label>Slug (post filename, leave as-is once set) <input type="text" name="slug" value={c?.slug ?? ""} placeholder={`week-${String(nextWeek).padStart(2, "0")}-${id}`} /></label>
+        <label>Slug (post filename, leave as-is once set) <input type="text" name="slug" value={c?.slug ?? ""} placeholder={id} /></label>
       </fieldset>
 
       <fieldset>
@@ -136,9 +149,13 @@ const c = displayConcept;
         <label>Post title (the headline) <input type="text" name="postTitle" value={f?.title ?? ""} required /></label>
         <label>Subtitle <input type="text" name="subtitle" value={f?.subtitle ?? ""} /></label>
         <label>Publish date <input type="date" name="publishedDate" value={f?.published || new Date().toISOString().slice(0, 10)} required /></label>
-        <label>Claim (what the comic asserts — leave blank if there's nothing to debunk) <textarea name="claim" rows="2">{f?.claim ?? ""}</textarea></label>
-        <label>Claim source <input type="text" name="claimSource" value={f?.claimSource ?? ""} /></label>
-        <label>Ruling (the verdict — leave blank along with claim) <input type="text" name="ruling" value={f?.ruling ?? ""} /></label>
+        <label>Quote <span class="hint">(doesn't have to be a claim to debunk — just something relevant, attributed below)</span>
+          <textarea name="claim" rows="2">{f?.claim ?? ""}</textarea>
+        </label>
+        <label>Quote source <input type="text" name="claimSource" value={f?.claimSource ?? ""} /></label>
+        <label>Ruling <span class="hint">(optional — a closing verdict, if this issue is arguing against the quote)</span>
+          <input type="text" name="ruling" value={f?.ruling ?? ""} />
+        </label>
         <label>Body (MDX)
           <textarea name="body" rows="18" class="body-field">{displayBody}</textarea>
         </label>
@@ -146,7 +163,7 @@ const c = displayConcept;
 
       <label class="publish-row">
         <input type="checkbox" name="publishNow" checked={c?.published ?? false} />
-        Publish now (unchecked = save as a draft, hidden everywhere reader-facing)
+        Publish now (unchecked = save as a draft, hidden everywhere reader-facing — needs a week and arc)
       </label>
 
       <button class="btn btn--go" type="submit">Save</button>
@@ -160,6 +177,7 @@ const c = displayConcept;
     fieldset { border: var(--panel-line) solid var(--gutter); border-radius: var(--radius); padding: 1.2rem; margin: 1.5rem 0; }
     legend { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--paper-dim); padding: 0 0.4rem; }
     .issue-form label { display: block; margin: 0.9rem 0; font-size: 0.85rem; color: var(--paper-dim); }
+    .hint { font-weight: 400; font-style: italic; }
     .issue-form input[type="text"], .issue-form input[type="number"], .issue-form input[type="date"],
     .issue-form select, .issue-form textarea {
       display: block; width: 100%; margin-top: 0.35rem; background: var(--ink-2); color: var(--paper);

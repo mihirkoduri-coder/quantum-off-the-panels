@@ -1,8 +1,11 @@
 ---
+// Neutral on purpose: not every issue is debunking a wrong claim, some
+// just open on a quote worth sitting with. The label is plain attribution
+// either way — "claims" presupposed it was always about to be wrong.
 interface Props { source: string }
 const { source } = Astro.props;
 ---
 <blockquote class="claim">
-  <span class="who">{source} claims</span>
+  <span class="who">{source}</span>
   <slot />
 </blockquote>

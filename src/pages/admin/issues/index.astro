@@ -3,30 +3,62 @@ export const prerender = false;
 import Base from "../../../layouts/Base.astro";
 import { CONCEPTS } from "../../../data/concepts";
 
-// sorted by week — this is the planning order, not necessarily array order
-const sorted = [...CONCEPTS].sort((a, b) => a.week - b.week);
+const ungrouped = CONCEPTS.filter((c) => c.week === null || c.arc === null);
+
+const arcGroups = new Map<number, typeof CONCEPTS>();
+for (const c of CONCEPTS) {
+  if (c.arc === null) continue;
+  if (!arcGroups.has(c.arc)) arcGroups.set(c.arc, []);
+  arcGroups.get(c.arc)!.push(c);
+}
+const sortedArcs = [...arcGroups.entries()]
+  .sort(([a], [b]) => a - b)
+  .map(([arc, items]) => [arc, items.sort((a, b) => (a.week ?? 0) - (b.week ?? 0))] as const);
 ---
 <Base title="Admin: Issues — Quantum off the Panels">
   <div class="wrap admin">
     <p><a href="/admin">&larr; Admin</a></p>
     <h1>Issues</h1>
     <p class="dim">
-      Every planned issue lives here, published or not. Click one to write
-      its post and/or publish it. To add something entirely new (not
-      already on the roadmap), type an id that doesn't exist yet below.
+      Writing something and grouping it into a reading order are separate
+      steps — an issue can exist, get drafted, even get most of its content
+      written, before you decide which arc it's in or what number it gets.
+      Nothing has to slot into a pre-built roadmap.
     </p>
 
-    <ul class="issue-list">
-      {sorted.map((c) => (
-        <li class={`issue-row${c.published ? " is-live" : ""}`}>
-          <a href={`/admin/issues/${c.id}`}>
-            <span class="issue-row__wk">ISSUE {String(c.week).padStart(2, "0")}</span>
-            <span class="issue-row__title">{c.title}</span>
-            <span class="issue-row__state">{c.published ? "Published" : "Not published"}</span>
-          </a>
-        </li>
-      ))}
-    </ul>
+    {ungrouped.length > 0 && (
+      <>
+        <h2>Ungrouped</h2>
+        <ul class="issue-list">
+          {ungrouped.map((c) => (
+            <li class="issue-row">
+              <a href={`/admin/issues/${c.id}`}>
+                <span class="issue-row__wk">—</span>
+                <span class="issue-row__title">{c.title || c.id}</span>
+                <span class="issue-row__state">Not published</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )}
+
+    {sortedArcs.map(([arc, items]) => (
+      <>
+        <h2>Arc {arc}</h2>
+        <ul class="issue-list">
+          {items.map((c) => (
+            <li class={`issue-row${c.published ? " is-live" : ""}`}>
+              <a href={`/admin/issues/${c.id}`}>
+                <span class="issue-row__wk">ISSUE {String(c.week).padStart(2, "0")}</span>
+                <span class="issue-row__title">{c.title}</span>
+                <span class="issue-row__state">{c.published ? "Published" : "Not published"}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    ))}
 
     <form action="/admin/issues/new-redirect" method="get" class="new-form">
       <label for="new-id">New issue id (lowercase, hyphenated, not on the list above)</label>
@@ -39,7 +71,8 @@ const sorted = [...CONCEPTS].sort((a, b) => a.week - b.week);
 
   <style>
     .admin { padding: 2.5rem 0 4rem; max-width: 40rem; }
-    .issue-list { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; gap: 0.6rem; }
+    .admin h2 { font-size: 1rem; margin: 2rem 0 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--paper-dim); }
+    .issue-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.6rem; }
     .issue-row a {
       display: flex; justify-content: space-between; align-items: center; gap: 1rem;
       border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
