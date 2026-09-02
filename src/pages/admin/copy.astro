@@ -1,0 +1,212 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import { commitFile, getFileContent } from "../../lib/github";
+import { copy as defaultCopy, fullSiteTitle, type SiteCopy } from "../../lib/site-copy";
+
+const COPY_PATH = "src/data/site-copy.json";
+const session = Astro.locals.session!;
+
+let notice: string | null = Astro.url.searchParams.get("saved")
+  ? "Saved. Vercel will redeploy in a minute or two."
+  : null;
+let error: string | null = null;
+
+/** dot-path getter/setter — lets the form use flat names like "site.title"
+ *  against the nested SiteCopy shape without hand-writing every field twice. */
+function getPath(obj: any, path: string): string {
+  return path.split(".").reduce((o, k) => o?.[k], obj) ?? "";
+}
+function setPath(obj: any, path: string, value: string) {
+  const keys = path.split(".");
+  const last = keys.pop()!;
+  const target = keys.reduce((o, k) => (o[k] ??= {}), obj);
+  target[last] = value;
+}
+
+// every field the form edits, grouped for rendering. Keep this in sync
+// with SiteCopy in lib/site-copy.ts — it's the one place both the form
+// layout and the save logic read field names from.
+const FIELDS: { group: string; hint?: string; fields: { path: string; label: string; long?: boolean; hint?: string }[] }[] = [
+  {
+    group: "Site identity (header, footer, browser tab, RSS)",
+    fields: [
+      { path: "site.title", label: "Title, plain part" },
+      { path: "site.titleAccent", label: "Title, accent part (colored, e.g. \"Panels\")" },
+      { path: "site.byline", label: "Byline" },
+      { path: "site.description", label: "Description (browser/RSS metadata)", long: true },
+      { path: "site.footerNote", label: "Footer note", long: true },
+    ],
+  },
+  {
+    group: "Navigation",
+    fields: [
+      { path: "nav.compendium", label: "\"Compendium\" link" },
+      { path: "nav.simulations", label: "\"Simulations\" link" },
+      { path: "nav.rss", label: "\"RSS\" link" },
+    ],
+  },
+  {
+    group: "Shared labels (used in more than one place)",
+    fields: [
+      { path: "labels.issue", label: "The word for one issue/entry (e.g. \"Issue\")" },
+      { path: "labels.arc", label: "Arc label (e.g. \"ARC 1\")" },
+      { path: "labels.buildsOn", label: "Prerequisites label (e.g. \"Builds on\")" },
+      { path: "labels.notOutYet", label: "Not-yet-published suffix" },
+    ],
+  },
+  {
+    group: "Homepage",
+    fields: [
+      { path: "homepage.headline", label: "Headline, plain part" },
+      { path: "homepage.headlineAccent", label: "Headline, accent part (colored, own line)" },
+      { path: "homepage.subhead", label: "Subhead paragraph", long: true },
+      { path: "homepage.ctaFirst", label: "\"Start from the top\" button" },
+      { path: "homepage.ctaLatest", label: "\"Latest issue\" button" },
+      { path: "homepage.progressTemplate", label: "Progress stat", hint: "keep {count} and {total}" },
+    ],
+  },
+  {
+    group: "Concept map",
+    fields: [
+      { path: "conceptMap.progressTemplate", label: "Progress caption", hint: "keep {count} and {total}" },
+    ],
+  },
+  {
+    group: "Compendium page",
+    fields: [
+      { path: "compendium.heading", label: "Heading" },
+      { path: "compendium.intro", label: "Intro paragraph", long: true },
+      { path: "compendium.searchPlaceholder", label: "Search box placeholder" },
+    ],
+  },
+  {
+    group: "Simulations page + gallery",
+    fields: [
+      { path: "sims.heading", label: "Heading" },
+      { path: "sims.intro", label: "Intro paragraph", long: true },
+      { path: "sims.unlockedLabel", label: "\"unlocked on this device\"" },
+      { path: "sims.resetButton", label: "Reset link" },
+      { path: "sims.openButton", label: "Open button" },
+      { path: "sims.lockedText", label: "Locked state text" },
+      { path: "sims.notBuiltText", label: "Not-built-yet text" },
+    ],
+  },
+  {
+    group: "Sim shell (wraps every sim)",
+    fields: [
+      { path: "simShell.eyebrowLabel", label: "Eyebrow label (e.g. \"SIM\")" },
+      { path: "simShell.watchForLabel", label: "\"Watch for\" label" },
+      { path: "simShell.resetButton", label: "Reset button" },
+    ],
+  },
+  {
+    group: "Predict (guess-before-you-touch-it ritual)",
+    fields: [
+      { path: "predict.eyebrowLabel", label: "Eyebrow label (e.g. \"PREDICT\")" },
+      { path: "predict.beforeYouRunIt", label: "Eyebrow sub-text" },
+      { path: "predict.lockItInButton", label: "Commit button" },
+      { path: "predict.nailedIt", label: "Correct-guess sfx" },
+      { path: "predict.nope", label: "Wrong-guess sfx" },
+      { path: "predict.youSaidPrefix", label: "\"You said\" prefix" },
+      { path: "predict.itsActuallyPrefix", label: "\"It's actually\" prefix" },
+      { path: "predict.nudge", label: "Post-reveal nudge line" },
+    ],
+  },
+  {
+    group: "Violation explainer (forbidden-operation panel)",
+    fields: [
+      { path: "violationExplainer.youTriedToPrefix", label: "\"You tried to\" prefix" },
+      { path: "violationExplainer.trySomethingElse", label: "Dismiss button" },
+    ],
+  },
+];
+
+let display: SiteCopy = defaultCopy;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const updated: any = JSON.parse(JSON.stringify(defaultCopy)); // structural clone, keeps any fields the form doesn't cover
+  for (const { fields } of FIELDS) {
+    for (const { path } of fields) {
+      const value = (form.get(path) as string | null) ?? "";
+      setPath(updated, path, value);
+    }
+  }
+  display = updated;
+
+  try {
+    const current = await getFileContent(session.accessToken, COPY_PATH);
+    if (current === null) throw new Error("Could not read site-copy.json from the repo");
+    await commitFile({
+      accessToken: session.accessToken,
+      path: COPY_PATH,
+      content: `${JSON.stringify(updated, null, 2)}\n`,
+      message: "admin: update site copy",
+    });
+    return Astro.redirect("/admin/copy?saved=1");
+  } catch (err) {
+    console.error(err);
+    error = err instanceof Error ? err.message : "Something went wrong saving the copy.";
+  }
+} else {
+  const current = await getFileContent(session.accessToken, COPY_PATH);
+  if (current) {
+    try {
+      display = JSON.parse(current);
+    } catch {
+      error = "site-copy.json in the repo doesn't parse as JSON — showing the bundled defaults instead.";
+    }
+  }
+}
+---
+<Base title={`Admin: Site copy — ${fullSiteTitle()}`}>
+  <div class="wrap admin">
+    <p><a href="/admin">&larr; Admin</a></p>
+    <h1>Site copy</h1>
+    <p class="dim">
+      Every editable UI string, grouped by where it shows up. Fields marked
+      with a hint contain a <code>{"{placeholder}"}</code> — keep that token
+      somewhere in the text, or the value it's supposed to carry won't appear.
+    </p>
+
+    {notice && <p class="admin__notice">{notice}</p>}
+    {error && <p class="admin__error">Error: {error}</p>}
+
+    <form method="POST" class="copy-form">
+      {FIELDS.map(({ group, fields }) => (
+        <fieldset>
+          <legend>{group}</legend>
+          {fields.map((f) => (
+            <label>
+              {f.label} {f.hint && <span class="hint">({f.hint})</span>}
+              {f.long ? (
+                <textarea name={f.path} rows="3">{getPath(display, f.path)}</textarea>
+              ) : (
+                <input type="text" name={f.path} value={getPath(display, f.path)} />
+              )}
+            </label>
+          ))}
+        </fieldset>
+      ))}
+
+      <button class="btn btn--go" type="submit">Save</button>
+    </form>
+  </div>
+
+  <style>
+    .admin { padding: 2.5rem 0 5rem; max-width: 42rem; }
+    .admin__notice { border-left: 2px solid var(--cyan); padding-left: 0.9rem; color: var(--paper); }
+    .admin__error { border-left: 2px solid var(--magenta); padding-left: 0.9rem; color: var(--magenta); }
+    fieldset { border: var(--panel-line) solid var(--gutter); border-radius: var(--radius); padding: 1.2rem; margin: 1.5rem 0; }
+    legend { font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--paper-dim); padding: 0 0.4rem; }
+    .copy-form label { display: block; margin: 0.9rem 0; font-size: 0.85rem; color: var(--paper-dim); }
+    .copy-form input, .copy-form textarea {
+      display: block; width: 100%; margin-top: 0.35rem; background: var(--ink-2); color: var(--paper);
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.55rem 0.7rem; font-family: var(--font-body); font-size: 0.95rem;
+    }
+    .hint { font-style: italic; }
+    code { font-family: var(--font-mono); background: var(--ink-2); padding: 0.1rem 0.3rem; border-radius: 2px; }
+  </style>
+</Base>

@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
+import { fullSiteTitle } from "../../lib/site-copy";
 
 const messages: Record<string, string> = {
   state_mismatch: "That login attempt expired or didn't match up — try again.",
@@ -10,7 +11,7 @@ const messages: Record<string, string> = {
 const error = Astro.url.searchParams.get("error");
 const message = error ? (messages[error] ?? "Something went wrong — try again.") : null;
 ---
-<Base title="Admin login — Quantum off the Panels">
+<Base title={`Admin login — ${fullSiteTitle()}`}>
   <div class="wrap login">
     <h1>Admin</h1>
     {message && <p class="login__err">{message}</p>}

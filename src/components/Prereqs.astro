@@ -1,18 +1,19 @@
 ---
 import { byId } from "../data/concepts";
+import { copy } from "../lib/site-copy";
 interface Props { ids: string[] }
 const { ids } = Astro.props;
 const items = ids.map(byId).filter(Boolean);
 ---
 {items.length > 0 && (
   <nav class="prereq" aria-label="Prerequisites">
-    <span class="prereq__label">Builds on</span>
+    <span class="prereq__label">{copy.labels.buildsOn}</span>
     <ul>
       {items.map((c) => (
         <li>
           {c!.published
-            ? <a href={`/posts/${c!.slug}`}>{c!.week !== null ? `Issue ${c!.week} · ` : ""}{c!.title}</a>
-            : <span class="dim">{c!.week !== null ? `Issue ${c!.week} · ` : ""}{c!.title} (not out yet)</span>}
+            ? <a href={`/posts/${c!.slug}`}>{c!.week !== null ? `${copy.labels.issue} ${c!.week} · ` : ""}{c!.title}</a>
+            : <span class="dim">{c!.week !== null ? `${copy.labels.issue} ${c!.week} · ` : ""}{c!.title} {copy.labels.notOutYet}</span>}
         </li>
       ))}
     </ul>

@@ -5,6 +5,7 @@ import Prereqs from "../../components/Prereqs.astro";
 import Claim from "../../components/Claim.astro";
 import Verdict from "../../components/Verdict.astro";
 import { byId, neighbours } from "../../data/concepts";
+import { copy, fullSiteTitle } from "../../lib/site-copy";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", (p) => !p.data.draft);
@@ -16,14 +17,14 @@ const { Content } = await post.render();
 const c = byId(post.data.conceptId)!;
 const { prev, next } = neighbours(c.id);
 ---
-<Base title={`${post.data.title} — Quantum off the Panels`} description={c.blurb}>
+<Base title={`${post.data.title} — ${fullSiteTitle()}`} description={c.blurb}>
   <article>
     <header class="post__head">
       <!-- the cover: the one loud moment on the page. issue number, character,
            title. Chrome (prereqs, claim) stays below and stays quiet. -->
       <div class="cover dot-shadow">
         <div class="cover__badge">
-          <span class="cover__badgeLabel">Issue</span>
+          <span class="cover__badgeLabel">{copy.labels.issue}</span>
           <span class="cover__badgeNum">{c.week !== null ? String(c.week).padStart(2, "0") : "—"}</span>
         </div>
         <p class="eyebrow cover__eyebrow">
@@ -53,8 +54,8 @@ const { prev, next } = neighbours(c.id);
       )}
 
       <nav class="post__nav">
-        {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← Issue {prev.week}</a> : <span />}
-        {next && next.week !== null && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}>Issue {next.week} →</a>}
+        {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← {copy.labels.issue} {prev.week}</a> : <span />}
+        {next && next.week !== null && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}>{copy.labels.issue} {next.week} →</a>}
       </nav>
     </div>
   </article>

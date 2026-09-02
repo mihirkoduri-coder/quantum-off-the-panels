@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { unlock } from "../../lib/unlocks";
+import { copy } from "../../lib/site-copy";
 
 interface Props {
   slug: string;
@@ -54,13 +55,13 @@ export default function SimShell({
     <section ref={ref} className="sim dot-shadow" aria-label={`Simulation: ${title}`}>
       <header className="sim__head">
         <div className="eyebrow">
-          <span className="wk">SIM</span>
+          <span className="wk">{copy.simShell.eyebrowLabel}</span>
           <span className="sep">/</span>
           <span>{slug}</span>
         </div>
         <h3 className="sim__title">{title}</h3>
         <p className="sim__watch">
-          <span className="sim__watchLabel">Watch for</span> {watchFor}
+          <span className="sim__watchLabel">{copy.simShell.watchForLabel}</span> {watchFor}
         </p>
       </header>
 
@@ -71,7 +72,7 @@ export default function SimShell({
           {controls}
           {onReset && (
             <button className="btn" onClick={onReset}>
-              Reset
+              {copy.simShell.resetButton}
             </button>
           )}
         </div>

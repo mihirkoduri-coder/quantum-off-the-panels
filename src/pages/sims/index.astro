@@ -1,14 +1,13 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Gallery from "../../components/Gallery";
+import { copy, fullSiteTitle } from "../../lib/site-copy";
 ---
-<Base title="Simulations — Quantum off the Panels">
+<Base title={`${copy.sims.heading} — ${fullSiteTitle()}`}>
   <div class="wrap">
-    <h1>Simulations</h1>
+    <h1>{copy.sims.heading}</h1>
     <p class="dim" style="max-width: 34rem">
-      Each one unlocks when you meet it inside its post. That's not a gate for
-      its own sake — most of them only make sense after the argument that sets
-      them up.
+      {copy.sims.intro}
     </p>
     <Gallery client:load />
   </div>

@@ -1,0 +1,64 @@
+{
+  "site": {
+    "title": "Quantum off the",
+    "titleAccent": "Panels",
+    "byline": "by Mihir Koduri",
+    "description": "One quantum concept a week, argued against a comic book.",
+    "footerNote": "Written weekly. Simulations run entirely in your browser — nothing is sent anywhere."
+  },
+  "nav": {
+    "compendium": "Compendium",
+    "simulations": "Simulations",
+    "rss": "RSS"
+  },
+  "labels": {
+    "issue": "Issue",
+    "arc": "ARC 1",
+    "buildsOn": "Builds on",
+    "notOutYet": "(not out yet)"
+  },
+  "homepage": {
+    "headline": "Comics get quantum physics wrong",
+    "headlineAccent": "in interesting ways.",
+    "subhead": "One concept a week, argued against the comic that made me curious about it in the first place. Every post comes with something you can take apart yourself — including a few things the universe won't let you do.",
+    "ctaFirst": "Start it from the top",
+    "ctaLatest": "Check out the latest issue",
+    "progressTemplate": "{count} of {total} published"
+  },
+  "conceptMap": {
+    "progressTemplate": "{count} of {total} weeks published so far"
+  },
+  "compendium": {
+    "heading": "Compendium",
+    "intro": "Every issue published so far. Search by concept or character — tiers are a production detail and stay backstage.",
+    "searchPlaceholder": "Search concept or character…"
+  },
+  "sims": {
+    "heading": "Simulations",
+    "intro": "Each one unlocks when you meet it inside its post. That's not a gate for its own sake — most of them only make sense after the argument that sets them up.",
+    "unlockedLabel": "unlocked on this device",
+    "resetButton": "reset",
+    "openButton": "Open",
+    "lockedText": "Locked — meet it in the post",
+    "notBuiltText": "Not built yet"
+  },
+  "simShell": {
+    "eyebrowLabel": "SIM",
+    "watchForLabel": "Watch for",
+    "resetButton": "Reset"
+  },
+  "predict": {
+    "eyebrowLabel": "PREDICT",
+    "beforeYouRunIt": "before you run it",
+    "lockItInButton": "Lock it in",
+    "nailedIt": "NAILED IT!",
+    "nope": "NOPE!",
+    "youSaidPrefix": "You said",
+    "itsActuallyPrefix": "It's",
+    "nudge": "Now go find out why. The controls are live."
+  },
+  "violationExplainer": {
+    "youTriedToPrefix": "You tried to",
+    "trySomethingElse": "Try something else"
+  }
+}

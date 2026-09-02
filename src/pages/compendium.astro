@@ -1,21 +1,22 @@
 ---
 import Base from "../layouts/Base.astro";
 import { published } from "../data/concepts";
+import { copy, fullSiteTitle } from "../lib/site-copy";
 
 const live = published();
 ---
-<Base title="Compendium — Quantum off the Panels">
+<Base title={`${copy.compendium.heading} — ${fullSiteTitle()}`}>
   <div class="wrap">
-    <h1>Compendium</h1>
-    <p class="dim">Every issue published so far. Search by concept or character — tiers are a production detail and stay backstage.</p>
+    <h1>{copy.compendium.heading}</h1>
+    <p class="dim">{copy.compendium.intro}</p>
 
-    <input id="q" class="search" type="search" placeholder="Search concept or character…" aria-label="Search" />
+    <input id="q" class="search" type="search" placeholder={copy.compendium.searchPlaceholder} aria-label="Search" />
 
     <ul class="cards">
       {live.map((c) => (
         <li class="card dot-shadow" data-text={`${c.title} ${c.character}`.toLowerCase()}>
           <span class="eyebrow">
-            <span class="wk">ISSUE {String(c.week).padStart(2, "0")}</span>
+            <span class="wk">{copy.labels.issue} {String(c.week).padStart(2, "0")}</span>
             <span class="sep">/</span><span>{c.character}</span>
           </span>
           <h2 class="card__h"><a href={`/posts/${c.slug}`}>{c.title}</a></h2>

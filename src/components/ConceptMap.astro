@@ -30,25 +30,27 @@
  *   wk2 interference → wk12 Deutsch–Jozsa    M260,108 C200,240 300,440 640,412
  */
 import { published, CONCEPTS } from "../data/concepts";
+import { copy, format } from "../lib/site-copy";
 
 // scoped to arc 1 — issue 0 (arc 0) is the project's intro, not a physics
 // concept, and doesn't belong on this grid. See concepts.ts for why.
 const arc1 = CONCEPTS.filter((c) => c.arc === 1);
 const live = published().filter((c) => c.arc === 1);
+const progressText = format(copy.conceptMap.progressTemplate, { count: live.length, total: arc1.length });
 ---
 
 <figure class="map">
   <figcaption class="map__cap">
     <span class="eyebrow">
-      <span class="wk">ARC 1</span>
+      <span class="wk">{copy.labels.arc}</span>
       <span class="sep">/</span>
-      <span>{live.length} of {arc1.length} weeks published so far</span>
+      <span>{progressText}</span>
     </span>
   </figcaption>
 
   <div class="map__scroll">
     <svg viewBox="-16 -16 208 140" class="map__svg" role="img"
-         aria-label={`Concept map for arc one: ${live.length} of ${arc1.length} weeks published so far, starting with superposition.`}>
+         aria-label={`Concept map for arc one: ${progressText}, starting with superposition.`}>
 
       <defs>
         <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"

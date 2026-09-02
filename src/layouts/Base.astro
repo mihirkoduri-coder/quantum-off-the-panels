@@ -1,9 +1,10 @@
 ---
 import "../styles/global.css";
 import "katex/dist/katex.min.css";
+import { copy, fullSiteTitle } from "../lib/site-copy";
 
 interface Props { title: string; description?: string }
-const { title, description = "One quantum concept a week, argued against a comic book." } = Astro.props;
+const { title, description = copy.site.description } = Astro.props;
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
@@ -12,7 +13,7 @@ const { title, description = "One quantum concept a week, argued against a comic
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="alternate" type="application/rss+xml" title="Quantum off the Panels" href="/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title={fullSiteTitle()} href="/rss.xml" />
     <meta name="theme-color" content="#0b0e1a" />
   </head>
   <body>
@@ -96,13 +97,13 @@ const { title, description = "One quantum concept a week, argued against a comic
     <header class="site">
       <div class="wrap site__in">
         <a href="/" class="site__mark">
-          <span class="site__title">Quantum off the <span class="site__accent">Panels</span></span>
-          <span class="site__by">by Mihir Koduri</span>
+          <span class="site__title">{copy.site.title} <span class="site__accent">{copy.site.titleAccent}</span></span>
+          <span class="site__by">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
-          <a href="/compendium">Compendium</a>
-          <a href="/sims">Simulations</a>
-          <a href="/rss.xml">RSS</a>
+          <a href="/compendium">{copy.nav.compendium}</a>
+          <a href="/sims">{copy.nav.simulations}</a>
+          <a href="/rss.xml">{copy.nav.rss}</a>
           <button id="theme" class="site__theme" aria-label="Switch to light mode">◐</button>
         </nav>
       </div>
@@ -113,9 +114,9 @@ const { title, description = "One quantum concept a week, argued against a comic
     <footer class="site-foot">
       <div class="wrap">
         <p class="dim">
-          Written weekly. Simulations run entirely in your browser — nothing is sent anywhere.
+          {copy.site.footerNote}
         </p>
-        <p class="site-foot__by">Quantum off the <span class="site__accent">Panels</span>, by Mihir Koduri</p>
+        <p class="site-foot__by">{copy.site.title} <span class="site__accent">{copy.site.titleAccent}</span>, {copy.site.byline}</p>
       </div>
     </footer>
 

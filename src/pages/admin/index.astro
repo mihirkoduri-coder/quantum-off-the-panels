@@ -1,18 +1,19 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
+import { fullSiteTitle } from "../../lib/site-copy";
 
 // middleware.ts guarantees this is set before this page ever renders
 const session = Astro.locals.session!;
 ---
-<Base title="Admin — Quantum off the Panels">
+<Base title={`Admin — ${fullSiteTitle()}`}>
   <div class="wrap admin">
     <h1>Admin</h1>
     <p class="dim">Logged in as <b>{session.login}</b>.</p>
     <ul>
       <li><a href="/admin/issues">Issues</a> — publish a planned week, write its post, or add a new one</li>
+      <li><a href="/admin/copy">Site copy</a> — every editable UI string, grouped by where it appears</li>
     </ul>
-    <p class="dim">Site-copy editing (nav labels, hero text, footer) isn't built yet.</p>
     <a href="/api/auth/logout">Log out</a>
   </div>
 </Base>

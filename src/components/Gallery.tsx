@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { publishedSims } from "../data/concepts";
 import { SIM_TITLES } from "../sims/registry";
 import { isUnlocked, onUnlockChange, relock } from "../lib/unlocks";
+import { copy } from "../lib/site-copy";
 
 /**
  * The gallery. Only sims whose issue is published ever appear here — an
@@ -27,10 +28,10 @@ export default function Gallery() {
       <p className="eyebrow gal__count">
         <span className="wk">{count} / {sims.length}</span>
         <span className="sep">/</span>
-        <span>unlocked on this device</span>
+        <span>{copy.sims.unlockedLabel}</span>
         {count > 0 && (
           <button className="gal__reset" onClick={() => relock()}>
-            reset
+            {copy.sims.resetButton}
           </button>
         )}
       </p>
@@ -42,7 +43,7 @@ export default function Gallery() {
           return (
             <li key={slug} className={`gal__i dot-shadow${live && built ? " is-open" : ""}`}>
               <span className="eyebrow">
-                <span className="wk">ISSUE {String(concept.week).padStart(2, "0")}</span>
+                <span className="wk">{copy.labels.issue} {String(concept.week).padStart(2, "0")}</span>
                 <span className="sep">/</span>
                 <span>{concept.character}</span>
               </span>
@@ -50,13 +51,13 @@ export default function Gallery() {
               <p className="gal__b">{concept.blurb}</p>
               <div className="gal__act">
                 {live && built ? (
-                  <a className="btn btn--go" href={`/sims/${slug}`}>Open</a>
+                  <a className="btn btn--go" href={`/sims/${slug}`}>{copy.sims.openButton}</a>
                 ) : (
                   <span className="gal__lock">
-                    {built ? "Locked — meet it in the post" : "Not built yet"}
+                    {built ? copy.sims.lockedText : copy.sims.notBuiltText}
                   </span>
                 )}
-                <a className="gal__post" href={`/posts/${concept.slug}`}>Issue {concept.week} →</a>
+                <a className="gal__post" href={`/posts/${concept.slug}`}>{copy.labels.issue} {concept.week} →</a>
               </div>
             </li>
           );

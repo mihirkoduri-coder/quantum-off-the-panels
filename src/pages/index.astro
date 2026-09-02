@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 import ConceptMap from "../components/ConceptMap.astro";
 import { CONCEPTS, published } from "../data/concepts";
+import { copy, format, fullSiteTitle } from "../lib/site-copy";
 
 // published implies grouped (see isGrouped() in concepts.ts) — the ?? 0
 // never actually fires, it's just satisfying the type for concepts that
@@ -15,29 +16,27 @@ const latest = live[live.length - 1];
 const arc1Live = live.filter((c) => c.arc === 1);
 const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
 ---
-<Base title="Quantum off the Panels">
+<Base title={fullSiteTitle()}>
   <section class="hero wrap">
     <p class="eyebrow">
-      <span class="wk">ARC 1</span><span class="sep">/</span>
-      <span>{arc1Live.length} of {arc1Total} published</span>
+      <span class="wk">{copy.labels.arc}</span><span class="sep">/</span>
+      <span>{format(copy.homepage.progressTemplate, { count: arc1Live.length, total: arc1Total })}</span>
     </p>
     <h1 class="hero__h">
-      Comics get quantum physics wrong<br />
-      <span class="hero__em">in interesting ways.</span>
+      {copy.homepage.headline}<br />
+      <span class="hero__em">{copy.homepage.headlineAccent}</span>
     </h1>
     <p class="hero__sub">
-      One concept a week, argued against the comic that made me curious about it
-      in the first place. Every post comes with something you can take apart
-      yourself — including a few things the universe won't let you do.
+      {copy.homepage.subhead}
     </p>
     {first && (
       <div class="hero__ctas">
         <a class="hero__cta btn btn--go" href={`/posts/${first.slug}`}>
-          Start it from the top
+          {copy.homepage.ctaFirst}
         </a>
         {latest.slug !== first.slug && (
           <a class="hero__cta btn" href={`/posts/${latest.slug}`}>
-            Check out the latest issue
+            {copy.homepage.ctaLatest}
           </a>
         )}
       </div>

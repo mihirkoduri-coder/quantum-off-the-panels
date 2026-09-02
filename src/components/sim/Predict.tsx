@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { unlock } from "../../lib/unlocks";
+import { copy } from "../../lib/site-copy";
 
 interface Choice {
   id: string;
@@ -41,9 +42,9 @@ export default function Predict({ slug, question, choices, answer, because, chil
       {!committed && (
         <div className="pr__gate dot-shadow">
           <p className="eyebrow">
-            <span className="wk">PREDICT</span>
+            <span className="wk">{copy.predict.eyebrowLabel}</span>
             <span className="sep">/</span>
-            <span>before you run it</span>
+            <span>{copy.predict.beforeYouRunIt}</span>
           </p>
           <p className="pr__q">{question}</p>
 
@@ -62,7 +63,7 @@ export default function Predict({ slug, question, choices, answer, because, chil
           </div>
 
           <button className="btn btn--go" onClick={commit} disabled={!picked}>
-            Lock it in
+            {copy.predict.lockItInButton}
           </button>
         </div>
       )}
@@ -70,19 +71,19 @@ export default function Predict({ slug, question, choices, answer, because, chil
       {committed && (
         <div className={`pr__result${right ? " is-right" : ""}`}>
           <span className={`sfx sfx--fire${right ? "" : " sfx--break"}`}>
-            {right ? "NAILED IT!" : "NOPE!"}
+            {right ? copy.predict.nailedIt : copy.predict.nope}
           </span>
           <p className="pr__because">
-            You said <b>{choices.find((c) => c.id === picked)?.label}</b>.
+            {copy.predict.youSaidPrefix} <b>{choices.find((c) => c.id === picked)?.label}</b>.
             {!right && (
               <>
                 {" "}
-                It's <b>{choices.find((c) => c.id === answer)?.label}</b>.
+                {copy.predict.itsActuallyPrefix} <b>{choices.find((c) => c.id === answer)?.label}</b>.
               </>
             )}{" "}
             {because}
           </p>
-          <p className="dim pr__nudge">Now go find out why. The controls are live.</p>
+          <p className="dim pr__nudge">{copy.predict.nudge}</p>
         </div>
       )}
 

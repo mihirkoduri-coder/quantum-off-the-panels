@@ -5,6 +5,7 @@ import { byId, type Concept, type Tier } from "../../../data/concepts";
 import { upsertConcept } from "../../../lib/concepts-writer";
 import { serializePost, parsePost, type PostFrontmatter } from "../../../lib/mdx";
 import { commitFile, getFileContent } from "../../../lib/github";
+import { fullSiteTitle } from "../../../lib/site-copy";
 
 const CONCEPTS_PATH = "src/data/concepts.ts";
 const POSTS_DIR = "src/content/posts";
@@ -112,7 +113,7 @@ if (displayFrontmatter === undefined) {
 const f = displayFrontmatter;
 const c = displayConcept;
 ---
-<Base title={`Admin: ${c?.title ?? id} — Quantum off the Panels`}>
+<Base title={`Admin: ${c?.title ?? id} — ${fullSiteTitle()}`}>
   <div class="wrap admin">
     <p><a href="/admin/issues">&larr; Issues</a></p>
     <h1>{c ? c.title : `New: ${id}`}</h1>

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { copy } from "../../lib/site-copy";
 
 interface Props {
   /** null = nothing broken yet. Set it to fire the panel. */
@@ -40,7 +41,7 @@ export default function ViolationExplainer({ violation, onDismiss }: Props) {
       <div className="vio__body">
         <p className="vio__law">{violation.law}</p>
         <p className="vio__attempted">
-          You tried to <b>{violation.attempted}</b>.
+          {copy.violationExplainer.youTriedToPrefix} <b>{violation.attempted}</b>.
         </p>
         <p className="vio__why">{violation.why}</p>
       </div>
@@ -52,7 +53,7 @@ export default function ViolationExplainer({ violation, onDismiss }: Props) {
           onDismiss?.();
         }}
       >
-        Try something else
+        {copy.violationExplainer.trySomethingElse}
       </button>
 
       <style>{`

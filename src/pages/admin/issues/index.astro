@@ -2,6 +2,7 @@
 export const prerender = false;
 import Base from "../../../layouts/Base.astro";
 import { CONCEPTS } from "../../../data/concepts";
+import { copy, fullSiteTitle } from "../../../lib/site-copy";
 
 const ungrouped = CONCEPTS.filter((c) => c.week === null || c.arc === null);
 
@@ -15,7 +16,7 @@ const sortedArcs = [...arcGroups.entries()]
   .sort(([a], [b]) => a - b)
   .map(([arc, items]) => [arc, items.sort((a, b) => (a.week ?? 0) - (b.week ?? 0))] as const);
 ---
-<Base title="Admin: Issues — Quantum off the Panels">
+<Base title={`Admin: Issues — ${fullSiteTitle()}`}>
   <div class="wrap admin">
     <p><a href="/admin">&larr; Admin</a></p>
     <h1>Issues</h1>
@@ -50,7 +51,7 @@ const sortedArcs = [...arcGroups.entries()]
           {items.map((c) => (
             <li class={`issue-row${c.published ? " is-live" : ""}`}>
               <a href={`/admin/issues/${c.id}`}>
-                <span class="issue-row__wk">ISSUE {String(c.week).padStart(2, "0")}</span>
+                <span class="issue-row__wk">{copy.labels.issue} {String(c.week).padStart(2, "0")}</span>
                 <span class="issue-row__title">{c.title}</span>
                 <span class="issue-row__state">{c.published ? "Published" : "Not published"}</span>
               </a>
