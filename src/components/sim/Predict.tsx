@@ -42,9 +42,9 @@ export default function Predict({ slug, question, choices, answer, because, chil
       {!committed && (
         <div className="pr__gate dot-shadow">
           <p className="eyebrow">
-            <span className="wk">{copy.predict.eyebrowLabel}</span>
+            <span className="wk" data-copy-key="predict.eyebrowLabel">{copy.predict.eyebrowLabel}</span>
             <span className="sep">/</span>
-            <span>{copy.predict.beforeYouRunIt}</span>
+            <span data-copy-key="predict.beforeYouRunIt">{copy.predict.beforeYouRunIt}</span>
           </p>
           <p className="pr__q">{question}</p>
 
@@ -63,27 +63,27 @@ export default function Predict({ slug, question, choices, answer, because, chil
           </div>
 
           <button className="btn btn--go" onClick={commit} disabled={!picked}>
-            {copy.predict.lockItInButton}
+            <span data-copy-key="predict.lockItInButton">{copy.predict.lockItInButton}</span>
           </button>
         </div>
       )}
 
       {committed && (
         <div className={`pr__result${right ? " is-right" : ""}`}>
-          <span className={`sfx sfx--fire${right ? "" : " sfx--break"}`}>
+          <span className={`sfx sfx--fire${right ? "" : " sfx--break"}`} data-copy-key={right ? "predict.nailedIt" : "predict.nope"}>
             {right ? copy.predict.nailedIt : copy.predict.nope}
           </span>
           <p className="pr__because">
-            {copy.predict.youSaidPrefix} <b>{choices.find((c) => c.id === picked)?.label}</b>.
+            <span data-copy-key="predict.youSaidPrefix">{copy.predict.youSaidPrefix}</span> <b>{choices.find((c) => c.id === picked)?.label}</b>.
             {!right && (
               <>
                 {" "}
-                {copy.predict.itsActuallyPrefix} <b>{choices.find((c) => c.id === answer)?.label}</b>.
+                <span data-copy-key="predict.itsActuallyPrefix">{copy.predict.itsActuallyPrefix}</span> <b>{choices.find((c) => c.id === answer)?.label}</b>.
               </>
             )}{" "}
             {because}
           </p>
-          <p className="dim pr__nudge">{copy.predict.nudge}</p>
+          <p className="dim pr__nudge" data-copy-key="predict.nudge">{copy.predict.nudge}</p>
         </div>
       )}
 

@@ -5,8 +5,8 @@ import { copy, fullSiteTitle } from "../../lib/site-copy";
 ---
 <Base title={`${copy.sims.heading} — ${fullSiteTitle()}`}>
   <div class="wrap">
-    <h1>{copy.sims.heading}</h1>
-    <p class="dim" style="max-width: 34rem">
+    <h1 data-copy-key="sims.heading">{copy.sims.heading}</h1>
+    <p class="dim" style="max-width: 34rem" data-copy-key="sims.intro">
       {copy.sims.intro}
     </p>
     <Gallery client:load />

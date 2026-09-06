@@ -15,6 +15,12 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE = "qp_session";
 export const OAUTH_STATE_COOKIE = "qp_oauth_state";
+/** Non-httpOnly, readable by client JS, set alongside the real session
+ *  cookie. Carries zero privilege on its own — it's not signed, not
+ *  checked by any save endpoint, just a hint the public pages' edit-mode
+ *  script uses to decide whether it's worth even asking "am I logged in?"
+ *  Real authorization always happens server-side via SESSION_COOKIE. */
+export const ADMIN_HINT_COOKIE = "qp_admin_hint";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 /** The only GitHub account allowed past the /admin gate. Not a secret —

@@ -14,10 +14,20 @@
  */
 import raw from "../data/site-copy.json";
 
+/** Named text styles — the "pick a style, don't hand-tune it" system.
+ *  "plain" is always valid and always means "the component's own default
+ *  styling, no modifier class." Right now only the logo (site.titleStyle)
+ *  exposes a choice; add a field's name here + a matching CSS class in
+ *  whichever component renders it to make another field stylable. */
+export const TEXT_STYLES = ["plain", "comic"] as const;
+export type TextStyle = (typeof TEXT_STYLES)[number];
+
 export interface SiteCopy {
   site: {
     title: string;
     titleAccent: string;
+    /** which of TEXT_STYLES the wordmark renders as */
+    titleStyle: TextStyle;
     byline: string;
     description: string;
     footerNote: string;
@@ -42,6 +52,7 @@ export interface SiteCopy {
     openButton: string;
     lockedText: string;
     notBuiltText: string;
+    readPostLink: string;
   };
   simShell: { eyebrowLabel: string; watchForLabel: string; resetButton: string };
   predict: {

@@ -19,24 +19,28 @@ const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
 <Base title={fullSiteTitle()}>
   <section class="hero wrap">
     <p class="eyebrow">
-      <span class="wk">{copy.labels.arc}</span><span class="sep">/</span>
+      <span class="wk" data-copy-key="labels.arc">{copy.labels.arc}</span><span class="sep">/</span>
+      <!-- not click-to-edit in place: this is a {count}/{total} template rendered
+           with real numbers already substituted in, and editing that text
+           directly would bake those numbers in and destroy the placeholders.
+           Edit the template itself from /admin/copy instead. -->
       <span>{format(copy.homepage.progressTemplate, { count: arc1Live.length, total: arc1Total })}</span>
     </p>
     <h1 class="hero__h">
-      {copy.homepage.headline}<br />
-      <span class="hero__em">{copy.homepage.headlineAccent}</span>
+      <span data-copy-key="homepage.headline">{copy.homepage.headline}</span><br />
+      <span class="hero__em" data-copy-key="homepage.headlineAccent">{copy.homepage.headlineAccent}</span>
     </h1>
-    <p class="hero__sub">
+    <p class="hero__sub" data-copy-key="homepage.subhead">
       {copy.homepage.subhead}
     </p>
     {first && (
       <div class="hero__ctas">
         <a class="hero__cta btn btn--go" href={`/posts/${first.slug}`}>
-          {copy.homepage.ctaFirst}
+          <span data-copy-key="homepage.ctaFirst">{copy.homepage.ctaFirst}</span>
         </a>
         {latest.slug !== first.slug && (
           <a class="hero__cta btn" href={`/posts/${latest.slug}`}>
-            {copy.homepage.ctaLatest}
+            <span data-copy-key="homepage.ctaLatest">{copy.homepage.ctaLatest}</span>
           </a>
         )}
       </div>

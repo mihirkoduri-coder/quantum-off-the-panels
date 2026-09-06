@@ -7,16 +7,18 @@ const live = published();
 ---
 <Base title={`${copy.compendium.heading} — ${fullSiteTitle()}`}>
   <div class="wrap">
-    <h1>{copy.compendium.heading}</h1>
-    <p class="dim">{copy.compendium.intro}</p>
+    <h1 data-copy-key="compendium.heading">{copy.compendium.heading}</h1>
+    <p class="dim" data-copy-key="compendium.intro">{copy.compendium.intro}</p>
 
+    <!-- placeholder text isn't real DOM content, so it's not click-to-edit
+         in place — change it from /admin/copy instead. -->
     <input id="q" class="search" type="search" placeholder={copy.compendium.searchPlaceholder} aria-label="Search" />
 
     <ul class="cards">
       {live.map((c) => (
         <li class="card dot-shadow" data-text={`${c.title} ${c.character}`.toLowerCase()}>
           <span class="eyebrow">
-            <span class="wk">{copy.labels.issue} {String(c.week).padStart(2, "0")}</span>
+            <span class="wk"><span data-copy-key="labels.issue">{copy.labels.issue}</span> {String(c.week).padStart(2, "0")}</span>
             <span class="sep">/</span><span>{c.character}</span>
           </span>
           <h2 class="card__h"><a href={`/posts/${c.slug}`}>{c.title}</a></h2>

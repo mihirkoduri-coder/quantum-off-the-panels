@@ -97,13 +97,20 @@ const { title, description = copy.site.description } = Astro.props;
     <header class="site">
       <div class="wrap site__in">
         <a href="/" class="site__mark">
-          <span class="site__title">{copy.site.title} <span class="site__accent">{copy.site.titleAccent}</span></span>
-          <span class="site__by">{copy.site.byline}</span>
+          <span
+            class={`site__title${copy.site.titleStyle === "comic" ? " site__title--comic" : ""}`}
+            data-style-key="site.titleStyle"
+            data-style-options="plain,comic"
+            data-style-class-prefix="site__title"
+          >
+            <span data-copy-key="site.title">{copy.site.title}</span> <span class="site__accent" data-copy-key="site.titleAccent">{copy.site.titleAccent}</span>
+          </span>
+          <span class="site__by" data-copy-key="site.byline">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
-          <a href="/compendium">{copy.nav.compendium}</a>
-          <a href="/sims">{copy.nav.simulations}</a>
-          <a href="/rss.xml">{copy.nav.rss}</a>
+          <a href="/compendium" data-copy-key="nav.compendium">{copy.nav.compendium}</a>
+          <a href="/sims" data-copy-key="nav.simulations">{copy.nav.simulations}</a>
+          <a href="/rss.xml" data-copy-key="nav.rss">{copy.nav.rss}</a>
           <button id="theme" class="site__theme" aria-label="Switch to light mode">◐</button>
         </nav>
       </div>
@@ -113,7 +120,7 @@ const { title, description = copy.site.description } = Astro.props;
 
     <footer class="site-foot">
       <div class="wrap">
-        <p class="dim">
+        <p class="dim" data-copy-key="site.footerNote">
           {copy.site.footerNote}
         </p>
         <p class="site-foot__by">{copy.site.title} <span class="site__accent">{copy.site.titleAccent}</span>, {copy.site.byline}</p>
@@ -132,6 +139,10 @@ const { title, description = copy.site.description } = Astro.props;
       });
     </script>
 
+    <!-- no-op for regular visitors: checks a non-privileged cookie and
+         does nothing further unless it's present. See public/admin-edit.js. -->
+    <script is:inline src="/admin-edit.js" defer></script>
+
     <style>
       .site { border-bottom: var(--panel-line) solid var(--gutter); background: var(--ink); position: sticky; top: 0; z-index: 20; }
       .site__in { display: flex; justify-content: space-between; align-items: center; gap: 1rem 1.5rem; padding: 0.85rem 0; flex-wrap: wrap; }
@@ -143,12 +154,29 @@ const { title, description = copy.site.description } = Astro.props;
         font-family: var(--font-sfx); font-size: clamp(0.86rem, 2.6vw, 1.05rem);
         color: var(--paper); letter-spacing: 0.015em;
       }
+      /* "comic" style — same "inked hit" language as .sfx (NAILED IT!/NOPE!):
+         ink outline + a hard colored offset shadow + a tilt. Cyan fill so it
+         still reads as the site's own mark, magenta shadow to borrow the
+         two-tone punch rather than invent a third color pairing. Toggled by
+         site.titleStyle in site-copy.json — "plain" just skips this class. */
+      .site__title--comic {
+        font-size: clamp(0.95rem, 2.9vw, 1.2rem);
+        color: var(--cyan);
+        display: inline-block;
+        transform: rotate(-4deg);
+        text-shadow:
+          1.5px 1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px -1.5px 0 var(--ink),
+          3px 3px 0 var(--magenta);
+      }
       .site__accent { color: var(--cyan); }
+      .site__title--comic .site__accent { color: var(--yellow); }
       .site__by {
         font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
         text-transform: uppercase; color: var(--paper-dim);
       }
       .site__mark:hover .site__title { color: var(--yellow); }
+      .site__mark:hover .site__title--comic .site__accent { color: var(--cyan); }
+      .site__mark:hover .site__accent { color: var(--cyan); }
       .site__mark:hover { background: none; }
       .site__nav { display: flex; gap: 1.1rem; align-items: center; }
       .site__nav a {

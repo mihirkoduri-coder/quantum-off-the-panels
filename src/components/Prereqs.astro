@@ -7,7 +7,7 @@ const items = ids.map(byId).filter(Boolean);
 ---
 {items.length > 0 && (
   <nav class="prereq" aria-label="Prerequisites">
-    <span class="prereq__label">{copy.labels.buildsOn}</span>
+    <span class="prereq__label" data-copy-key="labels.buildsOn">{copy.labels.buildsOn}</span>
     <ul>
       {items.map((c) => (
         <li>

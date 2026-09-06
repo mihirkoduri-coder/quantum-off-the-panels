@@ -55,13 +55,13 @@ export default function SimShell({
     <section ref={ref} className="sim dot-shadow" aria-label={`Simulation: ${title}`}>
       <header className="sim__head">
         <div className="eyebrow">
-          <span className="wk">{copy.simShell.eyebrowLabel}</span>
+          <span className="wk" data-copy-key="simShell.eyebrowLabel">{copy.simShell.eyebrowLabel}</span>
           <span className="sep">/</span>
           <span>{slug}</span>
         </div>
         <h3 className="sim__title">{title}</h3>
         <p className="sim__watch">
-          <span className="sim__watchLabel">{copy.simShell.watchForLabel}</span> {watchFor}
+          <span className="sim__watchLabel" data-copy-key="simShell.watchForLabel">{copy.simShell.watchForLabel}</span> {watchFor}
         </p>
       </header>
 
@@ -72,7 +72,7 @@ export default function SimShell({
           {controls}
           {onReset && (
             <button className="btn" onClick={onReset}>
-              {copy.simShell.resetButton}
+              <span data-copy-key="simShell.resetButton">{copy.simShell.resetButton}</span>
             </button>
           )}
         </div>

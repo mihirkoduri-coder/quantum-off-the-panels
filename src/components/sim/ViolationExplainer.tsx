@@ -41,7 +41,7 @@ export default function ViolationExplainer({ violation, onDismiss }: Props) {
       <div className="vio__body">
         <p className="vio__law">{violation.law}</p>
         <p className="vio__attempted">
-          {copy.violationExplainer.youTriedToPrefix} <b>{violation.attempted}</b>.
+          <span data-copy-key="violationExplainer.youTriedToPrefix">{copy.violationExplainer.youTriedToPrefix}</span> <b>{violation.attempted}</b>.
         </p>
         <p className="vio__why">{violation.why}</p>
       </div>
@@ -53,7 +53,7 @@ export default function ViolationExplainer({ violation, onDismiss }: Props) {
           onDismiss?.();
         }}
       >
-        {copy.violationExplainer.trySomethingElse}
+        <span data-copy-key="violationExplainer.trySomethingElse">{copy.violationExplainer.trySomethingElse}</span>
       </button>
 
       <style>{`

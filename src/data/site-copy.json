@@ -2,6 +2,7 @@
   "site": {
     "title": "Quantum off the",
     "titleAccent": "Panels",
+    "titleStyle": "comic",
     "byline": "by Mihir Koduri",
     "description": "One quantum concept a week, argued against a comic book.",
     "footerNote": "Written weekly. Simulations run entirely in your browser — nothing is sent anywhere."
@@ -40,7 +41,8 @@
     "resetButton": "reset",
     "openButton": "Open",
     "lockedText": "Locked — meet it in the post",
-    "notBuiltText": "Not built yet"
+    "notBuiltText": "Not built yet",
+    "readPostLink": "Read the post"
   },
   "simShell": {
     "eyebrowLabel": "SIM",

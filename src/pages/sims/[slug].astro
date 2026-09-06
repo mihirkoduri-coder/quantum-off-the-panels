@@ -17,9 +17,9 @@ const { concept } = Astro.props;
 <Base title={`${SIM_TITLES[slug!] ?? slug} — ${fullSiteTitle()}`}>
   <div class="wrap" style="max-width: 60rem">
     <p class="eyebrow">
-      <span class="wk">{copy.labels.issue} {String(concept.week).padStart(2, "0")}</span>
+      <span class="wk"><span data-copy-key="labels.issue">{copy.labels.issue}</span> {String(concept.week).padStart(2, "0")}</span>
       <span class="sep">/</span>
-      <a href={`/posts/${concept.slug}`}>Read the post</a>
+      <a href={`/posts/${concept.slug}`}><span data-copy-key="sims.readPostLink">{copy.sims.readPostLink}</span></a>
     </p>
     <SimLoader slug={slug!} client:load />
   </div>

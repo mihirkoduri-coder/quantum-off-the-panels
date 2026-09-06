@@ -25,13 +25,18 @@ export default function Gallery() {
 
   return (
     <>
+      {/* this whole block is a React-hydrated island — an in-place edit here
+          shows immediately but can get visually reverted if the component
+          re-renders for an unrelated reason (e.g. another sim unlocking)
+          before you save. The pending change itself isn't lost, just the
+          on-screen preview; save still picks up what you actually typed. */}
       <p className="eyebrow gal__count">
         <span className="wk">{count} / {sims.length}</span>
         <span className="sep">/</span>
-        <span>{copy.sims.unlockedLabel}</span>
+        <span data-copy-key="sims.unlockedLabel">{copy.sims.unlockedLabel}</span>
         {count > 0 && (
           <button className="gal__reset" onClick={() => relock()}>
-            {copy.sims.resetButton}
+            <span data-copy-key="sims.resetButton">{copy.sims.resetButton}</span>
           </button>
         )}
       </p>
@@ -43,7 +48,7 @@ export default function Gallery() {
           return (
             <li key={slug} className={`gal__i dot-shadow${live && built ? " is-open" : ""}`}>
               <span className="eyebrow">
-                <span className="wk">{copy.labels.issue} {String(concept.week).padStart(2, "0")}</span>
+                <span className="wk"><span data-copy-key="labels.issue">{copy.labels.issue}</span> {String(concept.week).padStart(2, "0")}</span>
                 <span className="sep">/</span>
                 <span>{concept.character}</span>
               </span>
@@ -51,13 +56,13 @@ export default function Gallery() {
               <p className="gal__b">{concept.blurb}</p>
               <div className="gal__act">
                 {live && built ? (
-                  <a className="btn btn--go" href={`/sims/${slug}`}>{copy.sims.openButton}</a>
+                  <a className="btn btn--go" href={`/sims/${slug}`}><span data-copy-key="sims.openButton">{copy.sims.openButton}</span></a>
                 ) : (
                   <span className="gal__lock">
-                    {built ? copy.sims.lockedText : copy.sims.notBuiltText}
+                    <span data-copy-key={built ? "sims.lockedText" : "sims.notBuiltText"}>{built ? copy.sims.lockedText : copy.sims.notBuiltText}</span>
                   </span>
                 )}
-                <a className="gal__post" href={`/posts/${concept.slug}`}>{copy.labels.issue} {concept.week} →</a>
+                <a className="gal__post" href={`/posts/${concept.slug}`}><span data-copy-key="labels.issue">{copy.labels.issue}</span> {concept.week} →</a>
               </div>
             </li>
           );

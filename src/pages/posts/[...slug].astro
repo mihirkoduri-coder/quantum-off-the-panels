@@ -24,7 +24,7 @@ const { prev, next } = neighbours(c.id);
            title. Chrome (prereqs, claim) stays below and stays quiet. -->
       <div class="cover dot-shadow">
         <div class="cover__badge">
-          <span class="cover__badgeLabel">{copy.labels.issue}</span>
+          <span class="cover__badgeLabel" data-copy-key="labels.issue">{copy.labels.issue}</span>
           <span class="cover__badgeNum">{c.week !== null ? String(c.week).padStart(2, "0") : "—"}</span>
         </div>
         <p class="eyebrow cover__eyebrow">
@@ -54,8 +54,8 @@ const { prev, next } = neighbours(c.id);
       )}
 
       <nav class="post__nav">
-        {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← {copy.labels.issue} {prev.week}</a> : <span />}
-        {next && next.week !== null && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}>{copy.labels.issue} {next.week} →</a>}
+        {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← <span data-copy-key="labels.issue">{copy.labels.issue}</span> {prev.week}</a> : <span />}
+        {next && next.week !== null && <a href={next.published ? `/posts/${next.slug}` : "/compendium"}><span data-copy-key="labels.issue">{copy.labels.issue}</span> {next.week} →</a>}
       </nav>
     </div>
   </article>

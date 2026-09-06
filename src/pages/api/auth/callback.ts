@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { ADMIN_GITHUB_LOGIN, OAUTH_STATE_COOKIE, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, createSessionCookie } from "../../../lib/auth";
+import { ADMIN_GITHUB_LOGIN, ADMIN_HINT_COOKIE, OAUTH_STATE_COOKIE, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, createSessionCookie } from "../../../lib/auth";
 import { exchangeCodeForToken, fetchGithubLogin } from "../../../lib/github";
 
 export const prerender = false;
@@ -30,6 +30,13 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
   cookies.set(SESSION_COOKIE, createSessionCookie({ login, accessToken }), {
     httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  });
+  cookies.set(ADMIN_HINT_COOKIE, "1", {
+    httpOnly: false,
     secure: true,
     sameSite: "lax",
     path: "/",
