@@ -2,7 +2,7 @@
   "site": {
     "title": "Quantum off the",
     "titleAccent": "Panels",
-    "titleStyle": "comic",
+    "titleStyle": "plain",
     "byline": "by Mihir Koduri",
     "description": "One quantum concept a week, argued against a comic book.",
     "footerNote": "Written weekly. Simulations run entirely in your browser — nothing is sent anywhere."
