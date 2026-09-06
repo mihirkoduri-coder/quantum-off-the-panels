@@ -92,19 +92,45 @@ const { title, description = copy.site.description } = Astro.props;
           d="M0.0,-17.0 C14.9,-41.4 34.8,-27.0 16.2,-5.3 C44.0,1.4 36.4,24.7 10.0,13.8 C12.3,42.3 -12.3,42.3 -10.0,13.8 C-36.4,24.7 -44.0,1.4 -16.2,-5.3 C-34.8,-27.0 -14.9,-41.4 -0.0,-17.0 Z"
           fill="url(#burstDotsMagenta2)" stroke="var(--magenta)" stroke-width="1.5" stroke-linejoin="round" />
       </svg>
+      <!-- two decorative onomatopoeia, same treatment as the sim reveal's
+           .sfx/.sfx--break. An intentional exception to "onomatopoeia only
+           on real sim events" — this is ambient page furniture in the
+           margins, same category as the bursts, not a claim that anything
+           happened. -->
+      <span class="sfx ambient-sfx ambient-sfx--a">POW!</span>
+      <span class="sfx sfx--break ambient-sfx ambient-sfx--b">BAM!</span>
     </div>
 
     <header class="site">
       <div class="wrap site__in">
         <a href="/" class="site__mark">
-          <span
-            class={`site__title${copy.site.titleStyle === "comic" ? " site__title--comic" : ""}`}
-            data-style-key="site.titleStyle"
-            data-style-options="plain,comic"
-            data-style-class-prefix="site__title"
-          >
-            <span data-copy-key="site.title">{copy.site.title}</span> <span class="site__accent" data-copy-key="site.titleAccent">{copy.site.titleAccent}</span>
-          </span>
+          {copy.site.logoVariant === "braket" ? (
+            <!-- ⟨Q|P⟩ — Q staggered up (cyan, magenta shadow), P staggered
+                 down (magenta, cyan shadow), same shadow-copy technique the
+                 margin bursts use. Brackets stay neutral paper so the two
+                 process-ink letters read as the point of the mark. -->
+            <svg class="site__braket" viewBox="0 0 130 46" role="img" aria-label={fullSiteTitle()}>
+              <text x="2" y="34" font-size="36" fill="var(--paper)">⟨</text>
+              <text x="24" y="24" font-size="24" font-family="var(--font-sfx)" fill="var(--magenta)" transform="rotate(-8 24 24) translate(2,2)">Q</text>
+              <text x="24" y="24" font-size="24" font-family="var(--font-sfx)" fill="var(--cyan)" transform="rotate(-8 24 24)">Q</text>
+              <text x="57" y="36" font-size="26" font-family="var(--font-sfx)" fill="var(--yellow)" transform="rotate(4 57 36)">|</text>
+              <text x="70" y="40" font-size="24" font-family="var(--font-sfx)" fill="var(--cyan)" transform="rotate(6 70 40) translate(2,2)">P</text>
+              <text x="70" y="40" font-size="24" font-family="var(--font-sfx)" fill="var(--magenta)" transform="rotate(6 70 40)">P</text>
+              <text x="104" y="34" font-size="36" fill="var(--paper)">⟩</text>
+            </svg>
+          ) : (
+            <span
+              class={[
+                "site__title",
+                copy.site.titleStyle.tilt && "site__title--tilt",
+                copy.site.titleStyle.shadow && "site__title--shadow",
+                copy.site.titleStyle.backsplash !== "none" && `site__title--backsplash-${copy.site.titleStyle.backsplash}`,
+              ].filter(Boolean).join(" ")}
+              style={`--shadow-c: var(--${copy.site.titleStyle.shadowColor}); --backsplash-c: var(--${copy.site.titleStyle.backsplashColor});`}
+            >
+              <span data-copy-key="site.title">{copy.site.title}</span> <span class="site__accent" data-copy-key="site.titleAccent">{copy.site.titleAccent}</span>
+            </span>
+          )}
           <span class="site__by" data-copy-key="site.byline">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
@@ -152,31 +178,39 @@ const { title, description = copy.site.description } = Astro.props;
       }
       .site__title {
         font-family: var(--font-sfx); font-size: clamp(0.86rem, 2.6vw, 1.05rem);
-        color: var(--paper); letter-spacing: 0.015em;
+        color: var(--cyan); letter-spacing: 0.015em; display: inline-block;
       }
-      /* "comic" style — same "inked hit" language as .sfx (NAILED IT!/NOPE!):
-         ink outline + a hard colored offset shadow + a tilt. Cyan fill so it
-         still reads as the site's own mark, magenta shadow to borrow the
-         two-tone punch rather than invent a third color pairing. Toggled by
-         site.titleStyle in site-copy.json — "plain" just skips this class. */
-      .site__title--comic {
-        font-size: clamp(0.95rem, 2.9vw, 1.2rem);
-        color: var(--cyan);
-        display: inline-block;
-        transform: rotate(-4deg);
+      /* the comic-text style system — three independent toggles rather than
+         one named preset, set via site.titleStyle in site-copy.json. Colors
+         come through as --shadow-c/--backsplash-c custom properties (inline
+         style, computed per-render) rather than fixed classes, so any of
+         the three process inks works without a class per color combo. */
+      .site__title--tilt { transform: rotate(-4deg); }
+      .site__title--shadow {
         text-shadow:
           1.5px 1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px -1.5px 0 var(--ink),
-          3px 3px 0 var(--magenta);
+          3px 3px 0 var(--shadow-c, var(--magenta));
       }
-      .site__accent { color: var(--cyan); }
-      .site__title--comic .site__accent { color: var(--yellow); }
+      .site__title--backsplash-dots, .site__title--backsplash-burst { position: relative; }
+      .site__title--backsplash-dots::before {
+        content: ""; position: absolute; z-index: -1; inset: -7px -11px -7px -7px;
+        background-image: radial-gradient(var(--backsplash-c, var(--cyan)) 1.2px, transparent 1.2px);
+        background-size: 6px 6px; opacity: 0.55; border-radius: 3px;
+      }
+      .site__title--backsplash-burst::before {
+        content: ""; position: absolute; z-index: -1; inset: -16px -20px -16px -16px;
+        background: var(--backsplash-c, var(--cyan)); opacity: 0.5;
+        clip-path: polygon(50.0% 0.0%, 56.5% 32.0%, 82.1% 11.7%, 66.6% 40.4%, 99.2% 41.3%, 68.8% 53.3%, 93.3% 75.0%, 62.3% 64.6%, 67.1% 97.0%, 50.0% 69.1%, 32.9% 97.0%, 37.7% 64.6%, 6.7% 75.0%, 31.2% 53.3%, 0.8% 41.3%, 33.4% 40.4%, 17.9% 11.7%, 43.5% 32.0%);
+      }
+      .site__accent { color: var(--yellow); }
+      .site__braket { height: 1.9rem; width: auto; display: block; }
       .site__by {
         font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
         text-transform: uppercase; color: var(--paper-dim);
       }
       .site__mark:hover .site__title { color: var(--yellow); }
-      .site__mark:hover .site__title--comic .site__accent { color: var(--cyan); }
       .site__mark:hover .site__accent { color: var(--cyan); }
+      .site__mark:hover .site__braket { opacity: 0.85; }
       .site__mark:hover { background: none; }
       .site__nav { display: flex; gap: 1.1rem; align-items: center; }
       .site__nav a {
@@ -216,6 +250,12 @@ const { title, description = copy.site.description } = Astro.props;
       .burst--d { top: 9rem; right: calc((100vw - 68rem) / 2 - 10.5rem); width: 5.5rem; transform: rotate(15deg); }
       /* off-centre on purpose, not a mechanical 50% — breaks up the column with a and c */
       .burst--e { top: 38%; left: calc((100vw - 68rem) / 2 - 10.3rem); width: 5.3rem; transform: translateY(-50%) rotate(6deg); }
+      /* the two ambient onomatopoeia — position:absolute inside the same
+         clipped frame the bursts use, so oversized text just gets clipped
+         safely rather than needing an exact width estimate. */
+      .ambient-sfx { position: absolute; opacity: 0.7; white-space: nowrap; }
+      .ambient-sfx--a { top: 50%; right: calc((100vw - 68rem) / 2 - 13rem); transform: translateY(-50%) rotate(-8deg); }
+      .ambient-sfx--b { top: 65%; left: calc((100vw - 68rem) / 2 - 12rem); transform: translateY(-50%) rotate(10deg); }
       @media (min-width: 60rem) {
         .bursts { display: block; }
       }

@@ -18,20 +18,25 @@ const c = byId(post.data.conceptId)!;
 const { prev, next } = neighbours(c.id);
 ---
 <Base title={`${post.data.title} — ${fullSiteTitle()}`} description={c.blurb}>
-  <article>
+  <article data-issue-id={c.id}>
     <header class="post__head">
       <!-- the cover: the one loud moment on the page. issue number, character,
-           title. Chrome (prereqs, claim) stays below and stays quiet. -->
+           title. Chrome (prereqs, claim) stays below and stays quiet.
+           Everything here with a data-issue-key is also editable in place
+           via /admin's edit mode — see public/admin-edit.js. week/arc/
+           prereqs/sims/publish-state and the body prose itself still go
+           through /admin/issues/[id]; this only covers what's actually
+           rendered on the page. -->
       <div class="cover dot-shadow">
         <div class="cover__badge">
           <span class="cover__badgeLabel" data-copy-key="labels.issue">{copy.labels.issue}</span>
           <span class="cover__badgeNum">{c.week !== null ? String(c.week).padStart(2, "0") : "—"}</span>
         </div>
         <p class="eyebrow cover__eyebrow">
-          <span>{c.title}</span><span class="sep">/</span><span>{c.character}</span>
+          <span data-issue-key="concept.title">{c.title}</span><span class="sep">/</span><span data-issue-key="concept.character">{c.character}</span>
         </p>
-        <h1 class="cover__title">{post.data.title}</h1>
-        {post.data.subtitle && <p class="cover__sub">{post.data.subtitle}</p>}
+        <h1 class="cover__title" data-issue-key="post.title">{post.data.title}</h1>
+        {post.data.subtitle && <p class="cover__sub" data-issue-key="post.subtitle">{post.data.subtitle}</p>}
       </div>
 
       <div class="prose post__chrome">

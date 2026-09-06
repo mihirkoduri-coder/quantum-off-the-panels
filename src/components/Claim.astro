@@ -6,6 +6,6 @@ interface Props { source: string }
 const { source } = Astro.props;
 ---
 <blockquote class="claim">
-  <span class="who">{source}</span>
-  <slot />
+  <span class="who" data-issue-key="post.claimSource">{source}</span>
+  <span data-issue-key="post.claim"><slot /></span>
 </blockquote>

@@ -1,20 +1,32 @@
 /**
- * In-context edit mode for /admin's site-copy fields. Loaded on every
- * public page, but does nothing at all unless the (non-httpOnly, no
- * privilege of its own) qp_admin_hint cookie is present — real
- * authorization happens server-side on every save, via the actual
- * session cookie, at /api/admin/save-copy.
+ * In-context edit mode for public pages. Loaded everywhere, but does
+ * nothing at all unless the (non-httpOnly, no privilege of its own)
+ * qp_admin_hint cookie is present — real authorization happens
+ * server-side on every save, via the actual session cookie.
  *
- * Scope: plain-text `[data-copy-key]` fields and the one `[data-style-key]`
- * field (the logo) that have that attribute rendered into the page.
- * Template fields ({count}/{total} stats) and post/sim content aren't
- * marked up for this — those stay on /admin/copy and /admin/issues.
+ * Two kinds of editable field, handled almost identically since their key
+ * namespaces never collide ("site.*"/"nav.*"/etc. for copy vs "concept.*"/
+ * "post.*" for issue fields) — they only branch apart at save time, into
+ * two different endpoints:
+ *   [data-copy-key]  -> POST /api/admin/save-copy   (site-copy.json)
+ *   [data-issue-key] -> POST /api/admin/save-issue  (concepts.ts + this
+ *                        post's .mdx frontmatter — needs the nearest
+ *                        [data-issue-id] ancestor's value too)
+ * Plus the one `[data-style-key]` field (the logo variant toggle isn't
+ * wired here — see /admin/copy for that; a single-value cycle badge
+ * doesn't fit a multi-toggle style object).
+ *
+ * Deliberately NOT covered: template fields ({count}/{total} stats),
+ * fields that are empty/absent on the current page (no element to anchor
+ * to), and post body prose. Those stay on /admin/copy and /admin/issues.
  */
 (function () {
   "use strict";
 
   var HINT_COOKIE = "qp_admin_hint";
-  var SAVE_URL = "/api/admin/save-copy";
+  var COPY_SAVE_URL = "/api/admin/save-copy";
+  var ISSUE_SAVE_URL = "/api/admin/save-issue";
+  var FIELD_SELECTOR = "[data-copy-key], [data-issue-key]";
 
   function hasHintCookie() {
     return document.cookie.split("; ").some(function (c) {
@@ -26,20 +38,26 @@
 
   var editMode = false;
   var originals = new Map(); // element -> current baseline text (for change detection + live-sync)
-  var pending = new Map(); // copy-key -> new text value
+  var pending = new Map(); // key -> new text value (copy AND issue keys share this — namespaces don't collide)
   var styleValues = new Map(); // style element -> current style value
   var stylePending = new Map(); // style-key -> new style value
 
   var style = document.createElement("style");
   style.textContent =
-    "html.qp-edit-mode [data-copy-key]{cursor:text;}" +
-    "html.qp-edit-mode [data-copy-key]:hover{outline:1px dashed #22c4f0;outline-offset:2px;}" +
-    "html.qp-edit-mode [data-copy-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
+    "html.qp-edit-mode [data-copy-key],html.qp-edit-mode [data-issue-key]{cursor:text;}" +
+    "html.qp-edit-mode [data-copy-key]:hover,html.qp-edit-mode [data-issue-key]:hover{outline:1px dashed #22c4f0;outline-offset:2px;}" +
+    "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
     "html.qp-edit-mode [data-style-key]{outline:1px dotted #ff3d8b;outline-offset:3px;}";
   document.head.appendChild(style);
 
-  function allCopyElements() {
-    return Array.prototype.slice.call(document.querySelectorAll("[data-copy-key]"));
+  function getKey(el) {
+    return el.dataset.copyKey || el.dataset.issueKey;
+  }
+  function isIssueKey(key) {
+    return key.indexOf("concept.") === 0 || key.indexOf("post.") === 0;
+  }
+  function allTextElements() {
+    return Array.prototype.slice.call(document.querySelectorAll(FIELD_SELECTOR));
   }
   function allStyleElements() {
     return Array.prototype.slice.call(document.querySelectorAll("[data-style-key]"));
@@ -65,7 +83,7 @@
 
   function snapshot() {
     originals.clear();
-    allCopyElements().forEach(function (el) {
+    allTextElements().forEach(function (el) {
       originals.set(el, el.textContent.trim());
     });
     styleValues.clear();
@@ -145,11 +163,11 @@
 
   document.addEventListener("click", function (e) {
     if (!editMode) return;
-    var copyEl = e.target.closest && e.target.closest("[data-copy-key]");
-    if (!copyEl || copyEl.isContentEditable) return;
+    var fieldEl = e.target.closest && e.target.closest(FIELD_SELECTOR);
+    if (!fieldEl || fieldEl.isContentEditable) return;
     e.preventDefault();
     e.stopPropagation();
-    startEditing(copyEl);
+    startEditing(fieldEl);
   }, true);
 
   function startEditing(el) {
@@ -183,14 +201,15 @@
   }
 
   function commitEdit(el) {
-    var key = el.dataset.copyKey;
+    var key = getKey(el);
     var newText = el.textContent.trim();
 
     // sync every element sharing this key (there can be several on one
     // page — e.g. "Issue" on every compendium card) and update their
     // per-element baseline so re-editing compares against what's actually
     // on screen now, not the pre-edit-mode snapshot
-    document.querySelectorAll('[data-copy-key="' + cssEscape(key) + '"]').forEach(function (other) {
+    var escaped = cssEscape(key);
+    document.querySelectorAll('[data-copy-key="' + escaped + '"], [data-issue-key="' + escaped + '"]').forEach(function (other) {
       other.textContent = newText;
       originals.set(other, newText);
     });
@@ -209,8 +228,9 @@
   // true page-load values, captured once — used to decide whether a key is
   // "actually changed" even across multiple edit-mode sessions in one visit
   var initialValues = new Map();
-  allCopyElements().forEach(function (el) {
-    if (!initialValues.has(el.dataset.copyKey)) initialValues.set(el.dataset.copyKey, el.textContent.trim());
+  allTextElements().forEach(function (el) {
+    var key = getKey(el);
+    if (!initialValues.has(key)) initialValues.set(key, el.textContent.trim());
   });
 
   function cssEscape(s) {
@@ -270,25 +290,53 @@
     el.dataset.styleInitial = inferStyleValue(el);
   });
 
-  // ---- save / discard ----
-  saveBtn.addEventListener("click", function () {
-    var body = {};
-    pending.forEach(function (v, k) { body[k] = v; });
-    stylePending.forEach(function (v, k) { body[k] = v; });
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = "Saving…";
-    fetch(SAVE_URL, {
+  function postJSON(url, body) {
+    return fetch(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok) throw new Error(data.error || "Save failed (" + res.status + ")");
-          return data;
-        });
-      })
+    }).then(function (res) {
+      return res.json().then(function (data) {
+        if (!res.ok) throw new Error(data.error || "Save failed (" + res.status + ")");
+        return data;
+      });
+    });
+  }
+
+  // ---- save / discard ----
+  saveBtn.addEventListener("click", function () {
+    var copyBody = {};
+    var issueConcept = {};
+    var issuePost = {};
+    var hasIssueChanges = false;
+
+    pending.forEach(function (v, k) {
+      if (isIssueKey(k)) {
+        hasIssueChanges = true;
+        var field = k.slice(k.indexOf(".") + 1);
+        (k.indexOf("concept.") === 0 ? issueConcept : issuePost)[field] = v;
+      } else {
+        copyBody[k] = v;
+      }
+    });
+    stylePending.forEach(function (v, k) { copyBody[k] = v; });
+
+    var requests = [];
+    if (Object.keys(copyBody).length > 0) requests.push(postJSON(COPY_SAVE_URL, copyBody));
+    if (hasIssueChanges) {
+      var issueIdEl = document.querySelector("[data-issue-id]");
+      var issueId = issueIdEl ? issueIdEl.dataset.issueId : null;
+      if (!issueId) {
+        alert("Save failed: couldn't find this page's issue id.");
+        return;
+      }
+      requests.push(postJSON(ISSUE_SAVE_URL, { id: issueId, concept: issueConcept, post: issuePost }));
+    }
+    if (requests.length === 0) return;
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    Promise.all(requests)
       .then(function () {
         pending.clear();
         stylePending.clear();

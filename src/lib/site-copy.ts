@@ -14,20 +14,39 @@
  */
 import raw from "../data/site-copy.json";
 
-/** Named text styles — the "pick a style, don't hand-tune it" system.
- *  "plain" is always valid and always means "the component's own default
- *  styling, no modifier class." Right now only the logo (site.titleStyle)
- *  exposes a choice; add a field's name here + a matching CSS class in
- *  whichever component renders it to make another field stylable. */
-export const TEXT_STYLES = ["plain", "comic"] as const;
-export type TextStyle = (typeof TEXT_STYLES)[number];
+/** The comic-text style system: instead of one named preset, three
+ *  independent toggles compose freely (tilt, shadow, backsplash), plus a
+ *  process-ink color choice for the parts that carry color. Right now only
+ *  the wordmark exposes this (site.titleStyle) — apply the same TitleStyle
+ *  shape + a matching set of CSS classes to make another field stylable. */
+export const PROCESS_COLORS = ["cyan", "magenta", "yellow"] as const;
+export type ProcessColor = (typeof PROCESS_COLORS)[number];
+
+export const BACKSPLASH_OPTIONS = ["none", "dots", "burst"] as const;
+export type Backsplash = (typeof BACKSPLASH_OPTIONS)[number];
+
+export interface TitleStyle {
+  tilt: boolean;
+  shadow: boolean;
+  shadowColor: ProcessColor;
+  backsplash: Backsplash;
+  backsplashColor: ProcessColor;
+}
+
+/** The two logo forms the header can show. "text" renders the wordmark
+ *  (styled per TitleStyle above); "braket" renders the ⟨Q|P⟩ mark instead.
+ *  The plain-text site name (site.title + site.titleAccent) still shows up
+ *  elsewhere regardless — footer, page titles, RSS — this only picks what
+ *  the header itself displays. */
+export const LOGO_VARIANTS = ["text", "braket"] as const;
+export type LogoVariant = (typeof LOGO_VARIANTS)[number];
 
 export interface SiteCopy {
   site: {
     title: string;
     titleAccent: string;
-    /** which of TEXT_STYLES the wordmark renders as */
-    titleStyle: TextStyle;
+    logoVariant: LogoVariant;
+    titleStyle: TitleStyle;
     byline: string;
     description: string;
     footerNote: string;
