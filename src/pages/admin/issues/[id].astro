@@ -4,8 +4,12 @@ import Base from "../../../layouts/Base.astro";
 import { byId, type Concept, type Tier } from "../../../data/concepts";
 import { upsertConcept } from "../../../lib/concepts-writer";
 import { serializePost, parsePost, type PostFrontmatter } from "../../../lib/mdx";
+import { expandSimShortcodes, collapseSimShortcodes } from "../../../lib/sim-shortcodes";
 import { commitFile, getFileContent } from "../../../lib/github";
 import { fullSiteTitle } from "../../../lib/site-copy";
+import { listSims } from "../../../sims/registry";
+
+const availableSims = listSims();
 
 const CONCEPTS_PATH = "src/data/concepts.ts";
 const POSTS_DIR = "src/content/posts";
@@ -84,7 +88,7 @@ if (Astro.request.method === "POST") {
       await commitFile({
         accessToken: session.accessToken,
         path: `${POSTS_DIR}/${slug}.mdx`,
-        content: serializePost({ frontmatter, body }),
+        content: serializePost({ frontmatter, body: expandSimShortcodes(body) }),
         message: `admin: write "${id}" (${slug})`,
       });
       // redirect rather than re-render in place — a fresh GET picks up what
@@ -104,7 +108,7 @@ if (displayFrontmatter === undefined) {
     ? parsePost((await getFileContent(session.accessToken, `${POSTS_DIR}/${existing.slug}.mdx`)) ?? "")
     : null;
   displayFrontmatter = existingPost?.frontmatter;
-  displayBody = existingPost?.body ?? "";
+  displayBody = existingPost ? collapseSimShortcodes(existingPost.body) : "";
 }
 
 // deliberately no auto-suggested "next" week/arc — a new entry starts
@@ -141,7 +145,7 @@ const c = displayConcept;
           </select>
         </label>
         <label>Prereqs (comma-separated concept ids) <input type="text" name="prereqs" value={(c?.prereqs ?? []).join(", ")} /></label>
-        <label>Sims (comma-separated slugs — building the actual sim component is still a code task) <input type="text" name="sims" value={(c?.sims ?? []).join(", ")} /></label>
+        <label>Sims (comma-separated slugs, in order of appearance in the body — building the actual sim component is still a code task; see the directory on the <a href="/admin#simulations">admin home</a> for what's already built) <input type="text" name="sims" value={(c?.sims ?? []).join(", ")} /></label>
         <label>Slug (post filename, leave as-is once set) <input type="text" name="slug" value={c?.slug ?? ""} placeholder={id} /></label>
       </fieldset>
 
@@ -158,8 +162,17 @@ const c = displayConcept;
           <input type="text" name="ruling" value={f?.ruling ?? ""} />
         </label>
         <label>Body (MDX)
-          <textarea name="body" rows="18" class="body-field">{displayBody}</textarea>
+          <textarea id="body-field" name="body" rows="18" class="body-field">{displayBody}</textarea>
         </label>
+        {availableSims.length > 0 && (
+          <div class="sim-insert">
+            <select id="sim-picker" aria-label="Sim to insert">
+              {availableSims.map((s) => <option value={s.slug}>{s.title} ({s.slug})</option>)}
+            </select>
+            <button type="button" id="sim-insert-btn" class="btn">Insert into body</button>
+            <span class="hint">drops a <code>[[sim:slug]]</code> marker at the cursor — it becomes the real embed when you save</span>
+          </div>
+        )}
       </fieldset>
 
       <label class="publish-row">
@@ -170,6 +183,30 @@ const c = displayConcept;
       <button class="btn btn--go" type="submit">Save</button>
     </form>
   </div>
+
+  <script is:inline>
+    const insertBtn = document.getElementById("sim-insert-btn");
+    if (insertBtn) {
+      insertBtn.addEventListener("click", () => {
+        const field = document.getElementById("body-field");
+        const slug = document.getElementById("sim-picker").value;
+        const token = `[[sim:${slug}]]`;
+        const start = field.selectionStart ?? field.value.length;
+        const end = field.selectionEnd ?? field.value.length;
+        // pad with blank lines so the marker lands on its own line even
+        // when dropped mid-paragraph, without doubling up if it already is
+        const before = field.value.slice(0, start);
+        const after = field.value.slice(end);
+        const lead = before && !before.endsWith("\n\n") ? (before.endsWith("\n") ? "\n" : "\n\n") : "";
+        const trail = after && !after.startsWith("\n\n") ? (after.startsWith("\n") ? "\n" : "\n\n") : "";
+        const insert = `${lead}${token}${trail}`;
+        field.value = before + insert + after;
+        const cursor = before.length + insert.length;
+        field.focus();
+        field.setSelectionRange(cursor, cursor);
+      });
+    }
+  </script>
 
   <style>
     .admin { padding: 2.5rem 0 5rem; max-width: 42rem; }
@@ -186,6 +223,14 @@ const c = displayConcept;
       padding: 0.55rem 0.7rem; font-family: var(--font-body); font-size: 0.95rem;
     }
     .body-field { font-family: var(--font-mono); font-size: 0.85rem; }
+    .sim-insert { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 0.6rem 0 0.9rem; }
+    .sim-insert select {
+      background: var(--ink-2); color: var(--paper); border: var(--panel-line) solid var(--gutter);
+      border-radius: var(--radius); padding: 0.45rem 0.6rem; font-family: var(--font-body); font-size: 0.85rem;
+    }
+    .sim-insert .btn { padding: 0.45rem 0.9rem; font-size: 0.85rem; }
+    .sim-insert .hint { margin: 0; }
+    .sim-insert code { font-family: var(--font-mono); color: var(--cyan); }
     .publish-row { display: flex; align-items: center; gap: 0.6rem; margin: 1.5rem 0; font-size: 0.9rem; }
     .publish-row input { min-height: auto; width: auto; }
   </style>

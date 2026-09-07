@@ -12,3 +12,9 @@ export const SIMS: Record<string, React.ComponentType> = {
 export const SIM_TITLES: Record<string, string> = {
   "amplitude-dial": "The amplitude dial",
 };
+
+/** For the admin's sim directory — every built sim, slug + title, sorted for display. */
+export const listSims = () =>
+  Object.keys(SIMS)
+    .map((slug) => ({ slug, title: SIM_TITLES[slug] ?? slug }))
+    .sort((a, b) => a.title.localeCompare(b.title));

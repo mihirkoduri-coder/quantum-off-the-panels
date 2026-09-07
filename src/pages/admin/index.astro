@@ -1,8 +1,15 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
-import { CONCEPTS } from "../../data/concepts";
+import { CONCEPTS, allSims } from "../../data/concepts";
 import { copy, fullSiteTitle } from "../../lib/site-copy";
+import { listSims } from "../../sims/registry";
+
+// every built sim, plus which concept(s) currently reference its slug —
+// a sim can be built and sit here unused until it's inserted into a body,
+// or listed on a concept but not yet dropped into that post's prose.
+const sims = listSims();
+const usedBy = allSims();
 
 // middleware.ts guarantees this is set before this page ever renders
 const session = Astro.locals.session!;
@@ -85,7 +92,59 @@ const sortedArcs = [...arcGroups.entries()]
         </div>
       </form>
     </details>
+
+    <details id="simulations" class="section" open>
+      <summary><h2>Simulations</h2></summary>
+      <p class="dim">
+        Sims still get built as code — ask for one when you're ready — but
+        once one exists it lives here independent of any post. Drop its
+        marker into a body's prose from an issue's own editor (there's a
+        picker right above the body field), or paste the shortcode below
+        directly. It becomes the real embed automatically when the issue
+        saves — nothing about it looks like code while you're drafting.
+      </p>
+
+      {sims.length === 0 ? (
+        <p class="dim">Nothing built yet.</p>
+      ) : (
+        <ul class="sim-list">
+          {sims.map((s) => {
+            const owners = usedBy.filter((u) => u.slug === s.slug).map((u) => u.concept);
+            return (
+              <li class="sim-row">
+                <div class="sim-row__top">
+                  <span class="sim-row__title">{s.title}</span>
+                  <code class="sim-row__shortcode" data-shortcode={`[[sim:${s.slug}]]`}>{`[[sim:${s.slug}]]`}</code>
+                  <button type="button" class="btn sim-copy" data-copy-target={`[[sim:${s.slug}]]`}>Copy</button>
+                </div>
+                <p class="sim-row__meta">
+                  {owners.length > 0
+                    ? <>Listed on: {owners.map((c) => <a href={`/admin/issues/${c.id}`}>{c.title || c.id}</a>).reduce((prev, cur) => <>{prev}, {cur}</>)}</>
+                    : "Not listed on any issue yet"}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </details>
   </div>
+
+  <script is:inline>
+    document.querySelectorAll(".sim-copy").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = btn.dataset.copyTarget;
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        } catch {
+          window.prompt("Copy this:", text);
+        }
+      });
+    });
+  </script>
 
   <style>
     .admin { padding: 2.5rem 0 5rem; max-width: 42rem; }
@@ -118,5 +177,17 @@ const sortedArcs = [...arcGroups.entries()]
       flex: 1; background: var(--ink-2); color: var(--paper); border: var(--panel-line) solid var(--gutter);
       border-radius: var(--radius); padding: 0.6rem 0.8rem; font-family: var(--font-mono);
     }
+
+    .sim-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.6rem; }
+    .sim-row {
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.8rem 1rem; background: var(--ink-2);
+    }
+    .sim-row__top { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; }
+    .sim-row__title { font-weight: 700; }
+    .sim-row__shortcode { font-family: var(--font-mono); font-size: 0.8rem; color: var(--cyan); }
+    .sim-copy { padding: 0.3rem 0.7rem; font-size: 0.75rem; margin-left: auto; }
+    .sim-row__meta { margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--paper-dim); }
+    .sim-row__meta a { color: var(--paper-dim); }
   </style>
 </Base>
