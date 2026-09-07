@@ -54,7 +54,7 @@ export const CONCEPTS: Concept[] = [
     id: "intro",
     week: 0,
     arc: 0,
-    title: "Start here",
+    title: "Welcome!",
     blurb: "What is Quantum, off the Panels?",
     character: "The Narrator",
     tier: "C",
