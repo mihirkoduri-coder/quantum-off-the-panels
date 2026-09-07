@@ -1,0 +1,160 @@
+---
+export const prerender = false;
+import Base from "../../../layouts/Base.astro";
+import { commitFile, getFileContent } from "../../../lib/github";
+import { upsertSim, slugToComponentName } from "../../../lib/registry-writer";
+import { SIM_TITLES } from "../../../sims/registry";
+import { fullSiteTitle } from "../../../lib/site-copy";
+
+const REGISTRY_PATH = "src/sims/registry.ts";
+const SIMS_DIR = "src/sims";
+
+const slug = Astro.params.slug!;
+const session = Astro.locals.session!;
+// SIM_TITLES is the bundled, currently-deployed registry — a slug just
+// committed via this very form won't appear here until the next deploy
+// finishes, same one-cycle lag concepts.ts already has for brand-new ids.
+const isNew = !(slug in SIM_TITLES);
+
+let notice: string | null = Astro.url.searchParams.get("saved")
+  ? "Saved. Vercel will redeploy in a minute or two — until then this sim won't be reachable anywhere yet."
+  : null;
+let error: string | null = null;
+
+const starterTemplate = `import { useState } from "react";
+import SimShell from "../components/sim/SimShell";
+import Predict from "../components/sim/Predict";
+import ViolationExplainer from "../components/sim/ViolationExplainer";
+
+const SLUG = "${slug}";
+
+export default function ${slugToComponentName(slug)}() {
+  const [violation, setViolation] = useState(null);
+
+  return (
+    <Predict
+      slug={SLUG}
+      question="Ask the reader to predict something before they can touch the controls."
+      choices={[
+        { id: "a", label: "First option" },
+        { id: "b", label: "Second option" },
+      ]}
+      answer="a"
+      because={<>Explain why, after they've guessed.</>}
+    >
+      <SimShell
+        slug={SLUG}
+        title="Sim title"
+        watchFor="the thing they should notice."
+        onReset={() => setViolation(null)}
+        controls={<div>controls go here</div>}
+        readout={<span>readout goes here</span>}
+      >
+        <div>the sim itself</div>
+        <ViolationExplainer violation={violation} onDismiss={() => setViolation(null)} />
+      </SimShell>
+    </Predict>
+  );
+}
+`;
+
+// what the form displays. null = not yet loaded from anywhere — set either
+// by a POST attempt below, or by the GET fallback that reads the repo.
+let displayTitle: string = SIM_TITLES[slug] ?? "";
+let displayCode: string | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const title = (form.get("title") as string | null)?.trim() || "";
+  const code = (form.get("code") as string | null) ?? "";
+
+  displayTitle = title;
+  displayCode = code;
+
+  if (!title) {
+    error = "Needs a title — it's what shows up in the sim directory and any reader-facing gallery.";
+  } else if (!code.trim()) {
+    error = "Needs code — paste the full component file.";
+  } else if (!/export default/.test(code)) {
+    error = "Doesn't look like it has a default export — SimLoader imports the component as a default export, so this won't be reachable without one.";
+  } else {
+    try {
+      const componentName = slugToComponentName(slug);
+      await commitFile({
+        accessToken: session.accessToken,
+        path: `${SIMS_DIR}/${slug}.tsx`,
+        content: `${code.trim()}\n`,
+        message: `admin: ${isNew ? "add" : "update"} sim "${slug}"`,
+      });
+
+      const currentRegistryText = await getFileContent(session.accessToken, REGISTRY_PATH);
+      if (!currentRegistryText) throw new Error("Could not read registry.ts from the repo");
+      const newRegistryText = upsertSim(currentRegistryText, { slug, componentName, title });
+      await commitFile({
+        accessToken: session.accessToken,
+        path: REGISTRY_PATH,
+        content: newRegistryText,
+        message: `admin: register sim "${slug}"`,
+      });
+
+      // redirect rather than re-render in place, same reason as the issue
+      // editor — a fresh GET reflects what was actually just committed.
+      return Astro.redirect(`/admin/sims/${slug}?saved=1`);
+    } catch (err) {
+      console.error(err);
+      error = err instanceof Error ? err.message : "Something went wrong saving this sim.";
+    }
+  }
+}
+
+if (displayCode === null) {
+  const existingCode = await getFileContent(session.accessToken, `${SIMS_DIR}/${slug}.tsx`);
+  displayCode = existingCode ?? (isNew ? starterTemplate : "");
+}
+---
+<Base title={`Admin: ${displayTitle || slug} — ${fullSiteTitle()}`}>
+  <div class="wrap admin">
+    <p><a href="/admin#simulations">&larr; Admin</a></p>
+    <h1>{isNew ? `New simulation: ${slug}` : displayTitle}</h1>
+
+    {notice && <p class="admin__notice">{notice}</p>}
+    {error && <p class="admin__error">Error: {error}</p>}
+
+    <p class="dim">
+      Once this saves, reference it in an issue's body with{" "}
+      <code>{`[[sim:${slug}]]`}</code> (there's also a picker for this in
+      the issue editor), and add <code>{slug}</code> to that issue's Sims
+      field so it shows up as owned by that concept.
+    </p>
+
+    <form method="POST" class="sim-form">
+      <label>Title <span class="hint">(shown in the directory and any gallery)</span>
+        <input type="text" name="title" value={displayTitle} required />
+      </label>
+      <label>Code <span class="hint">(the full .tsx file — needs a default export; imports are relative to src/sims/)</span>
+        <textarea name="code" rows="26" class="code-field" spellcheck="false">{displayCode}</textarea>
+      </label>
+      <button class="btn btn--go" type="submit">Save</button>
+    </form>
+  </div>
+
+  <style>
+    .admin { padding: 2.5rem 0 5rem; max-width: 48rem; }
+    .admin__notice { border-left: 2px solid var(--cyan); padding-left: 0.9rem; color: var(--paper); }
+    .admin__error { border-left: 2px solid var(--magenta); padding-left: 0.9rem; color: var(--magenta); }
+    .dim code { font-family: var(--font-mono); color: var(--cyan); }
+    .sim-form label { display: block; margin: 0.9rem 0; font-size: 0.85rem; color: var(--paper-dim); }
+    .hint { font-weight: 400; font-style: italic; }
+    .sim-form input[type="text"] {
+      display: block; width: 100%; margin-top: 0.35rem; background: var(--ink-2); color: var(--paper);
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.55rem 0.7rem; font-family: var(--font-body); font-size: 0.95rem;
+    }
+    .code-field {
+      display: block; width: 100%; margin-top: 0.35rem; background: var(--ink-2); color: var(--paper);
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.7rem; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.5;
+      white-space: pre; overflow-wrap: normal; overflow-x: auto;
+    }
+  </style>
+</Base>

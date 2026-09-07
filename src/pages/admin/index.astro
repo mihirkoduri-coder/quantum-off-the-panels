@@ -96,12 +96,13 @@ const sortedArcs = [...arcGroups.entries()]
     <details id="simulations" class="section" open>
       <summary><h2>Simulations</h2></summary>
       <p class="dim">
-        Sims still get built as code — ask for one when you're ready — but
-        once one exists it lives here independent of any post. Drop its
-        marker into a body's prose from an issue's own editor (there's a
-        picker right above the body field), or paste the shortcode below
-        directly. It becomes the real embed automatically when the issue
-        saves — nothing about it looks like code while you're drafting.
+        A sim is still real code — build it wherever, then paste the finished
+        file in here. Once it's saved it lives here independent of any post:
+        drop its marker into a body's prose from an issue's own editor
+        (there's a picker right above the body field), or paste the
+        shortcode below directly. It becomes the real embed automatically
+        when the issue saves — nothing about it looks like code while
+        you're drafting.
       </p>
 
       {sims.length === 0 ? (
@@ -116,6 +117,7 @@ const sortedArcs = [...arcGroups.entries()]
                   <span class="sim-row__title">{s.title}</span>
                   <code class="sim-row__shortcode" data-shortcode={`[[sim:${s.slug}]]`}>{`[[sim:${s.slug}]]`}</code>
                   <button type="button" class="btn sim-copy" data-copy-target={`[[sim:${s.slug}]]`}>Copy</button>
+                  <a class="btn" href={`/admin/sims/${s.slug}`}>Edit code</a>
                 </div>
                 <p class="sim-row__meta">
                   {owners.length > 0
@@ -127,6 +129,14 @@ const sortedArcs = [...arcGroups.entries()]
           })}
         </ul>
       )}
+
+      <form action="/admin/sims/new-redirect" method="get" class="new-form">
+        <label for="new-sim-slug">New sim slug (lowercase, hyphenated, not on the list above)</label>
+        <div class="row">
+          <input id="new-sim-slug" name="slug" type="text" pattern="[a-z0-9-]+" placeholder="e.g. two-path-interference" required />
+          <button class="btn" type="submit">Create</button>
+        </div>
+      </form>
     </details>
   </div>
 
