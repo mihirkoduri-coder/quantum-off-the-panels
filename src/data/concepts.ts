@@ -51,16 +51,11 @@ export const isGrouped = (c: Concept): c is Concept & { week: number; arc: numbe
 
 export const CONCEPTS: Concept[] = [
   {
-    // issue 0: the project's intro, not a physics concept. arc: 0 keeps it
-    // out of "ARC 1, twelve weeks" counts (see ConceptMap.astro / index.astro,
-    // which filter to arc === 1) — it stays off the concept map's grid, but
-    // it's still first in this array, so prev/next nav, the compendium, and
-    // "start it from the top" all pick it up for free.
     id: "intro",
     week: 0,
     arc: 0,
     title: "Start here",
-    blurb: "What this project actually is, before week one throws you into a superposition.",
+    blurb: "Welcome to Quantum, off the Panels",
     character: "The Narrator",
     tier: "C",
     prereqs: [],
