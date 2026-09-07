@@ -1,6 +1,6 @@
 {
   "site": {
-    "title": "Quantum off the",
+    "title": "Quantum, off the",
     "titleAccent": "Panels",
     "logoVariant": "braket",
     "titleStyle": {
@@ -38,18 +38,18 @@
   },
   "compendium": {
     "heading": "Compendium",
-    "intro": "Every issue published so far. Search by concept or character — tiers are a production detail and stay backstage.",
+    "intro": "Check out the other issues: past, present, but maybe not future.",
     "searchPlaceholder": "Search concept or character…"
   },
   "sims": {
     "heading": "Simulations",
     "intro": "Each one unlocks when you meet it inside its post. That's not a gate for its own sake — most of them only make sense after the argument that sets them up.",
-    "unlockedLabel": "unlocked on this device",
+    "unlockedLabel": "unlocked ",
     "resetButton": "reset",
     "openButton": "Open",
-    "lockedText": "Locked — meet it in the post",
-    "notBuiltText": "Not built yet",
-    "readPostLink": "Read the post"
+    "lockedText": "Locked. Go meet it in the post!",
+    "notBuiltText": "Coming Soon!",
+    "readPostLink": "Check it out!"
   },
   "simShell": {
     "eyebrowLabel": "SIM",
@@ -64,7 +64,7 @@
     "nope": "NOPE!",
     "youSaidPrefix": "You said",
     "itsActuallyPrefix": "It's",
-    "nudge": "Now go find out why. The controls are live."
+    "nudge": "Now go find out why!"
   },
   "violationExplainer": {
     "youTriedToPrefix": "You tried to",
