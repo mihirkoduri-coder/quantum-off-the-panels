@@ -21,7 +21,7 @@
   },
   "labels": {
     "issue": "Issue",
-    "arc": "ARC 1",
+    "arc": "(month)",
     "buildsOn": "Builds on",
     "notOutYet": "(not out yet)"
   },
@@ -31,7 +31,7 @@
     "subhead": "One concept a week, argued against the comic that made me curious about it in the first place. Every post comes with something you can take apart yourself — including a few things the universe won't let you do.",
     "ctaFirst": "Start it from the top",
     "ctaLatest": "Check out the latest issue",
-    "progressTemplate": "{count} of {total} published"
+    "progressTemplate": "(day)"
   },
   "conceptMap": {
     "progressTemplate": "{count} of {total} weeks published so far"
