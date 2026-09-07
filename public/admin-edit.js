@@ -41,7 +41,9 @@
  * yet" here), creating a brand-new post (no page exists to click-edit on),
  * and post body prose (rendered MDX -> editable rich text -> Markdown
  * round-tripping is a separate, much bigger problem). Those live on
- * /admin.
+ * /admin — which this script also links to from the site nav, so it's
+ * reachable without knowing the URL, but only for whoever has the hint
+ * cookie.
  */
 (function () {
   "use strict";
@@ -58,6 +60,22 @@
   }
 
   if (!hasHintCookie()) return;
+
+  // an "Admin" nav link, only for whoever has the hint cookie — inserted
+  // rather than server-rendered-and-hidden so regular visitors' HTML never
+  // contains it at all. No inline styling: it's a plain <a> dropped into
+  // the real nav, so the site's own `.site__nav a` rules style it exactly
+  // like "Compendium"/"Simulations"/"RSS" already sitting there.
+  function addAdminNavLink() {
+    var nav = document.querySelector(".site__nav");
+    if (!nav || nav.querySelector('a[href="/admin"]')) return;
+    var link = document.createElement("a");
+    link.href = "/admin";
+    link.textContent = "Admin";
+    nav.insertBefore(link, nav.firstChild);
+  }
+  if (document.body) addAdminNavLink();
+  else document.addEventListener("DOMContentLoaded", addAdminNavLink);
 
   function format(template, vars) {
     return template.replace(/\{(\w+)\}/g, function (match, key) {
