@@ -68,7 +68,7 @@ export const CONCEPTS: Concept[] = [
     week: 1,
     arc: 1,
     title: "Superposition",
-    blurb: "We're wrong about",
+    blurb: "Temporally or spatially, this isn't superposition.",
     character: "Doctor Manhattan",
     tier: "B",
     prereqs: [],
