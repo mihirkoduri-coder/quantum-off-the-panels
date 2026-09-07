@@ -34,7 +34,7 @@
     "progressTemplate": "(day)"
   },
   "conceptMap": {
-    "progressTemplate": "{count} of {total} weeks published so far"
+    "progressTemplate": "Week 1"
   },
   "compendium": {
     "heading": "Compendium",
