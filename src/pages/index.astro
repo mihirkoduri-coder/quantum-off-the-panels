@@ -20,11 +20,15 @@ const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
   <section class="hero wrap">
     <p class="eyebrow">
       <span class="wk" data-copy-key="labels.arc">{copy.labels.arc}</span><span class="sep">/</span>
-      <!-- not click-to-edit in place: this is a {count}/{total} template rendered
-           with real numbers already substituted in, and editing that text
-           directly would bake those numbers in and destroy the placeholders.
-           Edit the template itself from /admin/copy instead. -->
-      <span>{format(copy.homepage.progressTemplate, { count: arc1Live.length, total: arc1Total })}</span>
+      <!-- a {count}/{total} template — clicking it in edit mode shows the
+           raw template (with the literal tokens) to edit, then re-renders
+           the interpolated preview; see admin-edit.js. -->
+      <span
+        data-copy-key="homepage.progressTemplate"
+        data-copy-template="true"
+        data-copy-raw={copy.homepage.progressTemplate}
+        data-copy-vars={JSON.stringify({ count: arc1Live.length, total: arc1Total })}
+      >{format(copy.homepage.progressTemplate, { count: arc1Live.length, total: arc1Total })}</span>
     </p>
     <h1 class="hero__h">
       <span data-copy-key="homepage.headline">{copy.homepage.headline}</span><br />

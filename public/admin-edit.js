@@ -1,24 +1,47 @@
 /**
- * In-context edit mode for public pages. Loaded everywhere, but does
- * nothing at all unless the (non-httpOnly, no privilege of its own)
- * qp_admin_hint cookie is present — real authorization happens
- * server-side on every save, via the actual session cookie.
+ * In-context edit mode — the *only* way to edit site copy and a post's own
+ * metadata. There is no separate admin form for any of this: what you see
+ * here is what gets saved, with no hand-written field labels standing
+ * between you and the actual content.
  *
- * Two kinds of editable field, handled almost identically since their key
- * namespaces never collide ("site.*"/"nav.*"/etc. for copy vs "concept.*"/
- * "post.*" for issue fields) — they only branch apart at save time, into
- * two different endpoints:
- *   [data-copy-key]  -> POST /api/admin/save-copy   (site-copy.json)
- *   [data-issue-key] -> POST /api/admin/save-issue  (concepts.ts + this
- *                        post's .mdx frontmatter — needs the nearest
- *                        [data-issue-id] ancestor's value too)
- * Plus the one `[data-style-key]` field (the logo variant toggle isn't
- * wired here — see /admin/copy for that; a single-value cycle badge
- * doesn't fit a multi-toggle style object).
+ * Loaded on every public page, but does nothing at all unless the
+ * (non-httpOnly, no privilege of its own) qp_admin_hint cookie is present —
+ * real authorization happens server-side on every save, via the actual
+ * session cookie.
  *
- * Deliberately NOT covered: template fields ({count}/{total} stats),
- * fields that are empty/absent on the current page (no element to anchor
- * to), and post body prose. Those stay on /admin/copy and /admin/issues.
+ * Four kinds of editable thing, converging on the same pending-changes
+ * state and the same Save bar:
+ *   [data-copy-key]                    plain text, click to edit in place
+ *   [data-copy-key][data-copy-template] a {count}/{total} template — click
+ *                                        shows the raw template to edit,
+ *                                        then re-renders the interpolated
+ *                                        preview
+ *   [data-copy-key][data-copy-attr]    an attribute (e.g. an input's
+ *                                        placeholder) rather than text
+ *                                        content — click prompts instead
+ *   [data-issue-key]                   a post's own metadata (concept
+ *                                        title/character, post title/
+ *                                        subtitle/quote/ruling) — same as
+ *                                        copy keys, but saved to
+ *                                        concepts.ts + this post's
+ *                                        frontmatter instead
+ *   [data-style-panel]                 opens a small popover (built from
+ *                                        its data-style-fields JSON) with
+ *                                        every toggle/select for that
+ *                                        element's style — currently just
+ *                                        the logo
+ *
+ * [data-copy-key]/[data-issue-key] namespaces never collide ("site.*"/
+ * "nav.*"/etc. for copy vs "concept.*"/"post.*" for issue fields), so they
+ * share almost all of the same logic and only branch apart at save time,
+ * into whichever of two endpoints the changed keys belong to.
+ *
+ * Deliberately still not covered: a field with no existing value on the
+ * page has nothing to click (there's no "add a quote that doesn't exist
+ * yet" here), creating a brand-new post (no page exists to click-edit on),
+ * and post body prose (rendered MDX -> editable rich text -> Markdown
+ * round-tripping is a separate, much bigger problem). Those live on
+ * /admin.
  */
 (function () {
   "use strict";
@@ -36,18 +59,29 @@
 
   if (!hasHintCookie()) return;
 
+  function format(template, vars) {
+    return template.replace(/\{(\w+)\}/g, function (match, key) {
+      return Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match;
+    });
+  }
+
   var editMode = false;
-  var originals = new Map(); // element -> current baseline text (for change detection + live-sync)
-  var pending = new Map(); // key -> new text value (copy AND issue keys share this — namespaces don't collide)
-  var styleValues = new Map(); // style element -> current style value
-  var stylePending = new Map(); // style-key -> new style value
+  var originals = new Map(); // element -> current baseline value (raw template for template fields; for change detection + live-sync)
+  var pending = new Map(); // key -> new value (copy AND issue keys share this — namespaces don't collide)
+  var stylePending = new Map(); // style-key -> new value, from the style popovers
 
   var style = document.createElement("style");
   style.textContent =
     "html.qp-edit-mode [data-copy-key],html.qp-edit-mode [data-issue-key]{cursor:text;}" +
     "html.qp-edit-mode [data-copy-key]:hover,html.qp-edit-mode [data-issue-key]:hover{outline:1px dashed #22c4f0;outline-offset:2px;}" +
     "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
-    "html.qp-edit-mode [data-style-key]{outline:1px dotted #ff3d8b;outline-offset:3px;}";
+    "html.qp-edit-mode [data-style-panel]{outline:1px dotted #ff3d8b;outline-offset:3px;}" +
+    ".qp-style-trigger{position:fixed;z-index:99998;background:#ff3d8b;color:#fff;font-family:monospace;font-size:0.7rem;padding:0.15rem 0.45rem;border-radius:3px;border:none;cursor:pointer;}" +
+    ".qp-style-popover{position:fixed;z-index:100000;background:#131829;color:#ece7d9;border:2px solid #ff3d8b;border-radius:6px;padding:0.8rem;font-family:monospace;font-size:0.8rem;min-width:14rem;box-shadow:0 4px 16px rgba(0,0,0,0.5);}" +
+    ".qp-style-popover h4{margin:0 0 0.6rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#ff3d8b;}" +
+    ".qp-style-row{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;margin:0.45rem 0;}" +
+    ".qp-style-row select{background:#1d2440;color:#ece7d9;border:1px solid #2b3358;border-radius:3px;font-family:inherit;font-size:0.75rem;padding:0.15rem;}" +
+    ".qp-style-close{margin-top:0.5rem;background:none;border:1px solid #9aa0b8;color:#ece7d9;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;font-family:inherit;font-size:0.7rem;width:100%;}";
   document.head.appendChild(style);
 
   function getKey(el) {
@@ -59,37 +93,27 @@
   function allTextElements() {
     return Array.prototype.slice.call(document.querySelectorAll(FIELD_SELECTOR));
   }
-  function allStyleElements() {
-    return Array.prototype.slice.call(document.querySelectorAll("[data-style-key]"));
-  }
-
-  function inferStyleValue(el) {
-    var prefix = el.dataset.styleClassPrefix;
-    var options = (el.dataset.styleOptions || "").split(",");
-    for (var i = 0; i < options.length; i++) {
-      if (options[i] !== "plain" && el.classList.contains(prefix + "--" + options[i])) return options[i];
-    }
-    return "plain";
-  }
-
-  function applyStyleValue(el, value) {
-    var prefix = el.dataset.styleClassPrefix;
-    var options = (el.dataset.styleOptions || "").split(",");
-    options.forEach(function (opt) {
-      if (opt !== "plain") el.classList.remove(prefix + "--" + opt);
-    });
-    if (value !== "plain") el.classList.add(prefix + "--" + value);
+  function baselineValue(el) {
+    return el.dataset.copyTemplate === "true" ? el.dataset.copyRaw : el.textContent.trim();
   }
 
   function snapshot() {
     originals.clear();
     allTextElements().forEach(function (el) {
-      originals.set(el, el.textContent.trim());
+      originals.set(el, baselineValue(el));
     });
-    styleValues.clear();
-    allStyleElements().forEach(function (el) {
-      styleValues.set(el, inferStyleValue(el));
-    });
+  }
+
+  // true page-load values, captured once — used to decide whether a key is
+  // "actually changed" even across multiple edit-mode sessions in one visit
+  var initialValues = new Map();
+  allTextElements().forEach(function (el) {
+    var key = getKey(el);
+    if (!initialValues.has(key)) initialValues.set(key, baselineValue(el));
+  });
+
+  function cssEscape(s) {
+    return window.CSS && CSS.escape ? CSS.escape(s) : s.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
   }
 
   // ---- floating controls ----
@@ -146,7 +170,7 @@
     toggleBtn.textContent = on ? "✕ Done" : "✏️ Edit";
     document.documentElement.classList.toggle("qp-edit-mode", on);
     if (on) snapshot();
-    renderStyleBadges();
+    renderStyleTriggers();
   }
 
   toggleBtn.addEventListener("click", function () {
@@ -165,12 +189,45 @@
     if (!editMode) return;
     var fieldEl = e.target.closest && e.target.closest(FIELD_SELECTOR);
     if (!fieldEl || fieldEl.isContentEditable) return;
+
+    if (fieldEl.dataset.copyAttr) {
+      e.preventDefault();
+      e.stopPropagation();
+      editAttribute(fieldEl);
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
     startEditing(fieldEl);
   }, true);
 
+  // ---- attribute fields (e.g. an input's placeholder) ----
+  function editAttribute(el) {
+    var key = getKey(el);
+    var attr = el.dataset.copyAttr;
+    var current = el.getAttribute(attr) || "";
+    var next = window.prompt("Edit " + attr + ":", current);
+    if (next === null || next === current) return;
+    el.setAttribute(attr, next);
+    if (next === initialValues.get(key)) pending.delete(key);
+    else pending.set(key, next);
+    updateSaveBar();
+  }
+  // seed initial values for attribute fields too (baselineValue() only
+  // handles text content) — the attribute IS the value here
+  document.querySelectorAll("[data-copy-attr]").forEach(function (el) {
+    var key = getKey(el);
+    if (!initialValues.has(key)) initialValues.set(key, el.getAttribute(el.dataset.copyAttr) || "");
+  });
+
+  // ---- plain text + template fields ----
   function startEditing(el) {
+    if (el.dataset.copyTemplate === "true") {
+      // show the raw template (literal {count}/{total} tokens) to edit,
+      // not the already-interpolated numbers currently on screen
+      el.textContent = el.dataset.copyRaw;
+    }
     el.contentEditable = "true";
     el.classList.add("qp-editing");
     el.focus();
@@ -185,7 +242,7 @@
         ev.preventDefault();
         el.blur();
       } else if (ev.key === "Escape") {
-        el.textContent = originals.get(el);
+        el.textContent = el.dataset.copyTemplate === "true" ? el.dataset.copyRaw : originals.get(el);
         el.blur();
       }
     }
@@ -202,7 +259,7 @@
 
   function commitEdit(el) {
     var key = getKey(el);
-    var newText = el.textContent.trim();
+    var newValue = el.textContent.trim(); // the raw template, for template fields
 
     // sync every element sharing this key (there can be several on one
     // page — e.g. "Issue" on every compendium card) and update their
@@ -210,84 +267,184 @@
     // on screen now, not the pre-edit-mode snapshot
     var escaped = cssEscape(key);
     document.querySelectorAll('[data-copy-key="' + escaped + '"], [data-issue-key="' + escaped + '"]').forEach(function (other) {
-      other.textContent = newText;
-      originals.set(other, newText);
+      if (other.dataset.copyTemplate === "true") {
+        other.dataset.copyRaw = newValue;
+        var vars = {};
+        try { vars = JSON.parse(other.dataset.copyVars || "{}"); } catch (e) { /* leave empty */ }
+        other.textContent = format(newValue, vars);
+      } else {
+        other.textContent = newValue;
+      }
+      originals.set(other, newValue);
     });
 
-    // but "is this actually a pending change worth saving" compares
-    // against the true page-load value, so cycling back to it — even
-    // through several intermediate edits — correctly clears the flag
-    if (newText === initialValues.get(key)) {
+    if (newValue === initialValues.get(key)) {
       pending.delete(key);
     } else {
-      pending.set(key, newText);
+      pending.set(key, newValue);
     }
     updateSaveBar();
   }
 
-  // true page-load values, captured once — used to decide whether a key is
-  // "actually changed" even across multiple edit-mode sessions in one visit
-  var initialValues = new Map();
-  allTextElements().forEach(function (el) {
-    var key = getKey(el);
-    if (!initialValues.has(key)) initialValues.set(key, el.textContent.trim());
-  });
+  // ---- style panels (currently just the logo) ----
+  var openPopover = null;
+  var triggers = [];
 
-  function cssEscape(s) {
-    return window.CSS && CSS.escape ? CSS.escape(s) : s.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+  function allStylePanelElements() {
+    return Array.prototype.slice.call(document.querySelectorAll("[data-style-panel]"));
   }
 
-  // ---- style badges (currently just the logo) ----
-  var badges = [];
-  function renderStyleBadges() {
-    badges.forEach(function (b) { b.remove(); });
-    badges = [];
+  function renderStyleTriggers() {
+    triggers.forEach(function (t) { t.remove(); });
+    triggers = [];
+    closePopover();
     if (!editMode) return;
-    allStyleElements().forEach(function (el) {
-      var badge = document.createElement("button");
-      badge.type = "button";
-      var current = styleValues.get(el) || inferStyleValue(el);
-      badge.textContent = "Style: " + current;
-      Object.assign(badge.style, {
-        position: "fixed", zIndex: "99998", background: "#ff3d8b", color: "#fff",
-        fontFamily: "monospace", fontSize: "0.65rem", padding: "0.15rem 0.4rem",
-        borderRadius: "3px", border: "none", cursor: "pointer",
-      });
-      positionBadge(badge, el);
-      badge.addEventListener("click", function (e) {
+    allStylePanelElements().forEach(function (el) {
+      var trigger = document.createElement("button");
+      trigger.type = "button";
+      trigger.className = "qp-style-trigger";
+      trigger.textContent = "🎨 Style";
+      positionNear(trigger, el, -24);
+      trigger.addEventListener("click", function (e) {
         e.preventDefault();
         e.stopPropagation();
-        var options = (el.dataset.styleOptions || "plain").split(",");
-        var idx = options.indexOf(styleValues.get(el) || "plain");
-        var next = options[(idx + 1) % options.length];
-        styleValues.set(el, next);
-        applyStyleValue(el, next);
-        badge.textContent = "Style: " + next;
-        var key = el.dataset.styleKey;
-        var initial = el.dataset.styleInitial || "plain";
-        if (next === initial) stylePending.delete(key);
-        else stylePending.set(key, next);
-        updateSaveBar();
+        if (openPopover && openPopover.dataset.forEl === elId(el)) {
+          closePopover();
+        } else {
+          openStylePopover(el, trigger);
+        }
       });
-      document.body.appendChild(badge);
-      badges.push(badge);
+      document.body.appendChild(trigger);
+      triggers.push(trigger);
     });
   }
-  function positionBadge(badge, el) {
-    var rect = el.getBoundingClientRect();
-    badge.style.top = (rect.top - 20) + "px";
-    badge.style.left = rect.left + "px";
+
+  var elIdCounter = 0;
+  function elId(el) {
+    if (!el.dataset.qpElId) el.dataset.qpElId = String(++elIdCounter);
+    return el.dataset.qpElId;
   }
+
+  function positionNear(node, el, yOffset) {
+    var rect = el.getBoundingClientRect();
+    node.style.top = (rect.top + yOffset) + "px";
+    node.style.left = rect.left + "px";
+  }
+
+  function closePopover() {
+    if (openPopover) {
+      openPopover.remove();
+      openPopover = null;
+    }
+  }
+
+  function openStylePopover(el, trigger) {
+    closePopover();
+    var fields = [];
+    try { fields = JSON.parse(el.dataset.styleFields || "[]"); } catch (e) { /* nothing to show */ }
+
+    var pop = document.createElement("div");
+    pop.className = "qp-style-popover";
+    pop.dataset.forEl = elId(el);
+    var heading = document.createElement("h4");
+    heading.textContent = "Style";
+    pop.appendChild(heading);
+
+    fields.forEach(function (field) {
+      var row = document.createElement("div");
+      row.className = "qp-style-row";
+      var label = document.createElement("span");
+      label.textContent = field.label;
+      row.appendChild(label);
+
+      var currentValue = stylePending.has(field.key) ? stylePending.get(field.key) : field.value;
+
+      if (field.type === "checkbox") {
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = Boolean(currentValue);
+        checkbox.addEventListener("change", function () {
+          applyStyleChange(field, checkbox.checked);
+        });
+        row.appendChild(checkbox);
+      } else {
+        var select = document.createElement("select");
+        (field.options || []).forEach(function (opt) {
+          var option = document.createElement("option");
+          option.value = opt;
+          option.textContent = opt;
+          option.selected = opt === currentValue;
+          select.appendChild(option);
+        });
+        select.addEventListener("change", function () {
+          applyStyleChange(field, select.value);
+        });
+        row.appendChild(select);
+      }
+      pop.appendChild(row);
+    });
+
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "qp-style-close";
+    closeBtn.textContent = "Close";
+    closeBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closePopover();
+    });
+    pop.appendChild(closeBtn);
+
+    document.body.appendChild(pop);
+    var rect = trigger.getBoundingClientRect();
+    pop.style.top = (rect.bottom + 6) + "px";
+    pop.style.left = rect.left + "px";
+    openPopover = pop;
+  }
+
+  function applyStyleChange(field, value) {
+    var initial = field.value;
+    if (value === initial) stylePending.delete(field.key);
+    else stylePending.set(field.key, value);
+    updateSaveBar();
+    applyLivePreview(field.key, value);
+  }
+
+  // translates a style field change into an immediate visual update, so
+  // the popover is previewing the real page, not a guess at what it'll
+  // look like once saved
+  function applyLivePreview(key, value) {
+    if (key === "site.logoVariant") {
+      document.querySelectorAll("[data-logo-variant]").forEach(function (el) {
+        el.classList.toggle("site__logo-variant--hidden", el.dataset.logoVariant !== value);
+      });
+      return;
+    }
+    var titleEl = document.querySelector(".site__title");
+    if (!titleEl) return;
+    if (key === "site.titleStyle.tilt") {
+      titleEl.classList.toggle("site__title--tilt", Boolean(value));
+    } else if (key === "site.titleStyle.shadow") {
+      titleEl.classList.toggle("site__title--shadow", Boolean(value));
+    } else if (key === "site.titleStyle.shadowColor") {
+      titleEl.style.setProperty("--shadow-c", "var(--" + value + ")");
+    } else if (key === "site.titleStyle.backsplash") {
+      ["none", "dots", "burst"].forEach(function (opt) {
+        titleEl.classList.remove("site__title--backsplash-" + opt);
+      });
+      if (value !== "none") titleEl.classList.add("site__title--backsplash-" + value);
+    } else if (key === "site.titleStyle.backsplashColor") {
+      titleEl.style.setProperty("--backsplash-c", "var(--" + value + ")");
+    }
+  }
+
   window.addEventListener("scroll", function () {
-    badges.forEach(function (b, i) { positionBadge(b, allStyleElements()[i]); });
+    triggers.forEach(function (t, i) { positionNear(t, allStylePanelElements()[i], -24); });
+    closePopover();
   }, true);
   window.addEventListener("resize", function () {
-    badges.forEach(function (b, i) { positionBadge(b, allStyleElements()[i]); });
-  });
-
-  // remember each style element's page-load value, for change detection
-  allStyleElements().forEach(function (el) {
-    el.dataset.styleInitial = inferStyleValue(el);
+    triggers.forEach(function (t, i) { positionNear(t, allStylePanelElements()[i], -24); });
+    closePopover();
   });
 
   function postJSON(url, body) {
@@ -340,9 +497,6 @@
       .then(function () {
         pending.clear();
         stylePending.clear();
-        allStyleElements().forEach(function (el) {
-          el.dataset.styleInitial = styleValues.get(el) || inferStyleValue(el);
-        });
         updateSaveBar();
         saveBtn.textContent = "Saved! (redeploying)";
         setTimeout(function () {

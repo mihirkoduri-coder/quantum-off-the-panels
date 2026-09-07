@@ -1,10 +1,25 @@
 ---
 import "../styles/global.css";
 import "katex/dist/katex.min.css";
-import { copy, fullSiteTitle } from "../lib/site-copy";
+import { copy, fullSiteTitle, LOGO_VARIANTS, PROCESS_COLORS, BACKSPLASH_OPTIONS } from "../lib/site-copy";
 
 interface Props { title: string; description?: string }
 const { title, description = copy.site.description } = Astro.props;
+
+// the logo's whole style panel (shown in edit mode), described as data so
+// admin-edit.js can build the popover generically instead of hand-coding
+// six controls in JS. Both logo variants render below regardless of which
+// is selected — logoVariant just toggles which one is visible via CSS —
+// specifically so switching it in the popover can preview live instead of
+// needing a page reload to see the other variant at all.
+const logoFields = [
+  { key: "site.logoVariant", label: "Logo mark", type: "select", options: LOGO_VARIANTS, value: copy.site.logoVariant },
+  { key: "site.titleStyle.tilt", label: "Text: tilt", type: "checkbox", value: copy.site.titleStyle.tilt },
+  { key: "site.titleStyle.shadow", label: "Text: shadow", type: "checkbox", value: copy.site.titleStyle.shadow },
+  { key: "site.titleStyle.shadowColor", label: "Shadow color", type: "select", options: PROCESS_COLORS, value: copy.site.titleStyle.shadowColor },
+  { key: "site.titleStyle.backsplash", label: "Backsplash", type: "select", options: BACKSPLASH_OPTIONS, value: copy.site.titleStyle.backsplash },
+  { key: "site.titleStyle.backsplashColor", label: "Backsplash color", type: "select", options: PROCESS_COLORS, value: copy.site.titleStyle.backsplashColor },
+];
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
@@ -103,8 +118,12 @@ const { title, description = copy.site.description } = Astro.props;
 
     <header class="site">
       <div class="wrap site__in">
-        <a href="/" class="site__mark">
-          {copy.site.logoVariant === "braket" ? (
+        <a href="/" class="site__mark" data-style-panel data-style-fields={JSON.stringify(logoFields)}>
+          <!-- both variants always render — logoVariant only toggles which
+               is visible (site__logo-variant--hidden) — so the style panel
+               can preview switching between them live, in place, instead
+               of needing a reload to see the one not currently selected. -->
+          <span class={`site__logo-variant${copy.site.logoVariant !== "braket" ? " site__logo-variant--hidden" : ""}`} data-logo-variant="braket">
             <!-- ⟨Q|P⟩ — Q staggered up (cyan, magenta shadow), P staggered
                  down (magenta, cyan shadow), same shadow-copy technique the
                  margin bursts use. Brackets stay neutral paper so the two
@@ -118,7 +137,8 @@ const { title, description = copy.site.description } = Astro.props;
               <text x="70" y="40" font-size="24" font-family="var(--font-sfx)" fill="var(--magenta)" transform="rotate(6 70 40)">P</text>
               <text x="104" y="34" font-size="36" fill="var(--paper)">⟩</text>
             </svg>
-          ) : (
+          </span>
+          <span class={`site__logo-variant${copy.site.logoVariant !== "text" ? " site__logo-variant--hidden" : ""}`} data-logo-variant="text">
             <span
               class={[
                 "site__title",
@@ -130,7 +150,7 @@ const { title, description = copy.site.description } = Astro.props;
             >
               <span data-copy-key="site.title">{copy.site.title}</span> <span class="site__accent" data-copy-key="site.titleAccent">{copy.site.titleAccent}</span>
             </span>
-          )}
+          </span>
           <span class="site__by" data-copy-key="site.byline">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
@@ -176,6 +196,7 @@ const { title, description = copy.site.description } = Astro.props;
         display: flex; flex-direction: column; gap: 0.15rem;
         text-decoration: none; line-height: 1.1;
       }
+      .site__logo-variant--hidden { display: none; }
       .site__title {
         font-family: var(--font-sfx); font-size: clamp(0.86rem, 2.6vw, 1.05rem);
         color: var(--cyan); letter-spacing: 0.015em; display: inline-block;

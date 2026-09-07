@@ -6,7 +6,7 @@ export const prerender = false;
 
 const COPY_PATH = "src/data/site-copy.json";
 
-function setPath(obj: any, path: string, value: string) {
+function setPath(obj: any, path: string, value: unknown) {
   const keys = path.split(".");
   const last = keys.pop()!;
   const target = keys.reduce((o, k) => (o[k] ??= {}), obj);
@@ -14,16 +14,17 @@ function setPath(obj: any, path: string, value: string) {
 }
 
 /**
- * Used by both /admin/copy's form (a full resubmission of every field) and
- * the in-context edit overlay (just the handful of keys actually changed
- * on that page). Either way it's a read-current -> apply -> write-whole-
- * file round trip, same as /admin/copy always did — a partial update here
- * still means reading the latest committed copy first, not trusting
- * whatever the bundled build happens to have.
+ * The one endpoint for every in-context copy edit — text, the logo's
+ * style toggles, all of it. Values keep whatever type the client actually
+ * sent (string, boolean, ...) rather than being coerced to string: a
+ * boolean field like titleStyle.tilt has to land in the JSON as a real
+ * `true`/`false`, not the string "true" — Boolean("false") is true in JS,
+ * so silently stringifying booleans here would be a genuine, hard-to-spot
+ * correctness bug the moment someone toggled a switch off.
  */
 export const POST: APIRoute = async ({ request, locals }) => {
   const session = locals.session!; // middleware guarantees this
-  let changes: Record<string, string>;
+  let changes: Record<string, unknown>;
   try {
     changes = await request.json();
   } catch {
@@ -31,7 +32,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   if (!changes || typeof changes !== "object" || Array.isArray(changes)) {
-    return new Response(JSON.stringify({ error: "Body must be a flat object of dot-path -> string" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Body must be a flat object of dot-path -> value" }), { status: 400 });
   }
 
   try {
@@ -39,7 +40,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const updated = current ? JSON.parse(current) : JSON.parse(JSON.stringify(defaultCopy));
 
     for (const [path, value] of Object.entries(changes)) {
-      if (typeof value !== "string") continue;
       setPath(updated, path, value);
     }
 

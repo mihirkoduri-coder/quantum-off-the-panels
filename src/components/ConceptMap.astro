@@ -44,7 +44,12 @@ const progressText = format(copy.conceptMap.progressTemplate, { count: live.leng
     <span class="eyebrow">
       <span class="wk" data-copy-key="labels.arc">{copy.labels.arc}</span>
       <span class="sep">/</span>
-      <span>{progressText}</span>
+      <span
+        data-copy-key="conceptMap.progressTemplate"
+        data-copy-template="true"
+        data-copy-raw={copy.conceptMap.progressTemplate}
+        data-copy-vars={JSON.stringify({ count: live.length, total: arc1.length })}
+      >{progressText}</span>
     </span>
   </figcaption>
 

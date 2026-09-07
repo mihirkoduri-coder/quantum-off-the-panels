@@ -1,6 +1,6 @@
 ---
-// site copy now lives on the unified /admin page — this just catches
-// anyone with the old URL bookmarked.
+// site copy is edited in place now (see public/admin-edit.js) — this just
+// catches anyone with the old form URL bookmarked.
 export const prerender = false;
-return Astro.redirect("/admin#copy");
+return Astro.redirect("/admin");
 ---
