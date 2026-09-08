@@ -34,7 +34,7 @@ export interface SiteCopy {
   };
   conceptMap: { progressTemplate: string };
   compendium: { heading: string; intro: string; searchPlaceholder: string };
-  about: { heading: string; bioP1: string; bioP2: string };
+  about: { heading: string; photoUrl: string; bioP1: string; bioP2: string };
   sims: {
     heading: string;
     intro: string;

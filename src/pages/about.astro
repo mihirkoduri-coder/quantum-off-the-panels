@@ -4,6 +4,16 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
 ---
 <Base title={`${copy.about.heading} — ${fullSiteTitle()}`}>
   <div class="wrap about">
+    <!-- data-copy-image marks this as click-to-upload in edit mode (see
+         admin-edit.js) rather than click-to-edit-text — the "value" it
+         tracks is the src of whatever <img> ends up inside it, not its
+         text content. data-copy-slug seeds the uploaded file's name. -->
+    <div class="about__photo" data-copy-key="about.photoUrl" data-copy-image="true" data-copy-slug="about-photo">
+      {copy.about.photoUrl
+        ? <img src={copy.about.photoUrl} alt="" />
+        : <span class="about__photo-placeholder">+ Add a photo</span>}
+    </div>
+
     <h1 data-copy-key="about.heading">{copy.about.heading}</h1>
     <div class="prose">
       <p data-copy-key="about.bioP1">{copy.about.bioP1}</p>
@@ -14,5 +24,16 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
   <style>
     .about { padding: 2.5rem 0 5rem; }
     .about h1 { margin-bottom: 1.5rem; }
+    .about__photo {
+      width: 10rem; height: 10rem; margin-bottom: 1.5rem;
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      background: var(--ink-2); overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .about__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .about__photo-placeholder {
+      font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em;
+      color: var(--paper-dim); text-align: center; padding: 1rem;
+    }
   </style>
 </Base>

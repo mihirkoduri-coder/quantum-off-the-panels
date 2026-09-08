@@ -19,6 +19,11 @@
  *   [data-copy-key][data-copy-attr]    an attribute (e.g. an input's
  *                                        placeholder) rather than text
  *                                        content — click prompts instead
+ *   [data-copy-key][data-copy-image]   an image — click opens a file
+ *                                        picker, uploads immediately (its
+ *                                        own request, not batched into
+ *                                        Save), and the resulting URL
+ *                                        becomes this key's pending value
  *   [data-issue-key]                   a post's own metadata (concept
  *                                        title/character, post title/
  *                                        subtitle/quote/ruling) — same as
@@ -46,6 +51,7 @@
   var HINT_COOKIE = "qp_admin_hint";
   var COPY_SAVE_URL = "/api/admin/save-copy";
   var ISSUE_SAVE_URL = "/api/admin/save-issue";
+  var UPLOAD_URL = "/api/admin/upload-image";
   var FIELD_SELECTOR = "[data-copy-key], [data-issue-key]";
 
   function hasHintCookie() {
@@ -86,7 +92,10 @@
   style.textContent =
     "html.qp-edit-mode [data-copy-key],html.qp-edit-mode [data-issue-key]{cursor:text;}" +
     "html.qp-edit-mode [data-copy-key]:hover,html.qp-edit-mode [data-issue-key]:hover{outline:1px dashed #22c4f0;outline-offset:2px;}" +
-    "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}";
+    "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
+    "html.qp-edit-mode [data-copy-image]{cursor:pointer;}" +
+    "[data-copy-image].qp-uploading{opacity:0.6;pointer-events:none;}" +
+    ".qp-upload-status{font-family:monospace;font-size:0.72rem;color:#9aa0b8;}";
   document.head.appendChild(style);
 
   function getKey(el) {
@@ -99,6 +108,10 @@
     return Array.prototype.slice.call(document.querySelectorAll(FIELD_SELECTOR));
   }
   function baselineValue(el) {
+    if (el.dataset.copyImage === "true") {
+      var img = el.querySelector("img");
+      return img ? img.getAttribute("src") || "" : "";
+    }
     return el.dataset.copyTemplate === "true" ? el.dataset.copyRaw : el.textContent.trim();
   }
 
@@ -194,6 +207,13 @@
     var fieldEl = e.target.closest && e.target.closest(FIELD_SELECTOR);
     if (!fieldEl || fieldEl.isContentEditable) return;
 
+    if (fieldEl.dataset.copyImage === "true") {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerImageUpload(fieldEl);
+      return;
+    }
+
     if (fieldEl.dataset.copyAttr) {
       e.preventDefault();
       e.stopPropagation();
@@ -205,6 +225,74 @@
     e.stopPropagation();
     startEditing(fieldEl);
   }, true);
+
+  // ---- image fields ----
+  var imageInput = document.createElement("input");
+  imageInput.type = "file";
+  imageInput.accept = "image/jpeg,image/png,image/webp,image/gif,image/svg+xml";
+  imageInput.style.display = "none";
+  var uploadTarget = null;
+  if (document.body) document.body.appendChild(imageInput);
+  else document.addEventListener("DOMContentLoaded", function () { document.body.appendChild(imageInput); });
+
+  function triggerImageUpload(container) {
+    uploadTarget = container;
+    imageInput.value = ""; // so picking the same file twice in a row still fires change
+    imageInput.click();
+  }
+
+  imageInput.addEventListener("change", function () {
+    var file = imageInput.files && imageInput.files[0];
+    var container = uploadTarget;
+    uploadTarget = null;
+    if (!file || !container) return;
+    uploadImage(container, file);
+  });
+
+  function uploadImage(container, file) {
+    var key = getKey(container);
+    var slug = container.dataset.copySlug || key.replace(/\./g, "-");
+    var previousHtml = container.innerHTML;
+    container.classList.add("qp-uploading");
+    container.innerHTML = "";
+    var status = document.createElement("span");
+    status.className = "qp-upload-status";
+    status.textContent = "Uploading…";
+    container.appendChild(status);
+
+    var fd = new FormData();
+    fd.append("file", file);
+    fd.append("slug", slug);
+
+    fetch(UPLOAD_URL, { method: "POST", body: fd })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok) throw new Error(data.error || "Upload failed (" + res.status + ")");
+          return data;
+        });
+      })
+      .then(function (data) {
+        container.classList.remove("qp-uploading");
+        // sync every element sharing this key, same pattern commitEdit uses
+        var escaped = cssEscape(key);
+        document.querySelectorAll('[data-copy-key="' + escaped + '"][data-copy-image="true"]').forEach(function (other) {
+          other.innerHTML = "";
+          var img = document.createElement("img");
+          img.src = data.url;
+          img.alt = "";
+          other.appendChild(img);
+          originals.set(other, data.url);
+        });
+        if (data.url === initialValues.get(key)) pending.delete(key);
+        else pending.set(key, data.url);
+        updateSaveBar();
+      })
+      .catch(function (err) {
+        container.classList.remove("qp-uploading");
+        container.innerHTML = previousHtml;
+        alert("Upload failed: " + (err && err.message ? err.message : err));
+      });
+  }
 
   // ---- attribute fields (e.g. an input's placeholder) ----
   function editAttribute(el) {

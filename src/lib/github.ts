@@ -52,12 +52,16 @@ export async function getFileContent(accessToken: string, path: string): Promise
   return Buffer.from(data.content, "base64").toString("utf-8");
 }
 
-/** Create or update one file in the repo as a real commit. */
+/** Create or update one file in the repo as a real commit. `content` as a
+ *  Buffer (image uploads) is base64-encoded directly, byte-for-byte; as a
+ *  string (every text-file caller) it's treated as UTF-8 first, same as
+ *  always. Routing binary data through the string path would corrupt it —
+ *  `Buffer.from(str, "utf-8")` only round-trips valid UTF-8 text. */
 export async function commitFile(opts: {
   accessToken: string;
   /** repo-relative, e.g. "src/content/posts/week-02-interference.mdx" */
   path: string;
-  content: string;
+  content: string | Buffer;
   message: string;
 }): Promise<void> {
   const { accessToken, path, content, message } = opts;
@@ -82,7 +86,7 @@ export async function commitFile(opts: {
     headers: { ...headers, "content-type": "application/json" },
     body: JSON.stringify({
       message,
-      content: Buffer.from(content, "utf-8").toString("base64"),
+      content: Buffer.isBuffer(content) ? content.toString("base64") : Buffer.from(content, "utf-8").toString("base64"),
       branch: REPO_BRANCH,
       ...(sha ? { sha } : {}),
     }),
