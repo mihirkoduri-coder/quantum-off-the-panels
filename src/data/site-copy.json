@@ -9,7 +9,7 @@
   "nav": {
     "compendium": "Compendium",
     "simulations": "Simulations",
-    "rss": "RSS"
+    "about": "About"
   },
   "labels": {
     "issue": "Issue",
@@ -32,6 +32,11 @@
     "heading": "Compendium",
     "intro": "Check out the other issues: past, present, but maybe not future.",
     "searchPlaceholder": "Search concept or character…"
+  },
+  "about": {
+    "heading": "About the author",
+    "bioP1": "PLACEHOLDER — click ✏️ Edit (bottom-right) to replace this with your own bio.",
+    "bioP2": "PLACEHOLDER — a second paragraph, if you want one. Delete this line if one paragraph is enough."
   },
   "sims": {
     "heading": "Simulations",

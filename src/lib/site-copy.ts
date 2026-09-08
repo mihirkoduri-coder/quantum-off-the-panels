@@ -22,7 +22,7 @@ export interface SiteCopy {
     description: string;
     footerNote: string;
   };
-  nav: { compendium: string; simulations: string; rss: string };
+  nav: { compendium: string; simulations: string; about: string };
   labels: { issue: string; arc: string; buildsOn: string; notOutYet: string };
   homepage: {
     headline: string;
@@ -34,6 +34,7 @@ export interface SiteCopy {
   };
   conceptMap: { progressTemplate: string };
   compendium: { heading: string; intro: string; searchPlaceholder: string };
+  about: { heading: string; bioP1: string; bioP2: string };
   sims: {
     heading: string;
     intro: string;

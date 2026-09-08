@@ -1,0 +1,18 @@
+---
+import Base from "../layouts/Base.astro";
+import { copy, fullSiteTitle } from "../lib/site-copy";
+---
+<Base title={`${copy.about.heading} — ${fullSiteTitle()}`}>
+  <div class="wrap about">
+    <h1 data-copy-key="about.heading">{copy.about.heading}</h1>
+    <div class="prose">
+      <p data-copy-key="about.bioP1">{copy.about.bioP1}</p>
+      <p data-copy-key="about.bioP2">{copy.about.bioP2}</p>
+    </div>
+  </div>
+
+  <style>
+    .about { padding: 2.5rem 0 5rem; }
+    .about h1 { margin-bottom: 1.5rem; }
+  </style>
+</Base>
