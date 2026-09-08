@@ -4,6 +4,7 @@ import Predict from "../components/sim/Predict";
 import ViolationExplainer from "../components/sim/ViolationExplainer";
 import ProbabilityHistogram from "../components/sim/ProbabilityHistogram";
 import BlochSphere from "../components/sim/BlochSphere";
+import Pocket from "../components/sim/Pocket";
 import { QuantumState, RY, RZ } from "../lib/quantum";
 
 const SLUG = "amplitude-dial";
@@ -264,6 +265,17 @@ export default function AmplitudeDial() {
             <p className="dial__cap">
               {locked ? "collapsed" : "the state — fully known"}
             </p>
+            <Pocket label="What am I looking at?">
+              <p>
+                This diagram is a Bloch Sphere: a visualization of a state
+                that combines both phases along the equator (direction) and
+                binary basis states at the poles (proximity to both 0 and 1).
+              </p>
+              <p>
+                The vector you're controlling right now combines those
+                pieces of information about our superposition!
+              </p>
+            </Pocket>
           </div>
 
           <div className="dial__hist">
