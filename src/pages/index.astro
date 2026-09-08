@@ -15,6 +15,13 @@ const latest = live[live.length - 1];
 // arc 1 the same way — issue 0 (arc 0) is the intro, not one of its weeks.
 const arc1Live = live.filter((c) => c.arc === 1);
 const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
+
+// issue 0 — the project's intro, arc 0, deliberately kept off the arc-1
+// concept map (see ConceptMap.astro) since it isn't one of that arc's
+// numbered weeks. Given its own section here instead, so it's still
+// visible on the homepage rather than reachable only via a CTA button.
+// Only ever renders if actually published, same rule as everything else.
+const introConcepts = live.filter((c) => c.arc === 0);
 ---
 <Base title={fullSiteTitle()}>
   <section class="hero wrap">
@@ -51,6 +58,20 @@ const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
     )}
   </section>
 
+  {introConcepts.length > 0 && (
+    <section class="wrap introsec">
+      {introConcepts.map((c) => (
+        <a class="intro-card dot-shadow" href={`/posts/${c.slug}`}>
+          <span class="eyebrow">
+            <span class="wk" data-copy-key="homepage.introLabel">{copy.homepage.introLabel}</span>
+          </span>
+          <h2 class="intro-card__h">{c.title}</h2>
+          <p class="intro-card__b">{c.blurb}</p>
+        </a>
+      ))}
+    </section>
+  )}
+
   <section class="wrap mapsec">
     <ConceptMap />
   </section>
@@ -62,6 +83,18 @@ const arc1Total = CONCEPTS.filter((c) => c.arc === 1).length;
     .hero__sub { font-size: 1.15rem; max-width: 36rem; color: var(--paper); }
     .hero__ctas { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 1.5rem; }
     .hero__cta { display: inline-block; text-decoration: none; padding: 0.8rem 1.3rem; }
+
+    .introsec { padding-bottom: 3rem; max-width: 30rem; }
+    .intro-card {
+      display: block; text-decoration: none;
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 1.3rem 1.4rem; background: var(--ink-2);
+    }
+    .intro-card:hover { background: var(--ink-3); }
+    .intro-card:hover .intro-card__h { color: var(--cyan); }
+    .intro-card__h { margin: 0.5rem 0 0.4rem; font-size: 1.4rem; }
+    .intro-card__b { margin: 0; color: var(--paper-dim); }
+
     .mapsec { padding-bottom: 4rem; }
   </style>
 </Base>

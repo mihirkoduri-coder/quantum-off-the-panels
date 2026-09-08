@@ -163,6 +163,7 @@ const { title, description = copy.site.description } = Astro.props;
           <span class="site__by" data-copy-key="site.byline">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
+          <a href="/" data-copy-key="nav.home">{copy.nav.home}</a>
           <a href="/compendium" data-copy-key="nav.compendium">{copy.nav.compendium}</a>
           <a href="/sims" data-copy-key="nav.simulations">{copy.nav.simulations}</a>
           <a href="/about" data-copy-key="nav.about">{copy.nav.about}</a>

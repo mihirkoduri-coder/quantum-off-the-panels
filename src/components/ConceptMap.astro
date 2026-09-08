@@ -35,8 +35,14 @@ import { copy, format } from "../lib/site-copy";
 // scoped to arc 1 — issue 0 (arc 0) is the project's intro, not a physics
 // concept, and doesn't belong on this grid. See concepts.ts for why.
 const arc1 = CONCEPTS.filter((c) => c.arc === 1);
-const live = published().filter((c) => c.arc === 1);
+const live = published().filter((c) => c.arc === 1).sort((a, b) => (a.week ?? 0) - (b.week ?? 0));
 const progressText = format(copy.conceptMap.progressTemplate, { count: live.length, total: arc1.length });
+// was hardcoded to name week 1 specifically — a leak in its own right,
+// since it kept claiming "starting with superposition" even while that
+// week went back to a draft and the map had nothing published at all.
+const mapLabel = live.length > 0
+  ? `Concept map for arc one: ${progressText}, starting with ${live[0].title}.`
+  : `Concept map for arc one: ${progressText}.`;
 ---
 
 <figure class="map">
@@ -54,8 +60,7 @@ const progressText = format(copy.conceptMap.progressTemplate, { count: live.leng
   </figcaption>
 
   <div class="map__scroll">
-    <svg viewBox="-16 -16 208 140" class="map__svg" role="img"
-         aria-label={`Concept map for arc one: ${progressText}, starting with superposition.`}>
+    <svg viewBox="-16 -16 208 140" class="map__svg" role="img" aria-label={mapLabel}>
 
       <defs>
         <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
@@ -74,16 +79,12 @@ const progressText = format(copy.conceptMap.progressTemplate, { count: live.leng
       <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
       <g class="calls"></g>
 
-      <!-- ═══ WEEK 1 ═══ published ═══ -->
-      <a href="/posts/week-01-superposition">
-        <g class="node is-live">
-          <rect x="0" y="0" width="176" height="108" rx="3" />
-          <text class="n-wk"    x="12" y="22">ISSUE 01</text>
-          <text class="n-title" x="12" y="48">Superposition</text>
-          <text class="n-char"  x="12" y="70">Doctor Manhattan</text>
-          <text class="n-state" x="12" y="92">READ →</text>
-        </g>
-      </a>
+      <!-- ═══ WEEK 1 ═══ unpublished again (superposition.published went
+           back to false in concepts.ts after testing) — no node until it
+           republishes. Was left here stale and live-linking to a post
+           that had gone back to a draft; the rule at the top of this file
+           is exactly "unpublished weeks do not get a node here at all",
+           so removing it is a correctness fix, not a design choice. ═══ -->
 
     </svg>
   </div>

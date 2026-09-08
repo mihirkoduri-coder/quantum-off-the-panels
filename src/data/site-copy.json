@@ -7,6 +7,7 @@
     "footerNote": "Comics get physics wrong in interesting ways."
   },
   "nav": {
+    "home": "Home",
     "compendium": "Compendium",
     "simulations": "Simulations",
     "about": "About"
@@ -23,7 +24,8 @@
     "subhead": "Quantum, off the Panels: A weekly blog that puts the science back in science fiction. One concept at a time.",
     "ctaFirst": "Start it from the top",
     "ctaLatest": "Check out the latest issue",
-    "progressTemplate": "quantum, off the panels"
+    "progressTemplate": "quantum, off the panels",
+    "introLabel": "Start here"
   },
   "conceptMap": {
     "progressTemplate": "Week 1"

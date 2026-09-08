@@ -74,14 +74,24 @@
 
   // an "Admin" nav link, only for whoever has the hint cookie — inserted
   // rather than server-rendered-and-hidden so regular visitors' HTML never
-  // contains it at all. No inline styling: it's a plain <a> dropped into
-  // the real nav, so the site's own `.site__nav a` rules style it exactly
-  // like "Compendium"/"Simulations"/"RSS" already sitting there.
+  // contains it at all. Can't just rely on the site's own `.site__nav a`
+  // rule the way the old comment here claimed: Astro scopes component
+  // styles by stamping every element THAT COMPONENT rendered with a
+  // build-specific data-astro-cid-* attribute and compiling `.site__nav a`
+  // into `.site__nav a[data-astro-cid-xxxxx]` — a node inserted afterward
+  // by plain DOM APIs never carries that attribute, so it silently falls
+  // outside the scoped rule and renders as an unstyled browser-default
+  // link (serif, blue, underlined) instead of matching its siblings. The
+  // explicit qp-admin-link rule below (in this script's own injected
+  // <style>, which isn't Astro-scoped at all) states the same values
+  // Base.astro's `.site__nav a` uses, so it matches regardless of that
+  // internal, version-specific attribute name.
   function addAdminNavLink() {
     var nav = document.querySelector(".site__nav");
     if (!nav || nav.querySelector('a[href="/admin"]')) return;
     var link = document.createElement("a");
     link.href = "/admin";
+    link.className = "qp-admin-link";
     link.textContent = "Admin";
     nav.insertBefore(link, nav.firstChild);
   }
@@ -105,7 +115,11 @@
     "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
     "html.qp-edit-mode [data-copy-image]{cursor:pointer;}" +
     "[data-copy-image].qp-uploading{opacity:0.6;pointer-events:none;}" +
-    ".qp-upload-status{font-family:monospace;font-size:0.72rem;color:#9aa0b8;}";
+    ".qp-upload-status{font-family:monospace;font-size:0.72rem;color:#9aa0b8;}" +
+    // matches Base.astro's `.site__nav a` rule by value — see the comment
+    // on addAdminNavLink for why this can't just inherit that rule.
+    ".qp-admin-link{font-family:var(--font-mono,ui-monospace,monospace);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--paper-dim,#9aa0b8);text-decoration:none;}" +
+    ".qp-admin-link:hover{color:var(--cyan,#22c4f0);background:none;}";
   document.head.appendChild(style);
 
   function getKey(el) {
