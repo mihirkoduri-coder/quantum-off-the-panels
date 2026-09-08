@@ -4,28 +4,62 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
 ---
 <Base title={`${copy.about.heading} — ${fullSiteTitle()}`}>
   <div class="wrap about">
-    <!-- data-copy-image marks this as click-to-upload in edit mode (see
-         admin-edit.js) rather than click-to-edit-text — the "value" it
-         tracks is the src of whatever <img> ends up inside it, not its
-         text content. data-copy-slug seeds the uploaded file's name. -->
-    <div class="about__photo" data-copy-key="about.photoUrl" data-copy-image="true" data-copy-slug="about-photo">
-      {copy.about.photoUrl
-        ? <img src={copy.about.photoUrl} alt="" />
-        : <span class="about__photo-placeholder">+ Add a photo</span>}
-    </div>
-
     <h1 data-copy-key="about.heading">{copy.about.heading}</h1>
-    <div class="prose">
-      <p data-copy-key="about.bioP1">{copy.about.bioP1}</p>
-      <p data-copy-key="about.bioP2">{copy.about.bioP2}</p>
+
+    <div class="about__body">
+      <!-- burst frame: same halftone-fill + offset-shadow technique as the
+           header's margin bursts (Base.astro) — a hard-edged magenta copy
+           behind a cyan halftone-dot fill, just scaled to sit behind one
+           photo instead of floating in a page margin. -->
+      <div class="about__photo-frame">
+        <svg class="about__burst" viewBox="-44 -44 88 88" aria-hidden="true">
+          <defs>
+            <pattern id="about-burst-dots" width="7" height="7" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="var(--cyan)" />
+            </pattern>
+          </defs>
+          <path class="about__burst-shadow"
+            d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
+            fill="var(--magenta)" transform="translate(4,4)" />
+          <path
+            d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
+            fill="url(#about-burst-dots)" stroke="var(--cyan)" stroke-width="1.5" stroke-linejoin="round" />
+        </svg>
+
+        <!-- data-copy-image marks this as click-to-upload in edit mode
+             (see admin-edit.js) rather than click-to-edit-text — the
+             "value" it tracks is the src of whatever <img> ends up
+             inside it, not its text content. data-copy-slug seeds the
+             uploaded file's name. -->
+        <div class="about__photo" data-copy-key="about.photoUrl" data-copy-image="true" data-copy-slug="about-photo">
+          {copy.about.photoUrl
+            ? <img src={copy.about.photoUrl} alt="" />
+            : <span class="about__photo-placeholder">+ Add a photo</span>}
+        </div>
+      </div>
+
+      <div class="prose about__bio">
+        <p data-copy-key="about.bioP1">{copy.about.bioP1}</p>
+        <p data-copy-key="about.bioP2">{copy.about.bioP2}</p>
+      </div>
     </div>
   </div>
 
   <style>
     .about { padding: 2.5rem 0 5rem; }
-    .about h1 { margin-bottom: 1.5rem; }
+    .about h1 { margin-bottom: 1.75rem; }
+
+    .about__body { display: flex; flex-wrap: wrap; gap: 2.25rem; align-items: flex-start; }
+
+    .about__photo-frame { position: relative; flex: 0 0 10rem; width: 10rem; height: 10rem; }
+    .about__burst {
+      position: absolute; top: 50%; left: 50%; width: 13.5rem; height: 13.5rem;
+      transform: translate(-50%, -50%) rotate(-6deg); opacity: 0.9; pointer-events: none;
+    }
+    .about__burst-shadow { opacity: 0.65; }
+
     .about__photo {
-      width: 10rem; height: 10rem; margin-bottom: 1.5rem;
+      position: relative; width: 10rem; height: 10rem;
       border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
       background: var(--ink-2); overflow: hidden;
       display: flex; align-items: center; justify-content: center;
@@ -35,5 +69,14 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
       font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em;
       color: var(--paper-dim); text-align: center; padding: 1rem;
     }
+
+    /* .prose normally centers itself (margin-inline: auto) for a post
+       body reading top-to-bottom — here it sits beside the photo instead,
+       so it hugs the left edge of its own space rather than centering in
+       whatever's left of the row. No explicit flex-basis: that would
+       override .prose's own width rule (flex-basis beats width when
+       both apply), and that width — min(100% - 2.5rem, var(--measure))
+       — is exactly what should still cap the reading column here. */
+    .about__bio { margin-inline: 0; min-width: 16rem; }
   </style>
 </Base>
