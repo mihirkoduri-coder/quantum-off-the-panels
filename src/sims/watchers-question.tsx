@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import SimShell from "../components/sim/SimShell";
 import Predict from "../components/sim/Predict";
 import Pocket from "../components/sim/Pocket";
+import { WatchingEyes } from "../components/sim/motifs";
 import ViolationExplainer from "../components/sim/ViolationExplainer";
 import { QuantumState, RY } from "../lib/quantum";
 
@@ -60,6 +61,10 @@ export default function WatchersQuestion() {
   const [violation, setViolation] =
     useState<null | Parameters<typeof ViolationExplainer>[0]["violation"]>(null);
   const nextKey = useRef(1);
+  const [gaze, setGaze] = useState<{ open: boolean; deg: number; denied: boolean }>({
+    open: false, deg: 0, denied: false,
+  });
+  const gazeTimers = useRef<number[]>([]);
 
   const bloch = state.bloch(0);
   const dir = { x: bloch.x, z: bloch.z };
@@ -94,6 +99,15 @@ export default function WatchersQuestion() {
       { key: nextKey.current++, q, pPlus, outcome, before: { ...dir }, after, wasCertain },
     ]);
     setState(s);
+
+    // the eyes ARE the measurement: they open only when a question is asked,
+    // and the pupil lines up with the axis of that question
+    gazeTimers.current.forEach(clearTimeout);
+    gazeTimers.current = [];
+    setGaze({ open: true, deg: (q.theta * 180) / Math.PI, denied: false });
+    gazeTimers.current.push(
+      window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
+    );
   };
 
   const reset = () => {
@@ -101,10 +115,17 @@ export default function WatchersQuestion() {
     setPanels([]);
     setViolation(null);
     nextKey.current = 1;
+    gazeTimers.current.forEach(clearTimeout);
+    setGaze({ open: false, deg: 0, denied: false });
   };
 
   /** TACTIC 2 — Uatu's actual vow, offered as a live button. */
   const watchOnly = () => {
+    gazeTimers.current.forEach(clearTimeout);
+    setGaze({ open: false, deg: 0, denied: true });
+    gazeTimers.current.push(
+      window.setTimeout(() => setGaze((g) => ({ ...g, denied: false })), 700),
+    );
     setViolation({
       sfx: "THUNK!",
       law: "There is no view from nowhere.",
@@ -177,6 +198,13 @@ export default function WatchersQuestion() {
         }
       >
         <div className="wq">
+          <div className="wq__eyes">
+            <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
+            <p className="wq__eyesCap">
+              {gaze.open ? "he is looking" : gaze.denied ? "he refuses to look" : "he is not looking"}
+            </p>
+          </div>
+
           {/* ---- the certainty ledger ---- */}
           <div className="wq__ledger">
             <p className="wq__ledgerHead">What can be predicted right now</p>
@@ -272,6 +300,11 @@ export default function WatchersQuestion() {
 
         <style>{`
           .wq { display: grid; gap: 1.25rem; width: 100%; }
+          .wq__eyes { display: grid; justify-items: center; gap: 0.3rem; }
+          .wq__eysCap, .wq__eyesCap {
+            font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--paper-dim); margin: 0;
+          }
           .wq__prompt {
             font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em;
             text-transform: uppercase; color: var(--paper-dim); margin: 0;

@@ -5,6 +5,7 @@ import ViolationExplainer from "../components/sim/ViolationExplainer";
 import ProbabilityHistogram from "../components/sim/ProbabilityHistogram";
 import BlochSphere from "../components/sim/BlochSphere";
 import Pocket from "../components/sim/Pocket";
+import { GlowHand } from "../components/sim/motifs";
 import { QuantumState, RY, RZ } from "../lib/quantum";
 
 const SLUG = "amplitude-dial";
@@ -259,6 +260,8 @@ export default function AmplitudeDial() {
           </>
         }
       >
+        <div className="ad__stage">
+          <div className="ad__hand"><GlowHand alive={!locked} /></div>
         <div className="dial">
           <div className="dial__sphere">
             <BlochSphere vector={shownBloch} size={220} />
@@ -306,6 +309,7 @@ export default function AmplitudeDial() {
             )}
           </div>
         </div>
+        </div>
 
         {phase === "collapsed" && !violation && (
           <span className="sfx sfx--fire ad__snap">SNAP!</span>
@@ -314,6 +318,13 @@ export default function AmplitudeDial() {
         <ViolationExplainer violation={violation} onDismiss={() => setViolation(null)} />
 
         <style>{`
+          .ad__stage { position: relative; width: 100%; }
+          .ad__hand {
+            position: absolute; top: -1.15rem; right: -1.15rem;
+            z-index: 0; opacity: 0.9;
+          }
+          .ad__stage > .dial { position: relative; z-index: 1; }
+          @media (max-width: 32rem) { .ad__hand { display: none; } }
           .dial { display: grid; gap: 1.5rem; width: 100%; place-items: center; }
           .dial__sphere, .dial__hist { width: 100%; display: grid; justify-items: center; }
           .dial__hist { position: relative; }
