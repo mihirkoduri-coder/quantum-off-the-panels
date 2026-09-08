@@ -78,9 +78,9 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "interference",
-    week: 2,
+    week: 3,
     arc: 1,
-    title: "Interference",
+    title: "Phases & Interference",
     blurb: "The actual engine. Paths don't just add up — they cancel.",
     character: "The Flash",
     tier: "A",
