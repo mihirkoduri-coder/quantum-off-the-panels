@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import Base from "../../../../layouts/Base.astro";
+import { SIM_TITLES } from "../../../../sims/registry";
+import SimLoader from "../../../../components/SimLoader";
+import { fullSiteTitle } from "../../../../lib/site-copy";
+
+// unlike the public /sims/[slug] page, this one doesn't need the slug
+// attached to any published (or even any) concept — the whole point of
+// previewing from the bank is checking a sim before it's assigned
+// anywhere. SimLoader itself already handles an unregistered slug with a
+// plain "hasn't been built yet" message, so nothing else needs guarding.
+const slug = Astro.params.slug!;
+const title = SIM_TITLES[slug] ?? slug;
+---
+<Base title={`Preview: ${title} — ${fullSiteTitle()}`}>
+  <div class="wrap admin-preview">
+    <p><a href="/admin#simulations">&larr; Admin</a></p>
+    <div class="admin-preview__head">
+      <h1>{title}</h1>
+      <a class="btn" href={`/admin/sims/${slug}`}>Edit code</a>
+    </div>
+    <p class="dim">
+      This is the sim exactly as it runs for a reader — same component,
+      same physics, no admin-only stand-in. Predict/lock-in and any
+      forbidden-operation button both work for real.
+    </p>
+
+    <SimLoader slug={slug} client:load />
+  </div>
+
+  <style>
+    .admin-preview { padding: 2.5rem 0 5rem; max-width: 60rem; }
+    .admin-preview__head { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin: 0.5rem 0 0.75rem; }
+    .admin-preview__head h1 { margin: 0; }
+  </style>
+</Base>
