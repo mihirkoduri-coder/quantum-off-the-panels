@@ -100,9 +100,19 @@ export default function SimShell({
           /* visible so a frame motif can hang past the border */
           overflow: visible;
         }
+        /* .sim carries dot-shadow's isolation: isolate, which traps any
+           z-index inside this component's own stacking context — no value
+           here can ever out-rank the sticky site header (z-index: 20), so
+           a motif that pokes up far enough to physically reach the header
+           (a real risk on a page where the sim sits close to the top, e.g.
+           the standalone /sims/[slug] gallery page) gets its top sliver
+           painted over and clipped. Keeping the motif flush with the
+           panel's own top edge — extending outward past the side border
+           only, not upward past the top one — sidesteps the problem
+           entirely rather than fighting a stacking context it can't win. */
         .sim__motif {
           position: absolute;
-          top: -2.2rem;
+          top: 0.5rem;
           right: -3rem;
           z-index: 0;
           pointer-events: none;
