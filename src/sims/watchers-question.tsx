@@ -58,6 +58,8 @@ const axisOf = (t: number) => ({ x: Math.sin(t), z: Math.cos(t) });
 export default function WatchersQuestion() {
   const [state, setState] = useState(() => new QuantumState(1)); // |0⟩ = pointing up
   const [panels, setPanels] = useState<Panel[]>([]);
+  const [trades, setTrades] = useState(0);
+  const [ended, setEnded] = useState(false);
   const [violation, setViolation] =
     useState<null | Parameters<typeof ViolationExplainer>[0]["violation"]>(null);
   const nextKey = useRef(1);
@@ -94,6 +96,21 @@ export default function WatchersQuestion() {
     const outcome: 1 | -1 = bit === 0 ? 1 : -1;
     const after = { x: a.x * outcome, z: a.z * outcome };
 
+    // A "trade": asking something you were NOT certain about, while you WERE
+    // certain about something else. That is the exact move where one certainty
+    // is spent to buy another. Three of them is a pattern, not a fluke.
+    const heldSomething = odds.some(
+      (o) => o.q.id !== q.id && (o.p > 0.999 || o.p < 0.001),
+    );
+    const traded = !wasCertain && heldSomething;
+    if (traded) {
+      setTrades((n) => {
+        const next = n + 1;
+        if (next >= 3) setEnded(true);
+        return next;
+      });
+    }
+
     setPanels((ps) => [
       ...ps.slice(-11),
       { key: nextKey.current++, q, pPlus, outcome, before: { ...dir }, after, wasCertain },
@@ -104,7 +121,7 @@ export default function WatchersQuestion() {
     // and the pupil lines up with the axis of that question
     gazeTimers.current.forEach(clearTimeout);
     gazeTimers.current = [];
-    setGaze({ open: true, deg: (q.theta * 180) / Math.PI, denied: false });
+    setGaze({ open: !traded || trades + 1 < 3, deg: (q.theta * 180) / Math.PI, denied: false });
     gazeTimers.current.push(
       window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
     );
@@ -114,6 +131,8 @@ export default function WatchersQuestion() {
     setState(new QuantumState(1));
     setPanels([]);
     setViolation(null);
+    setTrades(0);
+    setEnded(false);
     nextKey.current = 1;
     gazeTimers.current.forEach(clearTimeout);
     setGaze({ open: false, deg: 0, denied: false });
@@ -173,13 +192,13 @@ export default function WatchersQuestion() {
             <p className="wq__prompt">Ask the qubit a question</p>
             <div className="row">
               {QUESTIONS.map((q) => (
-                <button key={q.id} className="btn btn--go" onClick={() => ask(q)}>
+                <button key={q.id} className="btn btn--go" onClick={() => ask(q)} disabled={ended}>
                   {q.label}
                 </button>
               ))}
             </div>
             <div className="row">
-              <button className="btn btn--break" onClick={watchOnly}>
+              <button className="btn btn--break" onClick={watchOnly} disabled={ended}>
                 Just watch — don't ask anything
               </button>
             </div>
@@ -201,8 +220,29 @@ export default function WatchersQuestion() {
           <div className="wq__eyes">
             <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
             <p className="wq__eyesCap">
-              {gaze.open ? "he is looking" : gaze.denied ? "he refuses to look" : "he is not looking"}
+              {ended
+                ? "he has seen enough"
+                : gaze.open
+                  ? "he is looking"
+                  : gaze.denied
+                    ? "he refuses to look"
+                    : "he is not looking"}
             </p>
+
+            {ended && (
+              <div className="wq__end">
+                <p>
+                  Every answer he took was paid for with one he already had. Three
+                  times now he has spent a certainty to buy a certainty, and three
+                  times he has come away knowing exactly as much as before.
+                </p>
+                <p className="wq__endKicker">
+                  There is no way to watch without choosing what to stop knowing.
+                  The vow was never available to him.
+                </p>
+                <p className="wq__endHint">Reset to begin again.</p>
+              </div>
+            )}
           </div>
 
           {/* ---- the certainty ledger ---- */}
@@ -301,6 +341,20 @@ export default function WatchersQuestion() {
         <style>{`
           .wq { display: grid; gap: 1.25rem; width: 100%; }
           .wq__eyes { display: grid; justify-items: center; gap: 0.3rem; }
+          .wq__end {
+            border-top: 2px solid var(--magenta);
+            margin-top: 0.9rem; padding-top: 0.9rem; max-width: 32rem;
+            text-align: center;
+          }
+          .wq__end p { margin: 0 0 0.6rem; font-size: 0.95rem; line-height: 1.6; }
+          .wq__endKicker {
+            font-family: var(--font-head); font-weight: 700; font-size: 1.05rem;
+            line-height: 1.35; color: var(--paper); text-wrap: balance;
+          }
+          .wq__endHint {
+            font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--paper-dim); margin-bottom: 0 !important;
+          }
           .wq__eysCap, .wq__eyesCap {
             font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
             text-transform: uppercase; color: var(--paper-dim); margin: 0;

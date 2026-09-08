@@ -16,27 +16,30 @@
 // alive: the qubit is still in superposition. dim: it has collapsed.
 // ─────────────────────────────────────────────────────────────
 
-export function GlowHand({ alive = true, size = 130 }: { alive?: boolean; size?: number }) {
+export function GlowHand({ alive = true, size = 132 }: { alive?: boolean; size?: number }) {
   return (
     <div className={`gh${alive ? " is-alive" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 130 150" width={size} height={size * (150 / 130)}>
+      <svg viewBox="28 0 140 152" width={size} height={size * (152 / 140)}>
         <defs>
           <pattern id="gh-dots" width="5" height="5" patternUnits="userSpaceOnUse">
             <circle cx="1.3" cy="1.3" r="1.15" fill="var(--cyan)" />
             <circle cx="3.8" cy="3.8" r="0.55" fill="var(--cyan)" />
           </pattern>
-          <filter id="gh-glow" x="-70%" y="-70%" width="240%" height="240%">
-            <feGaussianBlur stdDeviation="6" />
+          <filter id="gh-glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="5" />
           </filter>
+          {/* forearm entering top-right, wrist break, hand drooping down-left */}
           <g id="gh-shape">
-            <path d="M136,10 L78,70" strokeWidth="30" strokeLinecap="round" fill="none" />
-            <ellipse cx="62" cy="86" rx="21" ry="17" transform="rotate(-32 62 86)" />
-            <g strokeLinecap="round" fill="none">
-              <path d="M48,94 Q39,112 36,129" strokeWidth="11" />
-              <path d="M59,99 Q52,117 49,134" strokeWidth="11" />
-              <path d="M70,98 Q66,114 64,129" strokeWidth="10" />
-              <path d="M79,93 Q79,106 78,118" strokeWidth="9" />
-              <path d="M50,76 Q36,76 28,85" strokeWidth="10" />
+            <path d="M158,4 L152,26 Q124,52 100,70 Q90,78 82,80 L70,64 Q92,44 118,24 Q138,8 144,0 Z" />
+            <g transform="rotate(-44 76 76)">
+              <path d="M56,62 Q50,84 62,92 Q80,98 92,86 Q100,74 92,64 Q78,54 66,56 Z" />
+              <g transform="translate(58,88)" strokeLinecap="round" fill="none">
+                <path d="M0,6 Q-3,28 -6,50" strokeWidth="10" />
+                <path d="M11,8 Q9,32 7,54" strokeWidth="10" />
+                <path d="M22,7 Q22,29 22,49" strokeWidth="9.5" />
+                <path d="M32,3 Q34,20 35,37" strokeWidth="8.5" />
+              </g>
+              <path d="M58,66 Q42,62 33,69" strokeWidth="9" strokeLinecap="round" fill="none" />
             </g>
           </g>
         </defs>
@@ -50,11 +53,11 @@ export function GlowHand({ alive = true, size = 130 }: { alive?: boolean; size?:
 
       <style>{`
         .gh { pointer-events: none; line-height: 0; }
-        .gh__glow { opacity: 0.18; transition: opacity 400ms ease; }
-        .gh__skin { opacity: 0.35; transition: opacity 400ms ease; }
+        .gh__glow { opacity: 0.16; transition: opacity 400ms ease; }
+        .gh__skin { opacity: 0.32; transition: opacity 400ms ease; }
         .gh.is-alive .gh__glow { opacity: 0.5; animation: gh-breathe 3.4s ease-in-out infinite; }
         .gh.is-alive .gh__skin { opacity: 1; }
-        @keyframes gh-breathe { 0%,100% { opacity: 0.38; } 50% { opacity: 0.62; } }
+        @keyframes gh-breathe { 0%,100% { opacity: 0.36; } 50% { opacity: 0.62; } }
         @media (prefers-reduced-motion: reduce) {
           .gh.is-alive .gh__glow { animation: none; }
         }
