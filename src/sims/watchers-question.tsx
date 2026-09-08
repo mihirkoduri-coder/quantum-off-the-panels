@@ -98,7 +98,7 @@ export default function WatchersQuestion() {
 
     // A "trade": asking something you were NOT certain about, while you WERE
     // certain about something else. That is the exact move where one certainty
-    // is spent to buy another. Three of them is a pattern, not a fluke.
+    // is spent to buy another. Seven of them is a pattern, not a fluke.
     const heldSomething = odds.some(
       (o) => o.q.id !== q.id && (o.p > 0.999 || o.p < 0.001),
     );
@@ -106,7 +106,7 @@ export default function WatchersQuestion() {
     if (traded) {
       setTrades((n) => {
         const next = n + 1;
-        if (next >= 3) setEnded(true);
+        if (next >= 7) setEnded(true);
         return next;
       });
     }
@@ -121,7 +121,7 @@ export default function WatchersQuestion() {
     // and the pupil lines up with the axis of that question
     gazeTimers.current.forEach(clearTimeout);
     gazeTimers.current = [];
-    setGaze({ open: !traded || trades + 1 < 3, deg: (q.theta * 180) / Math.PI, denied: false });
+    setGaze({ open: !traded || trades + 1 < 7, deg: (q.theta * 180) / Math.PI, denied: false });
     gazeTimers.current.push(
       window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
     );
@@ -232,8 +232,8 @@ export default function WatchersQuestion() {
             {ended && (
               <div className="wq__end">
                 <p>
-                  Every answer he took was paid for with one he already had. Three
-                  times now he has spent a certainty to buy a certainty, and three
+                  Every answer he took was paid for with one he already had. Seven
+                  times now he has spent a certainty to buy a certainty, and seven
                   times he has come away knowing exactly as much as before.
                 </p>
                 <p className="wq__endKicker">
