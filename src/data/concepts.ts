@@ -91,9 +91,9 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "measurement",
-    week: 3,
+    week: 2,
     arc: 1,
-    title: "Measurement & collapse",
+    title: "Measurement & Collapse",
     blurb: "A photon detector has no opinions. Consciousness is not required.",
     character: "Uatu the Watcher",
     tier: "B",
