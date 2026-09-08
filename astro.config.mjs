@@ -7,7 +7,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
 export default defineConfig({
-  site: "https://quantum-off-the-panels.vercel.app",
+  site: "https://www.quantumoffthepanels.com",
   // output stays 'static' (the default) — every page still prerenders to
   // plain HTML, same as before. The adapter only comes into play for the
   // handful of routes (/admin, /api/*) that opt out individually with
@@ -21,7 +21,14 @@ export default defineConfig({
     // "localhost", which breaks anything that depends on the request's
     // own origin: the OAuth redirect_uri earlier, and the built-in CSRF
     // check (origin-vs-url mismatch => "Cross-site POST forbidden") now.
-    allowedDomains: [{ hostname: "quantum-off-the-panels.vercel.app", protocol: "https" }],
+    allowedDomains: [
+      { hostname: "www.quantumoffthepanels.com", protocol: "https" },
+      { hostname: "quantumoffthepanels.com", protocol: "https" },
+      // kept for continuity — Vercel still serves this alongside the
+      // custom domain, and nothing should suddenly 403 someone who still
+      // has the old URL bookmarked or linked somewhere.
+      { hostname: "quantum-off-the-panels.vercel.app", protocol: "https" },
+    ],
   },
   integrations: [mdx(), react(), sitemap()],
   markdown: {
