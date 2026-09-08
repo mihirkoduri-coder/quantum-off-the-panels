@@ -19,11 +19,21 @@
  *   [data-copy-key][data-copy-attr]    an attribute (e.g. an input's
  *                                        placeholder) rather than text
  *                                        content — click prompts instead
- *   [data-copy-key][data-copy-image]   an image — click opens a file
- *                                        picker, uploads immediately (its
- *                                        own request, not batched into
- *                                        Save), and the resulting URL
- *                                        becomes this key's pending value
+ *   [data-copy-key][data-copy-image]   an image — click ANYWHERE in this
+ *                                        element (it's the whole click
+ *                                        target, decorative children
+ *                                        included) opens a file picker,
+ *                                        uploads immediately (its own
+ *                                        request, not batched into Save),
+ *                                        and the resulting URL becomes
+ *                                        this key's pending value. An
+ *                                        inner [data-copy-image-target]
+ *                                        is where the <img> actually
+ *                                        lives, if the field has
+ *                                        decoration around the image
+ *                                        that a re-upload shouldn't wipe
+ *                                        out — falls back to the field
+ *                                        itself when there isn't one
  *   [data-issue-key]                   a post's own metadata (concept
  *                                        title/character, post title/
  *                                        subtitle/quote/ruling) — same as
@@ -249,16 +259,25 @@
     uploadImage(container, file);
   });
 
+  // the clickable container (data-copy-image) and the element whose
+  // innerHTML is actually safe to replace (the photo box, not decorative
+  // siblings like a burst frame) aren't always the same node — an inner
+  // [data-copy-image-target] wins when present, else the container itself.
+  function imageTarget(container) {
+    return container.querySelector("[data-copy-image-target]") || container;
+  }
+
   function uploadImage(container, file) {
     var key = getKey(container);
     var slug = container.dataset.copySlug || key.replace(/\./g, "-");
-    var previousHtml = container.innerHTML;
+    var target = imageTarget(container);
+    var previousHtml = target.innerHTML;
     container.classList.add("qp-uploading");
-    container.innerHTML = "";
+    target.innerHTML = "";
     var status = document.createElement("span");
     status.className = "qp-upload-status";
     status.textContent = "Uploading…";
-    container.appendChild(status);
+    target.appendChild(status);
 
     var fd = new FormData();
     fd.append("file", file);
@@ -276,11 +295,12 @@
         // sync every element sharing this key, same pattern commitEdit uses
         var escaped = cssEscape(key);
         document.querySelectorAll('[data-copy-key="' + escaped + '"][data-copy-image="true"]').forEach(function (other) {
-          other.innerHTML = "";
+          var otherTarget = imageTarget(other);
+          otherTarget.innerHTML = "";
           var img = document.createElement("img");
           img.src = data.url;
           img.alt = "";
-          other.appendChild(img);
+          otherTarget.appendChild(img);
           originals.set(other, data.url);
         });
         if (data.url === initialValues.get(key)) pending.delete(key);
@@ -289,7 +309,7 @@
       })
       .catch(function (err) {
         container.classList.remove("qp-uploading");
-        container.innerHTML = previousHtml;
+        target.innerHTML = previousHtml;
         alert("Upload failed: " + (err && err.message ? err.message : err));
       });
   }

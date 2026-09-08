@@ -10,28 +10,31 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
       <!-- burst frame: same halftone-fill + offset-shadow technique as the
            header's margin bursts (Base.astro) — a hard-edged magenta copy
            behind a cyan halftone-dot fill, just scaled to sit behind one
-           photo instead of floating in a page margin. -->
-      <div class="about__photo-frame">
+           photo instead of floating in a page margin.
+
+           data-copy-key/data-copy-image live on the WHOLE frame, not just
+           the inner box — the burst is the visually dominant part, so it
+           has to be part of the click target too, or clicking the thing
+           that actually looks clickable does nothing. data-copy-image-
+           target marks which inner element admin-edit.js is allowed to
+           clear and rebuild (the photo box), so uploading a photo can't
+           ever wipe out the burst sitting next to it. -->
+      <div class="about__photo-frame" data-copy-key="about.photoUrl" data-copy-image="true" data-copy-slug="about-photo">
         <svg class="about__burst" viewBox="-44 -44 88 88" aria-hidden="true">
           <defs>
             <pattern id="about-burst-dots" width="7" height="7" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="1" fill="var(--cyan)" />
+              <circle cx="1" cy="1" r="1.2" fill="var(--cyan)" />
             </pattern>
           </defs>
           <path class="about__burst-shadow"
             d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
-            fill="var(--magenta)" transform="translate(4,4)" />
+            fill="var(--magenta)" transform="translate(5,5)" />
           <path
             d="M0.0,-24.0 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 -0.0,-24.0 Z"
-            fill="url(#about-burst-dots)" stroke="var(--cyan)" stroke-width="1.5" stroke-linejoin="round" />
+            fill="url(#about-burst-dots)" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round" />
         </svg>
 
-        <!-- data-copy-image marks this as click-to-upload in edit mode
-             (see admin-edit.js) rather than click-to-edit-text — the
-             "value" it tracks is the src of whatever <img> ends up
-             inside it, not its text content. data-copy-slug seeds the
-             uploaded file's name. -->
-        <div class="about__photo" data-copy-key="about.photoUrl" data-copy-image="true" data-copy-slug="about-photo">
+        <div class="about__photo" data-copy-image-target="true">
           {copy.about.photoUrl
             ? <img src={copy.about.photoUrl} alt="" />
             : <span class="about__photo-placeholder">+ Add a photo</span>}
@@ -52,11 +55,12 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
     .about__body { display: flex; flex-wrap: wrap; gap: 2.25rem; align-items: flex-start; }
 
     .about__photo-frame { position: relative; flex: 0 0 10rem; width: 10rem; height: 10rem; }
+    html.qp-edit-mode .about__photo-frame:hover .about__burst { opacity: 1; }
     .about__burst {
-      position: absolute; top: 50%; left: 50%; width: 13.5rem; height: 13.5rem;
-      transform: translate(-50%, -50%) rotate(-6deg); opacity: 0.9; pointer-events: none;
+      position: absolute; top: 50%; left: 50%; width: 17rem; height: 17rem;
+      transform: translate(-50%, -50%) rotate(-6deg); opacity: 0.95; pointer-events: none;
     }
-    .about__burst-shadow { opacity: 0.65; }
+    .about__burst-shadow { opacity: 0.75; }
 
     .about__photo {
       position: relative; width: 10rem; height: 10rem;
