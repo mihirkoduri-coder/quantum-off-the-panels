@@ -13,6 +13,13 @@ interface Props {
   controls?: ReactNode;
   /** numeric readouts under the controls */
   readout?: ReactNode;
+  /**
+   * A character motif anchored to the PANEL FRAME rather than the content
+   * area, so it can straddle the border and hang outside. Breaking the panel
+   * edge is a comic convention, and it keeps the motif out of the reading
+   * column entirely.
+   */
+  motif?: ReactNode;
   onReset?: () => void;
 }
 
@@ -28,6 +35,7 @@ export default function SimShell({
   children,
   controls,
   readout,
+  motif,
   onReset,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -53,6 +61,8 @@ export default function SimShell({
 
   return (
     <section ref={ref} className="sim dot-shadow" aria-label={`Simulation: ${title}`}>
+      {motif && <div className="sim__motif">{motif}</div>}
+
       <header className="sim__head">
         <div className="eyebrow">
           <span className="wk" data-copy-key="simShell.eyebrowLabel">{copy.simShell.eyebrowLabel}</span>
@@ -86,9 +96,23 @@ export default function SimShell({
           border-radius: var(--radius);
           background: var(--ink-2);
           margin: 2.5rem 0;
-          overflow: hidden;
+          position: relative;
+          /* visible so a frame motif can hang past the border */
+          overflow: visible;
         }
+        .sim__motif {
+          position: absolute;
+          top: -2.2rem;
+          right: -3rem;
+          z-index: 0;
+          pointer-events: none;
+        }
+        /* content sits above the motif, and the motif never steals a click */
+        .sim__head, .sim__stage, .sim__controls, .sim__readout { position: relative; z-index: 1; }
+        @media (max-width: 46rem) { .sim__motif { display: none; } }
         .sim__head {
+          background: var(--ink-2);
+          border-radius: var(--radius) var(--radius) 0 0;
           padding: 1rem 1.15rem 0.75rem;
           border-bottom: var(--panel-line) solid var(--gutter);
         }
