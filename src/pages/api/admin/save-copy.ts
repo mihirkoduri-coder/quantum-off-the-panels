@@ -14,10 +14,9 @@ function setPath(obj: any, path: string, value: unknown) {
 }
 
 /**
- * The one endpoint for every in-context copy edit — text, the logo's
- * style toggles, all of it. Values keep whatever type the client actually
- * sent (string, boolean, ...) rather than being coerced to string: a
- * boolean field like titleStyle.tilt has to land in the JSON as a real
+ * The one endpoint for every in-context copy edit. Values keep whatever
+ * type the client actually sent (string, boolean, ...) rather than being
+ * coerced to string: a boolean field has to land in the JSON as a real
  * `true`/`false`, not the string "true" — Boolean("false") is true in JS,
  * so silently stringifying booleans here would be a genuine, hard-to-spot
  * correctness bug the moment someone toggled a switch off.

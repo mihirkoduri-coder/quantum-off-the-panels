@@ -2,14 +2,6 @@
   "site": {
     "title": "Quantum, off the",
     "titleAccent": "Panels",
-    "logoVariant": "braket",
-    "titleStyle": {
-      "tilt": true,
-      "shadow": true,
-      "shadowColor": "magenta",
-      "backsplash": "none",
-      "backsplashColor": "cyan"
-    },
     "byline": "by Mihir Koduri",
     "description": "One quantum concept a week, argued against a comic book.",
     "footerNote": "Written weekly. Simulations run entirely in your browser — nothing is sent anywhere."
@@ -26,7 +18,7 @@
     "notOutYet": "(not out yet)"
   },
   "homepage": {
-    "headline": "Comics get  physics wrong",
+    "headline": "Comics get  physics wrong",
     "headlineAccent": "in interesting ways.",
     "subhead": "One concept a week, argued against the comic that made me curious about it in the first place. Every post comes with something you can take apart yourself — including a few things the universe won't let you do.",
     "ctaFirst": "Start it from the top",

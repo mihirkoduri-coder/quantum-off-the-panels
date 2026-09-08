@@ -1,25 +1,10 @@
 ---
 import "../styles/global.css";
 import "katex/dist/katex.min.css";
-import { copy, fullSiteTitle, LOGO_VARIANTS, PROCESS_COLORS, BACKSPLASH_OPTIONS } from "../lib/site-copy";
+import { copy, fullSiteTitle } from "../lib/site-copy";
 
 interface Props { title: string; description?: string }
 const { title, description = copy.site.description } = Astro.props;
-
-// the logo's whole style panel (shown in edit mode), described as data so
-// admin-edit.js can build the popover generically instead of hand-coding
-// six controls in JS. Both logo variants render below regardless of which
-// is selected — logoVariant just toggles which one is visible via CSS —
-// specifically so switching it in the popover can preview live instead of
-// needing a page reload to see the other variant at all.
-const logoFields = [
-  { key: "site.logoVariant", label: "Logo mark", type: "select", options: LOGO_VARIANTS, value: copy.site.logoVariant },
-  { key: "site.titleStyle.tilt", label: "Text: tilt", type: "checkbox", value: copy.site.titleStyle.tilt },
-  { key: "site.titleStyle.shadow", label: "Text: shadow", type: "checkbox", value: copy.site.titleStyle.shadow },
-  { key: "site.titleStyle.shadowColor", label: "Shadow color", type: "select", options: PROCESS_COLORS, value: copy.site.titleStyle.shadowColor },
-  { key: "site.titleStyle.backsplash", label: "Backsplash", type: "select", options: BACKSPLASH_OPTIONS, value: copy.site.titleStyle.backsplash },
-  { key: "site.titleStyle.backsplashColor", label: "Backsplash color", type: "select", options: PROCESS_COLORS, value: copy.site.titleStyle.backsplashColor },
-];
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
@@ -28,6 +13,7 @@ const logoFields = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon-final.svg" />
     <link rel="alternate" type="application/rss+xml" title={fullSiteTitle()} href="/rss.xml" />
     <meta name="theme-color" content="#0b0e1a" />
   </head>
@@ -118,39 +104,8 @@ const logoFields = [
 
     <header class="site">
       <div class="wrap site__in">
-        <a href="/" class="site__mark" data-style-panel data-style-fields={JSON.stringify(logoFields)}>
-          <!-- both variants always render — logoVariant only toggles which
-               is visible (site__logo-variant--hidden) — so the style panel
-               can preview switching between them live, in place, instead
-               of needing a reload to see the one not currently selected. -->
-          <span class={`site__logo-variant${copy.site.logoVariant !== "braket" ? " site__logo-variant--hidden" : ""}`} data-logo-variant="braket">
-            <!-- ⟨Q|P⟩ — Q staggered up (cyan, magenta shadow), P staggered
-                 down (magenta, cyan shadow), same shadow-copy technique the
-                 margin bursts use. Brackets stay neutral paper so the two
-                 process-ink letters read as the point of the mark. -->
-            <svg class="site__braket" viewBox="0 0 130 46" role="img" aria-label={fullSiteTitle()}>
-              <text x="2" y="34" font-size="36" fill="var(--paper)">⟨</text>
-              <text x="24" y="24" font-size="24" font-family="var(--font-sfx)" fill="var(--magenta)" transform="rotate(-8 24 24) translate(2,2)">Q</text>
-              <text x="24" y="24" font-size="24" font-family="var(--font-sfx)" fill="var(--cyan)" transform="rotate(-8 24 24)">Q</text>
-              <text x="57" y="36" font-size="26" font-family="var(--font-sfx)" fill="var(--yellow)" transform="rotate(4 57 36)">|</text>
-              <text x="70" y="40" font-size="24" font-family="var(--font-sfx)" fill="var(--cyan)" transform="rotate(6 70 40) translate(2,2)">P</text>
-              <text x="70" y="40" font-size="24" font-family="var(--font-sfx)" fill="var(--magenta)" transform="rotate(6 70 40)">P</text>
-              <text x="104" y="34" font-size="36" fill="var(--paper)">⟩</text>
-            </svg>
-          </span>
-          <span class={`site__logo-variant${copy.site.logoVariant !== "text" ? " site__logo-variant--hidden" : ""}`} data-logo-variant="text">
-            <span
-              class={[
-                "site__title",
-                copy.site.titleStyle.tilt && "site__title--tilt",
-                copy.site.titleStyle.shadow && "site__title--shadow",
-                copy.site.titleStyle.backsplash !== "none" && `site__title--backsplash-${copy.site.titleStyle.backsplash}`,
-              ].filter(Boolean).join(" ")}
-              style={`--shadow-c: var(--${copy.site.titleStyle.shadowColor}); --backsplash-c: var(--${copy.site.titleStyle.backsplashColor});`}
-            >
-              <span data-copy-key="site.title">{copy.site.title}</span> <span class="site__accent" data-copy-key="site.titleAccent">{copy.site.titleAccent}</span>
-            </span>
-          </span>
+        <a href="/" class="site__mark">
+          <img class="site__logo" src="/logo-final.svg" alt={fullSiteTitle()} width="180" height="120" />
           <span class="site__by" data-copy-key="site.byline">{copy.site.byline}</span>
         </a>
         <nav class="site__nav">
@@ -196,42 +151,13 @@ const logoFields = [
         display: flex; flex-direction: column; gap: 0.15rem;
         text-decoration: none; line-height: 1.1;
       }
-      .site__logo-variant--hidden { display: none; }
-      .site__title {
-        font-family: var(--font-sfx); font-size: clamp(0.86rem, 2.6vw, 1.05rem);
-        color: var(--cyan); letter-spacing: 0.015em; display: inline-block;
-      }
-      /* the comic-text style system — three independent toggles rather than
-         one named preset, set via site.titleStyle in site-copy.json. Colors
-         come through as --shadow-c/--backsplash-c custom properties (inline
-         style, computed per-render) rather than fixed classes, so any of
-         the three process inks works without a class per color combo. */
-      .site__title--tilt { transform: rotate(-4deg); }
-      .site__title--shadow {
-        text-shadow:
-          1.5px 1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px -1.5px 0 var(--ink),
-          3px 3px 0 var(--shadow-c, var(--magenta));
-      }
-      .site__title--backsplash-dots, .site__title--backsplash-burst { position: relative; }
-      .site__title--backsplash-dots::before {
-        content: ""; position: absolute; z-index: -1; inset: -7px -11px -7px -7px;
-        background-image: radial-gradient(var(--backsplash-c, var(--cyan)) 1.2px, transparent 1.2px);
-        background-size: 6px 6px; opacity: 0.55; border-radius: 3px;
-      }
-      .site__title--backsplash-burst::before {
-        content: ""; position: absolute; z-index: -1; inset: -16px -20px -16px -16px;
-        background: var(--backsplash-c, var(--cyan)); opacity: 0.5;
-        clip-path: polygon(50.0% 0.0%, 56.5% 32.0%, 82.1% 11.7%, 66.6% 40.4%, 99.2% 41.3%, 68.8% 53.3%, 93.3% 75.0%, 62.3% 64.6%, 67.1% 97.0%, 50.0% 69.1%, 32.9% 97.0%, 37.7% 64.6%, 6.7% 75.0%, 31.2% 53.3%, 0.8% 41.3%, 33.4% 40.4%, 17.9% 11.7%, 43.5% 32.0%);
-      }
+      .site__logo { height: 2.4rem; width: auto; display: block; }
       .site__accent { color: var(--yellow); }
-      .site__braket { height: 1.9rem; width: auto; display: block; }
       .site__by {
         font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
         text-transform: uppercase; color: var(--paper-dim);
       }
-      .site__mark:hover .site__title { color: var(--yellow); }
-      .site__mark:hover .site__accent { color: var(--cyan); }
-      .site__mark:hover .site__braket { opacity: 0.85; }
+      .site__mark:hover .site__logo { opacity: 0.85; }
       .site__mark:hover { background: none; }
       .site__nav { display: flex; gap: 1.1rem; align-items: center; }
       .site__nav a {

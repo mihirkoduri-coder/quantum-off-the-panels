@@ -25,11 +25,6 @@
  *                                        copy keys, but saved to
  *                                        concepts.ts + this post's
  *                                        frontmatter instead
- *   [data-style-panel]                 opens a small popover (built from
- *                                        its data-style-fields JSON) with
- *                                        every toggle/select for that
- *                                        element's style — currently just
- *                                        the logo
  *
  * [data-copy-key]/[data-issue-key] namespaces never collide ("site.*"/
  * "nav.*"/etc. for copy vs "concept.*"/"post.*" for issue fields), so they
@@ -86,20 +81,12 @@
   var editMode = false;
   var originals = new Map(); // element -> current baseline value (raw template for template fields; for change detection + live-sync)
   var pending = new Map(); // key -> new value (copy AND issue keys share this — namespaces don't collide)
-  var stylePending = new Map(); // style-key -> new value, from the style popovers
 
   var style = document.createElement("style");
   style.textContent =
     "html.qp-edit-mode [data-copy-key],html.qp-edit-mode [data-issue-key]{cursor:text;}" +
     "html.qp-edit-mode [data-copy-key]:hover,html.qp-edit-mode [data-issue-key]:hover{outline:1px dashed #22c4f0;outline-offset:2px;}" +
-    "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}" +
-    "html.qp-edit-mode [data-style-panel]{outline:1px dotted #ff3d8b;outline-offset:3px;}" +
-    ".qp-style-trigger{position:fixed;z-index:99998;background:#ff3d8b;color:#fff;font-family:monospace;font-size:0.7rem;padding:0.15rem 0.45rem;border-radius:3px;border:none;cursor:pointer;}" +
-    ".qp-style-popover{position:fixed;z-index:100000;background:#131829;color:#ece7d9;border:2px solid #ff3d8b;border-radius:6px;padding:0.8rem;font-family:monospace;font-size:0.8rem;min-width:14rem;box-shadow:0 4px 16px rgba(0,0,0,0.5);}" +
-    ".qp-style-popover h4{margin:0 0 0.6rem;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em;color:#ff3d8b;}" +
-    ".qp-style-row{display:flex;align-items:center;justify-content:space-between;gap:0.6rem;margin:0.45rem 0;}" +
-    ".qp-style-row select{background:#1d2440;color:#ece7d9;border:1px solid #2b3358;border-radius:3px;font-family:inherit;font-size:0.75rem;padding:0.15rem;}" +
-    ".qp-style-close{margin-top:0.5rem;background:none;border:1px solid #9aa0b8;color:#ece7d9;padding:0.2rem 0.6rem;border-radius:4px;cursor:pointer;font-family:inherit;font-size:0.7rem;width:100%;}";
+    "html.qp-edit-mode [data-copy-key].qp-editing,html.qp-edit-mode [data-issue-key].qp-editing{outline:2px solid #ffd23f;outline-offset:2px;background:rgba(255,210,63,0.1);}";
   document.head.appendChild(style);
 
   function getKey(el) {
@@ -178,7 +165,7 @@
   else document.addEventListener("DOMContentLoaded", ready);
 
   function updateSaveBar() {
-    var total = pending.size + stylePending.size;
+    var total = pending.size;
     saveBar.style.display = total > 0 ? "flex" : "none";
     countEl.textContent = total + " change" + (total === 1 ? "" : "s");
   }
@@ -188,7 +175,6 @@
     toggleBtn.textContent = on ? "✕ Done" : "✏️ Edit";
     document.documentElement.classList.toggle("qp-edit-mode", on);
     if (on) snapshot();
-    renderStyleTriggers();
   }
 
   toggleBtn.addEventListener("click", function () {
@@ -304,167 +290,6 @@
     updateSaveBar();
   }
 
-  // ---- style panels (currently just the logo) ----
-  var openPopover = null;
-  var triggers = [];
-
-  function allStylePanelElements() {
-    return Array.prototype.slice.call(document.querySelectorAll("[data-style-panel]"));
-  }
-
-  function renderStyleTriggers() {
-    triggers.forEach(function (t) { t.remove(); });
-    triggers = [];
-    closePopover();
-    if (!editMode) return;
-    allStylePanelElements().forEach(function (el) {
-      var trigger = document.createElement("button");
-      trigger.type = "button";
-      trigger.className = "qp-style-trigger";
-      trigger.textContent = "🎨 Style";
-      positionNear(trigger, el, -24);
-      trigger.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (openPopover && openPopover.dataset.forEl === elId(el)) {
-          closePopover();
-        } else {
-          openStylePopover(el, trigger);
-        }
-      });
-      document.body.appendChild(trigger);
-      triggers.push(trigger);
-    });
-  }
-
-  var elIdCounter = 0;
-  function elId(el) {
-    if (!el.dataset.qpElId) el.dataset.qpElId = String(++elIdCounter);
-    return el.dataset.qpElId;
-  }
-
-  function positionNear(node, el, yOffset) {
-    var rect = el.getBoundingClientRect();
-    node.style.top = (rect.top + yOffset) + "px";
-    node.style.left = rect.left + "px";
-  }
-
-  function closePopover() {
-    if (openPopover) {
-      openPopover.remove();
-      openPopover = null;
-    }
-  }
-
-  function openStylePopover(el, trigger) {
-    closePopover();
-    var fields = [];
-    try { fields = JSON.parse(el.dataset.styleFields || "[]"); } catch (e) { /* nothing to show */ }
-
-    var pop = document.createElement("div");
-    pop.className = "qp-style-popover";
-    pop.dataset.forEl = elId(el);
-    var heading = document.createElement("h4");
-    heading.textContent = "Style";
-    pop.appendChild(heading);
-
-    fields.forEach(function (field) {
-      var row = document.createElement("div");
-      row.className = "qp-style-row";
-      var label = document.createElement("span");
-      label.textContent = field.label;
-      row.appendChild(label);
-
-      var currentValue = stylePending.has(field.key) ? stylePending.get(field.key) : field.value;
-
-      if (field.type === "checkbox") {
-        var checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = Boolean(currentValue);
-        checkbox.addEventListener("change", function () {
-          applyStyleChange(field, checkbox.checked);
-        });
-        row.appendChild(checkbox);
-      } else {
-        var select = document.createElement("select");
-        (field.options || []).forEach(function (opt) {
-          var option = document.createElement("option");
-          option.value = opt;
-          option.textContent = opt;
-          option.selected = opt === currentValue;
-          select.appendChild(option);
-        });
-        select.addEventListener("change", function () {
-          applyStyleChange(field, select.value);
-        });
-        row.appendChild(select);
-      }
-      pop.appendChild(row);
-    });
-
-    var closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.className = "qp-style-close";
-    closeBtn.textContent = "Close";
-    closeBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      closePopover();
-    });
-    pop.appendChild(closeBtn);
-
-    document.body.appendChild(pop);
-    var rect = trigger.getBoundingClientRect();
-    pop.style.top = (rect.bottom + 6) + "px";
-    pop.style.left = rect.left + "px";
-    openPopover = pop;
-  }
-
-  function applyStyleChange(field, value) {
-    var initial = field.value;
-    if (value === initial) stylePending.delete(field.key);
-    else stylePending.set(field.key, value);
-    updateSaveBar();
-    applyLivePreview(field.key, value);
-  }
-
-  // translates a style field change into an immediate visual update, so
-  // the popover is previewing the real page, not a guess at what it'll
-  // look like once saved
-  function applyLivePreview(key, value) {
-    if (key === "site.logoVariant") {
-      document.querySelectorAll("[data-logo-variant]").forEach(function (el) {
-        el.classList.toggle("site__logo-variant--hidden", el.dataset.logoVariant !== value);
-      });
-      return;
-    }
-    var titleEl = document.querySelector(".site__title");
-    if (!titleEl) return;
-    if (key === "site.titleStyle.tilt") {
-      titleEl.classList.toggle("site__title--tilt", Boolean(value));
-    } else if (key === "site.titleStyle.shadow") {
-      titleEl.classList.toggle("site__title--shadow", Boolean(value));
-    } else if (key === "site.titleStyle.shadowColor") {
-      titleEl.style.setProperty("--shadow-c", "var(--" + value + ")");
-    } else if (key === "site.titleStyle.backsplash") {
-      ["none", "dots", "burst"].forEach(function (opt) {
-        titleEl.classList.remove("site__title--backsplash-" + opt);
-      });
-      if (value !== "none") titleEl.classList.add("site__title--backsplash-" + value);
-    } else if (key === "site.titleStyle.backsplashColor") {
-      titleEl.style.setProperty("--backsplash-c", "var(--" + value + ")");
-    }
-  }
-
-  window.addEventListener("scroll", function () {
-    triggers.forEach(function (t, i) { positionNear(t, allStylePanelElements()[i], -24); });
-    closePopover();
-  }, true);
-  window.addEventListener("resize", function () {
-    triggers.forEach(function (t, i) { positionNear(t, allStylePanelElements()[i], -24); });
-    closePopover();
-  });
-
   function postJSON(url, body) {
     return fetch(url, {
       method: "POST",
@@ -494,7 +319,6 @@
         copyBody[k] = v;
       }
     });
-    stylePending.forEach(function (v, k) { copyBody[k] = v; });
 
     var requests = [];
     if (Object.keys(copyBody).length > 0) requests.push(postJSON(COPY_SAVE_URL, copyBody));
@@ -514,7 +338,6 @@
     Promise.all(requests)
       .then(function () {
         pending.clear();
-        stylePending.clear();
         updateSaveBar();
         saveBtn.textContent = "Saved! (redeploying)";
         setTimeout(function () {
@@ -536,7 +359,7 @@
   // pending edits live only in this page's memory — warn before they'd be
   // silently lost to navigation, a refresh, or closing the tab
   window.addEventListener("beforeunload", function (e) {
-    if (pending.size + stylePending.size === 0) return;
+    if (pending.size === 0) return;
     e.preventDefault();
     e.returnValue = "";
   });

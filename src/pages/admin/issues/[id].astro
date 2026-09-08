@@ -33,7 +33,10 @@ let displayBody = "";
 // ---- handle the save ----
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
-  const str = (key: string) => (form.get(key) as string | null)?.trim() || "";
+  // browsers normalize <textarea> line breaks to CRLF on submit (per the
+  // HTML forms spec) regardless of how they're stored in the DOM — strip
+  // that back to LF so committed files stay consistent either way.
+  const str = (key: string) => ((form.get(key) as string | null) ?? "").replace(/\r\n?/g, "\n").trim();
   const splitList = (key: string) =>
     str(key).split(",").map((s) => s.trim()).filter(Boolean);
 

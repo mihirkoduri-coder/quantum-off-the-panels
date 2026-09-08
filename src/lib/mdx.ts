@@ -54,7 +54,14 @@ export function serializePost(post: ParsedPost): string {
  *  a hand-edited .mdx with fancier YAML (multi-line strings, comments
  *  inside frontmatter) will parse incompletely rather than throw, so the
  *  admin form always has *something* sane to show. */
-export function parsePost(fileText: string): ParsedPost {
+export function parsePost(rawFileText: string): ParsedPost {
+  // normalize CRLF/CR to LF before anything else — a stray \r right after
+  // the opening "---" is enough to make the delimiter regex below miss
+  // entirely, silently falling through to the "couldn't parse" branch and
+  // blanking every field in the admin form. Line endings can end up mixed
+  // in this file for reasons outside our control (an editor, a paste, a
+  // conflict resolution), so normalize rather than assume LF.
+  const fileText = rawFileText.replace(/\r\n?/g, "\n");
   const match = fileText.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
   if (!match) {
     return { frontmatter: { conceptId: "", title: "", published: "", draft: false }, body: fileText };
