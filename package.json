@@ -6,7 +6,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "postinstall": "npm install --no-save --include=optional sharp || true"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",

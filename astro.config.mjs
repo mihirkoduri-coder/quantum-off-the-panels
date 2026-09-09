@@ -15,21 +15,24 @@ import rehypeKatex from "rehype-katex";
 // silently miss that binary and leave the deployed function unable to load
 // sharp at all, failing every single upload with no local repro. The
 // includeFiles option below is the documented fix — but npm only ever
-// installs ONE platform's optional-dependency package on a given machine,
-// so this path only exists at all on whatever OS actually ran `npm install`
-// (linux-x64, on Vercel's own build servers; darwin/arm64 or whatever else
-// locally) — @astrojs/vercel calls fs.realpath on every includeFiles entry
-// and throws outright if one doesn't exist, so listing a path unconditionally
-// would build fine on Vercel but crash every local build. Only include it
-// when it's actually present.
+// installs the optional-dependency package(s) matching whatever machine
+// actually ran `npm install`, and @astrojs/vercel calls fs.realpath on every
+// includeFiles entry, throwing outright if one doesn't exist — so listing a
+// path unconditionally would build fine only on a machine that happens to
+// have it and crash everywhere else. Checking both linux architectures
+// rather than assuming x64: Vercel's build fleet isn't guaranteed to be one
+// or the other, and getting this wrong once already broke a deploy.
 const root = fileURLToPath(new URL(".", import.meta.url));
-const sharpLinuxPaths = [
+const SHARP_CANDIDATES = [
   "node_modules/@img/sharp-linux-x64",
   "node_modules/@img/sharp-libvips-linux-x64",
-].filter((p) => existsSync(new URL(p, import.meta.url)));
+  "node_modules/@img/sharp-linux-arm64",
+  "node_modules/@img/sharp-libvips-linux-arm64",
+];
+const sharpLinuxPaths = SHARP_CANDIDATES.filter((p) => existsSync(new URL(p, import.meta.url)));
 if (sharpLinuxPaths.length === 0) {
   console.warn(
-    `[astro.config] sharp-linux-x64 not found under ${root}node_modules/@img — ` +
+    `[astro.config] no linux sharp binary found under ${root}node_modules/@img — ` +
       "skipping includeFiles for it. Expected on a non-Linux machine (this is only " +
       "needed for the deployed function); if this warning shows up in a Vercel build " +
       "log instead, image uploads will fail in production.",
