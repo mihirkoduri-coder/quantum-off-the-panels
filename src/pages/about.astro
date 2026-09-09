@@ -34,10 +34,15 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
             fill="url(#about-burst-dots)" stroke="var(--cyan)" stroke-width="2.5" stroke-linejoin="round" />
         </svg>
 
+        <!-- the placeholder's own data-copy-key is nested inside the
+             frame's data-copy-image — admin-edit.js resolves a click via
+             closest(), innermost match first, so clicking this text
+             specifically edits it as plain text; clicking anywhere else
+             in the frame still triggers the photo upload. -->
         <div class="about__photo" data-copy-image-target="true">
           {copy.about.photoUrl
             ? <img src={copy.about.photoUrl} alt="" />
-            : <span class="about__photo-placeholder">+ Add a photo</span>}
+            : <span class="about__photo-placeholder" data-copy-key="about.photoPlaceholder">{copy.about.photoPlaceholder}</span>}
         </div>
       </div>
 

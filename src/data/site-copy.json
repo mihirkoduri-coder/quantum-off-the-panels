@@ -38,6 +38,7 @@
   "about": {
     "heading": "About the author",
     "photoUrl": "",
+    "photoPlaceholder": "+ Add a photo",
     "bioP1": "PLACEHOLDER — click ✏️ Edit (bottom-right) to replace this with your own bio.",
     "bioP2": "PLACEHOLDER — a second paragraph, if you want one. Delete this line if one paragraph is enough."
   },
