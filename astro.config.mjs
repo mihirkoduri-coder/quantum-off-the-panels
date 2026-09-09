@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
@@ -6,6 +8,34 @@ import vercel from "@astrojs/vercel";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 
+// sharp (image uploads, api/admin/upload-image) picks its native binary via
+// a dynamically-constructed require() at runtime, based on the actual
+// process.platform/arch — not a static import path. Vercel's build-time file
+// tracer only bundles what it can see through static analysis, so it can
+// silently miss that binary and leave the deployed function unable to load
+// sharp at all, failing every single upload with no local repro. The
+// includeFiles option below is the documented fix — but npm only ever
+// installs ONE platform's optional-dependency package on a given machine,
+// so this path only exists at all on whatever OS actually ran `npm install`
+// (linux-x64, on Vercel's own build servers; darwin/arm64 or whatever else
+// locally) — @astrojs/vercel calls fs.realpath on every includeFiles entry
+// and throws outright if one doesn't exist, so listing a path unconditionally
+// would build fine on Vercel but crash every local build. Only include it
+// when it's actually present.
+const root = fileURLToPath(new URL(".", import.meta.url));
+const sharpLinuxPaths = [
+  "node_modules/@img/sharp-linux-x64",
+  "node_modules/@img/sharp-libvips-linux-x64",
+].filter((p) => existsSync(new URL(p, import.meta.url)));
+if (sharpLinuxPaths.length === 0) {
+  console.warn(
+    `[astro.config] sharp-linux-x64 not found under ${root}node_modules/@img — ` +
+      "skipping includeFiles for it. Expected on a non-Linux machine (this is only " +
+      "needed for the deployed function); if this warning shows up in a Vercel build " +
+      "log instead, image uploads will fail in production.",
+  );
+}
+
 export default defineConfig({
   site: "https://www.quantumoffthepanels.com",
   // output stays 'static' (the default) — every page still prerenders to
@@ -13,7 +43,9 @@ export default defineConfig({
   // handful of routes (/admin, /api/*) that opt out individually with
   // `export const prerender = false`, so the admin panel can run as a
   // Vercel serverless function without turning the whole blog into SSR.
-  adapter: vercel(),
+  adapter: vercel({
+    includeFiles: sharpLinuxPaths.map((p) => `${p}/**/*`),
+  }),
   security: {
     // Astro only trusts the request's real Host/X-Forwarded-Host header
     // against this allowlist — without it, Vercel's serverless runtime

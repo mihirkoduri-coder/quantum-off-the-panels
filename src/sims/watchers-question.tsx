@@ -118,7 +118,7 @@ export default function WatchersQuestion() {
     setGaze({ open: !willEnd, deg: (q.theta * 180) / Math.PI, denied: false });
     if (!willEnd) {
       gazeTimers.current.push(
-        window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
+        window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 2200),
       );
     }
   };
@@ -186,6 +186,39 @@ export default function WatchersQuestion() {
         onReset={reset}
         controls={
           <div className="stack">
+            {/* Right above the buttons that trigger it, not up in the stage —
+                the eyes only open for ~1.4s, and that used to happen well
+                out of view of whatever you'd scrolled down to click. Putting
+                the reaction where the click already is means you never have
+                to scroll back up to catch it. */}
+            <div className="wq__eyes">
+              <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
+              <p className="wq__eyesCap">
+                {ended
+                  ? "he has seen enough"
+                  : gaze.open
+                    ? "he is looking"
+                    : gaze.denied
+                      ? "he refuses to look"
+                      : "he is not looking"}
+              </p>
+
+              {ended && (
+                <div className="wq__end">
+                  <p>
+                    Seven questions, and the pattern is already the whole lesson:
+                    every answer that taught him something also cost him one he
+                    already had.
+                  </p>
+                  <p className="wq__endKicker">
+                    There is no way to watch without choosing what to stop knowing.
+                    The vow was never available to him.
+                  </p>
+                  <p className="wq__endHint">Reset to begin again.</p>
+                </div>
+              )}
+            </div>
+
             <p className="wq__prompt">Ask the qubit a question</p>
             <div className="row">
               {QUESTIONS.map((q) => (
@@ -214,34 +247,6 @@ export default function WatchersQuestion() {
         }
       >
         <div className="wq">
-          <div className="wq__eyes">
-            <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
-            <p className="wq__eyesCap">
-              {ended
-                ? "he has seen enough"
-                : gaze.open
-                  ? "he is looking"
-                  : gaze.denied
-                    ? "he refuses to look"
-                    : "he is not looking"}
-            </p>
-
-            {ended && (
-              <div className="wq__end">
-                <p>
-                  Seven questions, and the pattern is already the whole lesson:
-                  every answer that taught him something also cost him one he
-                  already had.
-                </p>
-                <p className="wq__endKicker">
-                  There is no way to watch without choosing what to stop knowing.
-                  The vow was never available to him.
-                </p>
-                <p className="wq__endHint">Reset to begin again.</p>
-              </div>
-            )}
-          </div>
-
           {/* ---- the certainty ledger ---- */}
           <div className="wq__ledger">
             <p className="wq__ledgerHead">What can be predicted right now</p>
