@@ -58,8 +58,6 @@ const axisOf = (t: number) => ({ x: Math.sin(t), z: Math.cos(t) });
 export default function WatchersQuestion() {
   const [state, setState] = useState(() => new QuantumState(1)); // |0⟩ = pointing up
   const [panels, setPanels] = useState<Panel[]>([]);
-  const [trades, setTrades] = useState(0);
-  const [ended, setEnded] = useState(false);
   const [violation, setViolation] =
     useState<null | Parameters<typeof ViolationExplainer>[0]["violation"]>(null);
   const nextKey = useRef(1);
@@ -96,20 +94,15 @@ export default function WatchersQuestion() {
     const outcome: 1 | -1 = bit === 0 ? 1 : -1;
     const after = { x: a.x * outcome, z: a.z * outcome };
 
-    // A "trade": asking something you were NOT certain about, while you WERE
-    // certain about something else. That is the exact move where one certainty
-    // is spent to buy another. Seven of them is a pattern, not a fluke.
-    const heldSomething = odds.some(
-      (o) => o.q.id !== q.id && (o.p > 0.999 || o.p < 0.001),
-    );
-    const traded = !wasCertain && heldSomething;
-    if (traded) {
-      setTrades((n) => {
-        const next = n + 1;
-        if (next >= 7) setEnded(true);
-        return next;
-      });
-    }
+    // Ends on the 7th question, full stop — keyed off the same panels
+    // count the reader is already watching in the readout, not a separate
+    // "was this one a real trade" heuristic. That distinction used to
+    // decide whether a question counted toward the cap at all, which
+    // meant re-asking something you'd JUST asked (free — you already knew
+    // it, nothing changes) added a panel to the strip without moving the
+    // cap, so the visible count and the real one could silently drift
+    // apart. Every question costs a panel now; the cap can't be outrun.
+    const willEnd = panels.length + 1 >= 7;
 
     setPanels((ps) => [
       ...ps.slice(-11),
@@ -118,21 +111,22 @@ export default function WatchersQuestion() {
     setState(s);
 
     // the eyes ARE the measurement: they open only when a question is asked,
-    // and the pupil lines up with the axis of that question
+    // and the pupil lines up with the axis of that question — except on the
+    // question that ends it, where they close for good instead.
     gazeTimers.current.forEach(clearTimeout);
     gazeTimers.current = [];
-    setGaze({ open: !traded || trades + 1 < 7, deg: (q.theta * 180) / Math.PI, denied: false });
-    gazeTimers.current.push(
-      window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
-    );
+    setGaze({ open: !willEnd, deg: (q.theta * 180) / Math.PI, denied: false });
+    if (!willEnd) {
+      gazeTimers.current.push(
+        window.setTimeout(() => setGaze((g) => ({ ...g, open: false })), 1400),
+      );
+    }
   };
 
   const reset = () => {
     setState(new QuantumState(1));
     setPanels([]);
     setViolation(null);
-    setTrades(0);
-    setEnded(false);
     nextKey.current = 1;
     gazeTimers.current.forEach(clearTimeout);
     setGaze({ open: false, deg: 0, denied: false });
@@ -162,6 +156,9 @@ export default function WatchersQuestion() {
 
   const certain = odds.find((o) => o.p > 0.999 || o.p < 0.001);
   const destroyed = panels.length > 0 && panels[panels.length - 1].q.id !== "z";
+  // derived straight from the same count in the readout below, not tracked
+  // separately — see the comment in ask() for why that used to drift.
+  const ended = panels.length >= 7;
 
   return (
     <Predict
@@ -232,9 +229,9 @@ export default function WatchersQuestion() {
             {ended && (
               <div className="wq__end">
                 <p>
-                  Every answer he took was paid for with one he already had. Seven
-                  times now he has spent a certainty to buy a certainty, and seven
-                  times he has come away knowing exactly as much as before.
+                  Seven questions, and the pattern is already the whole lesson:
+                  every answer that taught him something also cost him one he
+                  already had.
                 </p>
                 <p className="wq__endKicker">
                   There is no way to watch without choosing what to stop knowing.
