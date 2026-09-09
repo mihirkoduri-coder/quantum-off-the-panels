@@ -162,32 +162,73 @@ function drawHalftone(ctx: CanvasRenderingContext2D, W: number, H: number, h: Ha
   ctx.restore();
 }
 
-/** the QP mark, drawn from primitives so it stays sharp at any export scale */
+// the same outline data as the header mark's Q/P glyphs (src/layouts/Base.astro)
+// — extracted once as SVG path `d` strings so canvas draws the identical
+// letterforms via Path2D instead of falling back to a live webfont.
+const QP_GLYPH_D = {
+  q: "M445 -90H291Q255 -90 255 -54V1Q178 13 135.0 40.0Q92 67 75.0 107.5Q58 148 58 198V530Q58 576 72.0 613.5Q86 651 120.0 678.0Q154 705 214.5 720.0Q275 735 369 735Q463 735 523.5 720.0Q584 705 618.0 678.0Q652 651 665.5 613.5Q679 576 679 530V198Q679 148 662.0 107.5Q645 67 602.5 39.5Q560 12 481 1V-54Q481 -90 445 -90ZM285 220Q285 200 300.0 186.5Q315 173 369 173Q424 173 438.5 186.5Q453 200 453 220V493Q453 513 438.5 526.0Q424 539 369 539Q315 539 300.0 526.0Q285 513 285 493Z",
+  p: "M260 0H105Q69 0 69 36V684Q69 720 105 720H411Q502 720 553.5 695.5Q605 671 626.0 627.0Q647 583 647 525V397Q647 339 626.0 295.0Q605 251 553.5 226.5Q502 202 411 202H296V36Q296 0 260 0ZM294 533V382H384Q413 382 422.0 397.0Q431 412 431 431V484Q431 504 422.0 518.5Q413 533 384 533Z",
+};
+let qGlyph: Path2D | null = null;
+let pGlyph: Path2D | null = null;
+
+/**
+ * The QP mark — folded panels, brackets on the fold, gutter between, and the
+ * two-plate "Q"/"P" registration. Matches the header logo (Base.astro) shape
+ * for shape; built from canvas primitives + Path2D so it stays sharp at any
+ * export scale rather than screenshotting the live SVG.
+ */
 function drawLogo(ctx: CanvasRenderingContext2D, h: number) {
-  const s = h / 96;
+  const s = h / 149.04; // natural mark height, before scale
   ctx.save();
   ctx.scale(s, s);
+  ctx.translate(-155, -100); // natural centre → local origin
+
   const poly = (pts: [number, number][]) => {
     ctx.beginPath();
     pts.forEach(([a, b], i) => (i ? ctx.lineTo(a, b) : ctx.moveTo(a, b)));
     ctx.closePath();
   };
   ctx.fillStyle = PALETTE.ink2;
-  poly([[22, 0], [58, 0], [58, 72], [22, 72], [0, 36]]); ctx.fill();
-  poly([[70, 12], [112, 12], [134, 48], [112, 84], [70, 84]]); ctx.fill();
+  poly([[90, 34], [142, 34], [142, 138], [90, 138], [58, 86]]); ctx.fill();
+  poly([[160, 62], [220, 62], [252, 114], [220, 166], [160, 166]]); ctx.fill();
+
   ctx.strokeStyle = PALETTE.gutter; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(58, 0); ctx.lineTo(58, 72); ctx.lineTo(22, 72); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(112, 12); ctx.lineTo(70, 12); ctx.lineTo(70, 84); ctx.lineTo(112, 84); ctx.stroke();
-  const g = ctx.createLinearGradient(0, 0, 0, 90);
+  ctx.beginPath(); ctx.moveTo(90, 34); ctx.lineTo(142, 34); ctx.lineTo(142, 138); ctx.lineTo(90, 138); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(220, 62); ctx.lineTo(160, 62); ctx.lineTo(160, 166); ctx.lineTo(220, 166); ctx.stroke();
+
+  const g = ctx.createLinearGradient(0, 34, 0, 166);
   g.addColorStop(0, PALETTE.magenta); g.addColorStop(1, "rgba(255,61,139,0.15)");
-  ctx.fillStyle = g; ctx.fillRect(62, 0, 4, 90);
-  ctx.strokeStyle = PALETTE.cyan; ctx.lineWidth = 9; ctx.lineJoin = "miter"; ctx.lineCap = "butt";
-  ctx.beginPath(); ctx.moveTo(26, -6); ctx.lineTo(0, 36); ctx.lineTo(26, 78); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(108, 6); ctx.lineTo(134, 48); ctx.lineTo(108, 90); ctx.stroke();
-  ctx.fillStyle = PALETTE.paper;
-  ctx.font = `400 40px ${FONTS.display.css}`;
-  ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-  ctx.fillText("Q", 40, 50); ctx.fillText("P", 92, 62);
+  ctx.fillStyle = g; ctx.fillRect(149, 34, 5, 132);
+
+  ctx.lineCap = "butt"; ctx.lineJoin = "miter"; ctx.lineWidth = 12;
+  ctx.strokeStyle = PALETTE.cyan;
+  ctx.beginPath(); ctx.moveTo(95.24, 25.48); ctx.lineTo(58, 86); ctx.lineTo(95.24, 146.52); ctx.stroke();
+  ctx.strokeStyle = PALETTE.yellow;
+  ctx.beginPath(); ctx.moveTo(214.76, 53.48); ctx.lineTo(252, 114); ctx.lineTo(214.76, 174.52); ctx.stroke();
+
+  // glyphs: an offset colour plate under a paper-coloured top layer, same
+  // two-plate registration trick as burst lettering elsewhere in this file
+  if (!qGlyph) { qGlyph = new Path2D(QP_GLYPH_D.q); pGlyph = new Path2D(QP_GLYPH_D.p); }
+  const glyph = (path: Path2D, tx: number, ty: number, sc: number, color: string, dx: number, dy: number, alpha: number) => {
+    ctx.save();
+    ctx.translate(tx + dx, ty + dy);
+    ctx.scale(sc, -sc); // font outline y-up → canvas y-down
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fill(path);
+    ctx.restore();
+  };
+  glyph(qGlyph, 83.816, 109.040, 0.064, PALETTE.magenta, 4, 4, 0.85);
+  glyph(qGlyph, 83.816, 109.040, 0.064, PALETTE.paper, 0, 0, 1);
+  glyph(pGlyph!, 175.412, 138.480, 0.068, PALETTE.cyan, 4, 4, 0.85);
+  glyph(pGlyph!, 175.412, 138.480, 0.068, PALETTE.paper, 0, 0, 1);
+
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = PALETTE.yellow;
+  ctx.beginPath(); ctx.arc(136, 26, 3.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(168, 174, 3.6, 0, Math.PI * 2); ctx.fill();
+
   ctx.restore();
 }
 
@@ -236,9 +277,8 @@ function drawLayer(
       return { x: -w / 2, y: -h / 2, w, h };
     }
     case "logo":
-      ctx.save(); ctx.translate(-l.size * 0.7, -l.size * 0.47);
-      drawLogo(ctx, l.size); ctx.restore();
-      return { x: -l.size * 0.7, y: -l.size * 0.47, w: l.size * 1.4, h: l.size * 0.94 };
+      drawLogo(ctx, l.size); // already centred on its own local origin
+      return { x: -l.size * 0.651, y: -l.size * 0.5, w: l.size * 1.302, h: l.size };
     case "bracket": {
       const s = l.size;
       ctx.strokeStyle = PALETTE[l.color];
