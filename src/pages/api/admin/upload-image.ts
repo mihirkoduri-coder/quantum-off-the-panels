@@ -17,6 +17,26 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/svg+xml": "svg",
 };
 
+// iPhones save camera photos as HEIC by default — the single most likely
+// reason an upload "just fails" with no obvious cause. sharp/libvips's HEIF
+// decoder only covers the royalty-free AVIF codec (confirmed directly:
+// sharp.format.heif.input.fileSuffix is ["avif"], nothing else) — the HEVC
+// codec actual HEIC files use has patent-licensing restrictions that keep
+// it out of the prebuilt binaries, so this isn't fixable by just adding the
+// MIME type to the accepted list; sharp genuinely cannot decode one. Worth
+// catching by name specifically so the error says what's actually wrong
+// instead of the generic "is it a valid image file?" — file.type is blank
+// for HEIC in some browsers, so the filename is checked too.
+const HEIC_MESSAGE =
+  "That looks like a HEIC/HEIF photo (the default format on iPhone) — this can't decode that codec. " +
+  "Re-export or share it as JPEG first (iOS's share sheet usually offers this), or switch your camera to " +
+  "\"Most Compatible\" under Settings → Camera → Formats so future photos save as JPEG.";
+function isHeic(file: File): boolean {
+  const type = file.type.toLowerCase();
+  if (type === "image/heic" || type === "image/heif") return true;
+  return /\.(heic|heif)$/i.test(file.name);
+}
+
 /**
  * General-purpose image upload, not tied to the About page specifically —
  * the same endpoint a future "add a cover image to this post" feature
@@ -41,6 +61,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   const ext = EXT_BY_TYPE[file.type];
   if (!ext) {
+    if (isHeic(file)) {
+      return new Response(JSON.stringify({ error: HEIC_MESSAGE }), { status: 400 });
+    }
     return new Response(
       JSON.stringify({ error: `Unsupported image type "${file.type || "unknown"}" — use JPEG, PNG, WebP, GIF, or SVG.` }),
       { status: 400 },
