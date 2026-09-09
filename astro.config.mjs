@@ -1,4 +1,5 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { join as joinPath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
@@ -13,15 +14,33 @@ import rehypeKatex from "rehype-katex";
 // process.platform/arch — not a static import path. Vercel's build-time file
 // tracer only bundles what it can see through static analysis, so it can
 // silently miss that binary and leave the deployed function unable to load
-// sharp at all, failing every single upload with no local repro. The
-// includeFiles option below is the documented fix — but npm only ever
-// installs the optional-dependency package(s) matching whatever machine
-// actually ran `npm install`, and @astrojs/vercel calls fs.realpath on every
-// includeFiles entry, throwing outright if one doesn't exist — so listing a
-// path unconditionally would build fine only on a machine that happens to
-// have it and crash everywhere else. Checking both linux architectures
-// rather than assuming x64: Vercel's build fleet isn't guaranteed to be one
-// or the other, and getting this wrong once already broke a deploy.
+// sharp at all, failing every single upload with no local repro.
+//
+// includeFiles is the documented escape hatch for exactly this, but it does
+// NOT accept glob patterns — @astrojs/vercel passes each entry straight to
+// fs.realpath with no expansion step (confirmed by reading its own
+// copyFilesToFolder implementation), and for a bare directory entry it only
+// ever creates an empty folder at the destination, never copies what's
+// inside it. So a directory has to be walked and every individual file
+// listed by hand — there is no shortcut. Two other things learned the hard
+// way, from a genuinely failed deploy each time: an unconditional path
+// throws outright (via that same realpath call) on any machine where the
+// platform-specific optional dependency isn't installed, which is
+// EVERY machine except whichever one actually ran npm install on Vercel's
+// side — so the path only exists there, never locally — hence the
+// existsSync guard; and Vercel's build fleet's actual architecture isn't
+// documented anywhere I could find, so both linux-x64 and linux-arm64 are
+// checked rather than assumed.
+function listFilesRecursively(absDir) {
+  const out = [];
+  for (const entry of readdirSync(absDir, { withFileTypes: true })) {
+    const childPath = joinPath(absDir, entry.name);
+    if (entry.isDirectory()) out.push(...listFilesRecursively(childPath));
+    else if (entry.isFile()) out.push(childPath);
+  }
+  return out;
+}
+
 const root = fileURLToPath(new URL(".", import.meta.url));
 const SHARP_CANDIDATES = [
   "node_modules/@img/sharp-linux-x64",
@@ -29,8 +48,12 @@ const SHARP_CANDIDATES = [
   "node_modules/@img/sharp-linux-arm64",
   "node_modules/@img/sharp-libvips-linux-arm64",
 ];
-const sharpLinuxPaths = SHARP_CANDIDATES.filter((p) => existsSync(new URL(p, import.meta.url)));
-if (sharpLinuxPaths.length === 0) {
+const sharpIncludeFiles = SHARP_CANDIDATES.flatMap((relDir) => {
+  const absDir = joinPath(root, relDir);
+  if (!existsSync(absDir) || !statSync(absDir).isDirectory()) return [];
+  return listFilesRecursively(absDir).map((absFile) => absFile.slice(root.length));
+});
+if (sharpIncludeFiles.length === 0) {
   console.warn(
     `[astro.config] no linux sharp binary found under ${root}node_modules/@img — ` +
       "skipping includeFiles for it. Expected on a non-Linux machine (this is only " +
@@ -47,7 +70,7 @@ export default defineConfig({
   // `export const prerender = false`, so the admin panel can run as a
   // Vercel serverless function without turning the whole blog into SSR.
   adapter: vercel({
-    includeFiles: sharpLinuxPaths.map((p) => `${p}/**/*`),
+    includeFiles: sharpIncludeFiles,
   }),
   security: {
     // Astro only trusts the request's real Host/X-Forwarded-Host header
