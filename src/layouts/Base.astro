@@ -3,8 +3,8 @@ import "../styles/global.css";
 import "katex/dist/katex.min.css";
 import { copy, fullSiteTitle } from "../lib/site-copy";
 
-interface Props { title: string; description?: string }
-const { title, description = copy.site.description } = Astro.props;
+interface Props { title: string; description?: string; noindex?: boolean }
+const { title, description = copy.site.description, noindex = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="en" data-theme="dark">
@@ -16,6 +16,7 @@ const { title, description = copy.site.description } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon-final.svg" />
     <link rel="alternate" type="application/rss+xml" title={fullSiteTitle()} href="/rss.xml" />
     <meta name="theme-color" content="#0b0e1a" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
   </head>
   <body>
     <!-- margin bursts — purely decorative page furniture, wide viewports only.

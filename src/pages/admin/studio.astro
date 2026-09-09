@@ -1,0 +1,24 @@
+---
+// on-demand, not prerendered — middleware.ts only runs auth checks for
+// routes marked prerender: false. Skipping this line would silently ship
+// the whole studio as a public static page with no session gate at all.
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import PostStudio from "../../components/admin/PostStudio";
+import { fullSiteTitle } from "../../lib/site-copy";
+---
+<Base title={`Studio — ${fullSiteTitle()}`} noindex={true}>
+  <div class="wrap studio">
+    <p><a href="/admin#studio">&larr; Admin</a></p>
+    <h1>Instagram posts</h1>
+    <p class="dim" style="max-width:34rem">
+      Same fonts, same palette, same halftone as the site. Fill it in, download
+      the PNG.
+    </p>
+    <PostStudio client:only="react" />
+  </div>
+
+  <style>
+    .studio { padding: 2.5rem 0 5rem; }
+  </style>
+</Base>
