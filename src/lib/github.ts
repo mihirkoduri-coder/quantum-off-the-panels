@@ -11,6 +11,22 @@ const REPO_OWNER = "mihirkoduri-coder";
 const REPO_NAME = "quantum-off-the-panels";
 const REPO_BRANCH = "main";
 
+/** A bare status code tells a reader nothing actionable. 401 specifically
+ *  means GitHub itself rejected the access token stored in the session
+ *  cookie — expired or revoked — which no retry or code fix here can
+ *  repair; the only way out is a fresh login (see lib/auth.ts's doc
+ *  comment: this app doesn't yet refresh tokens, it just re-mints one at
+ *  next login). Every other status keeps the raw code, since those are
+ *  genuinely GitHub-side conditions worth seeing verbatim. */
+function githubApiError(action: string, status: number, body?: string): Error {
+  if (status === 401) {
+    return new Error(
+      `${action} failed: your GitHub login has expired or been revoked. Log out (bottom of /admin) and log back in, then try again.`,
+    );
+  }
+  return new Error(`${action} failed: ${status}${body ? ` ${body}` : ""}`);
+}
+
 export async function exchangeCodeForToken(code: string): Promise<string> {
   const res = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
@@ -47,7 +63,7 @@ export async function getFileContent(accessToken: string, path: string): Promise
     { headers: { authorization: `Bearer ${accessToken}`, accept: "application/vnd.github+json" } },
   );
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`GitHub file lookup failed: ${res.status}`);
+  if (!res.ok) throw githubApiError("GitHub file lookup", res.status);
   const data = await res.json();
   return Buffer.from(data.content, "base64").toString("utf-8");
 }
@@ -78,7 +94,7 @@ export async function commitFile(opts: {
   if (existing.ok) {
     sha = (await existing.json()).sha;
   } else if (existing.status !== 404) {
-    throw new Error(`GitHub file lookup failed: ${existing.status}`);
+    throw githubApiError("GitHub file lookup", existing.status);
   }
 
   const res = await fetch(apiUrl, {
@@ -92,6 +108,6 @@ export async function commitFile(opts: {
     }),
   });
   if (!res.ok) {
-    throw new Error(`GitHub commit failed: ${res.status} ${await res.text()}`);
+    throw githubApiError("GitHub commit", res.status, await res.text());
   }
 }

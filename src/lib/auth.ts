@@ -6,10 +6,14 @@
  * via the GitHub API (see lib/github.ts) — logging in and being allowed
  * to publish are the same act, which is the whole point of this scheme.
  *
- * Trade-off worth naming: a stolen cookie is a standing, long-lived write
- * credential to the repo, since GitHub OAuth App tokens don't expire on
- * their own. Acceptable for a single-editor personal blog; would need
- * server-side session storage (and therefore a database) to do better.
+ * Trade-off worth naming: a stolen cookie is a standing write credential to
+ * the repo for as long as it stays valid. This app doesn't refresh tokens —
+ * if GitHub expires or revokes the one baked into a session (observed in
+ * practice: a request to the GitHub API starts 401ing well into a session
+ * that was working fine earlier), the fix is logging out and back in to
+ * mint a new one; see lib/github.ts's githubApiError for how that surfaces.
+ * Acceptable for a single-editor personal blog; would need server-side
+ * session storage (and therefore a database) to do better.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
 

@@ -304,15 +304,29 @@
     if (!outputType || typeof createImageBitmap !== "function") {
       return Promise.resolve(file);
     }
-    return createImageBitmap(file)
+    // colorSpaceConversion is left at its spec default ("default" = do
+    // convert), but named explicitly rather than left implicit — a photo
+    // straight off an iPhone is typically tagged Display P3, a wider gamut
+    // than sRGB, and this is the option that controls whether that gets
+    // converted on the way in.
+    return createImageBitmap(file, { colorSpaceConversion: "default" })
       .then(function (bitmap) {
         var scale = Math.min(1, RESIZE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+        // already small enough — skip the decode/redraw/re-encode round
+        // trip entirely rather than pay its cost (and risk) for no reason.
+        if (scale === 1) { bitmap.close(); return file; }
         var w = Math.round(bitmap.width * scale);
         var h = Math.round(bitmap.height * scale);
         var canvas = document.createElement("canvas");
         canvas.width = w;
         canvas.height = h;
-        canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+        // { colorSpace: "srgb" } forces the canvas's own working space —
+        // explicit for the same reason as above: the destination shouldn't
+        // be left to whatever a given browser's implicit default happens
+        // to be, since that's exactly the kind of gap a wide-gamut source
+        // photo falls into and comes out desaturated the other side.
+        var ctx = canvas.getContext("2d", { colorSpace: "srgb" });
+        ctx.drawImage(bitmap, 0, 0, w, h);
         bitmap.close();
         return new Promise(function (resolve) {
           canvas.toBlob(function (blob) { resolve(blob || file); }, outputType, 0.85);
