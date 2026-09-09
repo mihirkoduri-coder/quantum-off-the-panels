@@ -60,69 +60,70 @@ export default function SimShell({
   }, [slug]);
 
   return (
-    <section ref={ref} className="sim dot-shadow" aria-label={`Simulation: ${title}`}>
+    <div ref={ref} className="sim-frame">
+      {/* .sim below carries dot-shadow's isolation: isolate, which traps
+          any z-index inside ITS OWN stacking context — nothing inside
+          .sim can ever out-rank the sticky site header (z-index: 20), no
+          matter what number it's given, because the comparison never
+          escapes that isolation boundary. The motif is rendered as a
+          SIBLING out here instead, outside the isolated box entirely, so
+          its own z-index (see .sim__motif) genuinely compares against the
+          header's at the shared body-level context and can legitimately
+          win — motifs are the one thing this component lets overlap the
+          header; the panel itself still correctly scrolls underneath it. */}
       {motif && <div className="sim__motif">{motif}</div>}
 
-      <header className="sim__head">
-        <div className="eyebrow">
-          <span className="wk" data-copy-key="simShell.eyebrowLabel">{copy.simShell.eyebrowLabel}</span>
-          <span className="sep">/</span>
-          <span>{slug}</span>
-        </div>
-        <h3 className="sim__title">{title}</h3>
-        <p className="sim__watch">
-          <span className="sim__watchLabel" data-copy-key="simShell.watchForLabel">{copy.simShell.watchForLabel}</span> {watchFor}
-        </p>
-      </header>
+      <section className="sim dot-shadow" aria-label={`Simulation: ${title}`}>
+        <header className="sim__head">
+          <div className="eyebrow">
+            <span className="wk" data-copy-key="simShell.eyebrowLabel">{copy.simShell.eyebrowLabel}</span>
+            <span className="sep">/</span>
+            <span>{slug}</span>
+          </div>
+          <h3 className="sim__title">{title}</h3>
+          <p className="sim__watch">
+            <span className="sim__watchLabel" data-copy-key="simShell.watchForLabel">{copy.simShell.watchForLabel}</span> {watchFor}
+          </p>
+        </header>
 
-      <div className="sim__stage">{children}</div>
+        <div className="sim__stage">{children}</div>
 
-      {(controls || onReset) && (
-        <div className="sim__controls">
-          {controls}
-          {onReset && (
-            <button className="btn" onClick={onReset}>
-              <span data-copy-key="simShell.resetButton">{copy.simShell.resetButton}</span>
-            </button>
-          )}
-        </div>
-      )}
+        {(controls || onReset) && (
+          <div className="sim__controls">
+            {controls}
+            {onReset && (
+              <button className="btn" onClick={onReset}>
+                <span data-copy-key="simShell.resetButton">{copy.simShell.resetButton}</span>
+              </button>
+            )}
+          </div>
+        )}
 
-      {readout && <div className="sim__readout readout">{readout}</div>}
+        {readout && <div className="sim__readout readout">{readout}</div>}
+      </section>
 
       <style>{`
+        .sim-frame { position: relative; margin: 2.5rem 0; }
         .sim {
           border: var(--panel-line) solid var(--gutter);
           border-radius: var(--radius);
           background: var(--ink-2);
-          margin: 2.5rem 0;
-          position: relative;
-          /* visible so a frame motif can hang past the border */
-          overflow: visible;
+          overflow: hidden;
         }
-        /* .sim carries dot-shadow's isolation: isolate, which traps any
-           z-index inside this component's own stacking context — no value
-           here can ever out-rank the sticky site header (z-index: 20), so
-           a motif that pokes up far enough to physically reach the header
-           (a real risk on a page where the sim sits close to the top, e.g.
-           the standalone /sims/[slug] gallery page) gets its top sliver
-           painted over and clipped. Keeping the motif flush with the
-           panel's own top edge — extending outward past the side border
-           only, not upward past the top one — sidesteps the problem
-           entirely rather than fighting a stacking context it can't win. */
+        /* deliberately NOT clamped to .sim-frame's own bounds and given a
+           z-index above the sticky header's (20) — see the comment above
+           for why this has to be a sibling of .sim, not a child, to work
+           at all. Hidden on narrow viewports, same as before: there's no
+           margin to hang a motif into on a phone-width layout anyway. */
         .sim__motif {
           position: absolute;
-          top: 0.5rem;
+          top: -2.2rem;
           right: -3rem;
-          z-index: 0;
+          z-index: 25;
           pointer-events: none;
         }
-        /* content sits above the motif, and the motif never steals a click */
-        .sim__head, .sim__stage, .sim__controls, .sim__readout { position: relative; z-index: 1; }
         @media (max-width: 46rem) { .sim__motif { display: none; } }
         .sim__head {
-          background: var(--ink-2);
-          border-radius: var(--radius) var(--radius) 0 0;
           padding: 1rem 1.15rem 0.75rem;
           border-bottom: var(--panel-line) solid var(--gutter);
         }
@@ -171,6 +172,6 @@ export default function SimShell({
           .sim__controls { grid-template-columns: 1fr auto; align-items: end; }
         }
       `}</style>
-    </section>
+    </div>
   );
 }
