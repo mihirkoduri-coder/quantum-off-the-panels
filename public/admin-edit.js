@@ -281,6 +281,48 @@
     return container.querySelector("[data-copy-image-target]") || container;
   }
 
+  // ---- client-side downscale before upload ----
+  // Vercel's serverless functions hard-reject request bodies over a
+  // platform size limit (~4.5MB) with a plain-text "Request Entity Too
+  // Large" response, not JSON — which surfaced client-side as a
+  // baffling "Unexpected token 'R' ... is not valid JSON" instead of any
+  // clear size message. A modern phone photo routinely exceeds that on
+  // its own, and the server's own resize (lib/sharp, upload-image.ts)
+  // never gets a chance to run — the oversized request is rejected
+  // before it ever reaches that code. Downscaling here means the actual
+  // bytes sent over the network are already small regardless of the
+  // original file's size. Only for formats a canvas can safely
+  // round-trip: not SVG (vector, would get rasterized for no reason),
+  // not GIF (would flatten an animation to one frame), not HEIC (most
+  // browsers can't decode it here either — falls through to the
+  // server's own clear error instead of a confusing canvas failure).
+  var RESIZE_OUTPUT_TYPE = { "image/jpeg": "image/jpeg", "image/png": "image/png", "image/webp": "image/jpeg" };
+  var RESIZE_MAX_DIMENSION = 1600; // matches the server's own resize target
+
+  function resizeImageIfPossible(file) {
+    var outputType = RESIZE_OUTPUT_TYPE[file.type];
+    if (!outputType || typeof createImageBitmap !== "function") {
+      return Promise.resolve(file);
+    }
+    return createImageBitmap(file)
+      .then(function (bitmap) {
+        var scale = Math.min(1, RESIZE_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+        var w = Math.round(bitmap.width * scale);
+        var h = Math.round(bitmap.height * scale);
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(bitmap, 0, 0, w, h);
+        bitmap.close();
+        return new Promise(function (resolve) {
+          canvas.toBlob(function (blob) { resolve(blob || file); }, outputType, 0.85);
+        });
+      })
+      .catch(function () {
+        return file; // couldn't decode it here — let the server give its own error
+      });
+  }
+
   function uploadImage(container, file) {
     var key = getKey(container);
     var slug = container.dataset.copySlug || key.replace(/\./g, "-");
@@ -293,13 +335,26 @@
     status.textContent = "Uploading…";
     target.appendChild(status);
 
-    var fd = new FormData();
-    fd.append("file", file);
-    fd.append("slug", slug);
-
-    fetch(UPLOAD_URL, { method: "POST", body: fd })
+    resizeImageIfPossible(file)
+      .then(function (uploadFile) {
+        var fd = new FormData();
+        fd.append("file", uploadFile, file.name);
+        fd.append("slug", slug);
+        return fetch(UPLOAD_URL, { method: "POST", body: fd });
+      })
       .then(function (res) {
-        return res.json().then(function (data) {
+        return res.text().then(function (raw) {
+          var data;
+          try {
+            data = JSON.parse(raw);
+          } catch (e) {
+            // the server didn't send JSON at all — almost always a
+            // platform-level rejection (e.g. body still too large even
+            // after resizing) rather than anything this code raised
+            throw new Error(res.status === 413 || /entity too large/i.test(raw)
+              ? "That image is too large to upload, even after shrinking it. Try a smaller photo."
+              : "Upload failed (" + res.status + "): " + raw.slice(0, 200));
+          }
           if (!res.ok) throw new Error(data.error || "Upload failed (" + res.status + ")");
           return data;
         });
