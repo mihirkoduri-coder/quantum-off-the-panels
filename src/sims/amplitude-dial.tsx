@@ -43,6 +43,7 @@ export default function AmplitudeDial() {
   const [collapse, setCollapse] = useState<Collapse | null>(null);
   const [t, setT] = useState(0);
   const [turbulence, setTurbulence] = useState(0);
+  const [touched, setTouched] = useState<"theta" | "phi" | null>(null);
   const [peekValue, setPeekValue] = useState<0 | 1 | null>(null);
   const [violation, setViolation] =
     useState<null | Parameters<typeof ViolationExplainer>[0]["violation"]>(null);
@@ -122,6 +123,7 @@ export default function AmplitudeDial() {
     setViolation(null);
     setTurbulence(0);
     setPeekValue(null);
+    setTouched(null);
   };
 
   const measure = () => {
@@ -176,7 +178,50 @@ export default function AmplitudeDial() {
     );
   };
 
+  const degTilt = (theta / Math.PI) * 180;
+
   const locked = phase === "collapsed";
+
+  /**
+   * MANHATTAN'S VOICE.
+   *
+   * He narrates in the present tense and he is never uncertain — which is the
+   * point. A measurement outcome does not exist until it happens, so the one
+   * thing his omniscience cannot reach is the thing this sim does every time
+   * you press the button. He is never corrected and never corrects himself.
+   * The apparatus disagrees with him on screen; that is the whole argument.
+   */
+  const caption = (() => {
+    if (phase === "peeking") return "i am looking without touching.";
+    if (phase === "failing") return "the state is intact. i would know.";
+    if (locked) return `it is |${collapse?.outcome}⟩. from here, it was always going to be.`;
+    if (touched === "phi") return "the phase turns. nothing turns with it.";
+    if (degTilt < 10) return "it is |0⟩ and it will be |0⟩. there is nothing to wait for.";
+    if (degTilt > 170) return "it is |1⟩ and it will be |1⟩. there is nothing to wait for.";
+    if (degTilt > 80 && degTilt < 100) return "it is neither. i see both. neither is happening.";
+    return degTilt < 90
+      ? "it leans toward |0⟩. leaning is not being."
+      : "it leans toward |1⟩. leaning is not being.";
+  })();
+
+  const speech =
+    phase === "failing" || (violation && locked)
+      ? {
+          lines: [
+            "I observed it without disturbing it.",
+            "The state is unchanged. I would know.",
+          ],
+        }
+      : locked
+        ? {
+            lines: [
+              `It is |${collapse?.outcome}⟩.`,
+              `From here it was always going to be |${collapse?.outcome}⟩. From a moment ago it was not going to be anything at all.`,
+              "I do not find this difficult.",
+            ],
+          }
+        : null;
+
   const busy = phase === "peeking" || phase === "failing";
   const shimmering = phase !== "collapsed";
 
@@ -220,7 +265,7 @@ export default function AmplitudeDial() {
               <input
                 id="th" type="range" min={0} max={Math.PI} step={0.01}
                 value={theta} disabled={locked || busy}
-                onChange={(e) => setTheta(+e.target.value)}
+                onChange={(e) => { setTheta(+e.target.value); setTouched("theta"); }}
               />
             </div>
             <div className="ctrl">
@@ -231,7 +276,7 @@ export default function AmplitudeDial() {
               <input
                 id="ph" type="range" min={0} max={Math.PI * 2} step={0.01}
                 value={phi} disabled={locked || busy}
-                onChange={(e) => setPhi(+e.target.value)}
+                onChange={(e) => { setPhi(+e.target.value); setTouched("phi"); }}
               />
             </div>
             <div className="row">
@@ -261,6 +306,8 @@ export default function AmplitudeDial() {
           </>
         }
       >
+        <p className="ad__caption">{caption}</p>
+
         <div className="dial">
           <div className="dial__sphere">
             <BlochSphere vector={shownBloch} size={220} />
@@ -309,6 +356,13 @@ export default function AmplitudeDial() {
           </div>
         </div>
 
+        {speech && (
+          <aside className="ad__speech">
+            <span className="ad__speechWho">Manhattan</span>
+            {speech.lines.map((l, i) => <p key={i}>{l}</p>)}
+          </aside>
+        )}
+
         {phase === "collapsed" && !violation && (
           <span className="sfx sfx--fire ad__snap">SNAP!</span>
         )}
@@ -316,6 +370,28 @@ export default function AmplitudeDial() {
         <ViolationExplainer violation={violation} onDismiss={() => setViolation(null)} />
 
         <style>{`
+          .ad__caption {
+            font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em;
+            color: var(--cyan); margin: 0 0 1rem; text-align: center;
+            min-height: 1.1rem;
+          }
+          .ad__speech {
+            border: 2px solid var(--cyan);
+            border-radius: var(--radius);
+            background: rgba(34,196,240,0.07);
+            padding: 1rem 1.15rem 0.9rem;
+            margin: 1.25rem 0 0;
+            max-width: 34rem;
+          }
+          .ad__speechWho {
+            font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--cyan);
+            display: block; margin-bottom: 0.5rem;
+          }
+          .ad__speech p {
+            margin: 0 0 0.5rem; font-size: 1rem; line-height: 1.55; color: var(--paper);
+          }
+          .ad__speech p:last-child { margin-bottom: 0; }
           .dial { display: grid; gap: 1.5rem; width: 100%; place-items: center; }
           .dial__sphere, .dial__hist { width: 100%; display: grid; justify-items: center; }
           .dial__hist { position: relative; }
