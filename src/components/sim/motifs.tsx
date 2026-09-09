@@ -51,15 +51,54 @@ export function GlowHand({ alive = true, size = 200 }: { alive?: boolean; size?:
 }
 
 // ─────────────────────────────────────────────────────────────
-// WEEK 2 — eyes that open only when a question is asked, with the
-// pupil aligned to the axis of that question. Closed means nothing
-// was learned, which is the entire point of the week.
+// WEEK 2 — eyes rendered in the same halftone-dot technique as the
+// glowing hand above: dot area stands in for brightness, not a filled
+// silhouette, so the two motifs read as the same print language rather
+// than one being a photo-traced dot field and the other a plain vector
+// icon sitting next to it. Eyes that open only when a question is
+// asked, with the pupil aligned to the axis of that question. Closed
+// means nothing was learned, which is the entire point of the week.
 // ─────────────────────────────────────────────────────────────
 
 const EYE_L = "M58,42 Q84,19 110,42 Q84,65 58,42 Z";
 const EYE_R = "M130,42 Q156,19 182,42 Q156,65 130,42 Z";
 const LID_L = "M58,42 Q84,38 110,42 Q84,46 58,42 Z";
 const LID_R = "M130,42 Q156,38 182,42 Q156,46 130,42 Z";
+
+/** Halftone dot-fill for a symmetric lens shape — same idea as the
+ *  hand's traced ink (dot area = brightness), generated rather than
+ *  traced since there's no photograph to trace a cartoon eye from the
+ *  way there was for a hand. Radius falls off from the shape's OWN
+ *  center, so it reads as a shaded lens rather than a circular spotlight
+ *  cropped by a lens-shaped window. */
+function lensDots(cx: number, cy: number, halfW: number, halfH: number, pitch: number) {
+  const dots: { x: number; y: number; r: number }[] = [];
+  const rowPitch = pitch * 0.87; // staggered rows, same hex-ish grid the histogram/burst dots use
+  const rows = Math.ceil(halfH / rowPitch) + 1;
+  const cols = Math.ceil(halfW / pitch) + 1;
+  for (let row = -rows; row <= rows; row++) {
+    const y = row * rowPitch;
+    const rowOffset = row % 2 !== 0 ? pitch / 2 : 0;
+    for (let col = -cols; col <= cols; col++) {
+      const x = col * pitch + rowOffset;
+      const fx = x / halfW;
+      const fy = y / halfH;
+      const d2 = fx * fx + fy * fy;
+      if (d2 > 1) continue;
+      const r = pitch * 0.44 * Math.sqrt(1 - d2);
+      if (r < 0.35) continue;
+      dots.push({ x: cx + x, y: cy + y, r: Math.round(r * 100) / 100 });
+    }
+  }
+  return dots;
+}
+
+// same geometry the old solid EYE_L/EYE_R paths described — center, half-
+// width, half-height — just filled with dots instead of a flat shape.
+const EYE_DOTS = [
+  ...lensDots(84, 42, 26, 23, 4.4),
+  ...lensDots(156, 42, 26, 23, 4.4),
+];
 
 export function WatchingEyes({
   open,
@@ -81,10 +120,18 @@ export function WatchingEyes({
             <stop offset="100%" stopColor="var(--ink-3)" stopOpacity="0" />
           </radialGradient>
           <filter id="we-glow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="5" />
+            <feGaussianBlur stdDeviation="2.4" />
           </filter>
           <clipPath id="we-clipL"><path d={EYE_L} /></clipPath>
           <clipPath id="we-clipR"><path d={EYE_R} /></clipPath>
+          {/* both eyes' halftone screen, defined once and reused twice below
+              (blurred for the glow, sharp for the ink) — same technique
+              GlowHand uses for exactly the same reason: a filled silhouette
+              blurs into a slab, but blurring the dots themselves keeps the
+              glow reading as light coming off a textured surface. */}
+          <g id="we-ink" fill="var(--cyan)">
+            {EYE_DOTS.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} />)}
+          </g>
         </defs>
 
         <ellipse cx="120" cy="42" rx="112" ry="36" fill="url(#we-shroud)" />
@@ -97,12 +144,10 @@ export function WatchingEyes({
 
         {/* open eyes */}
         <g className="we__eyes">
-          <g filter="url(#we-glow)" className="we__halo">
-            <path d={EYE_L} fill="var(--cyan)" />
-            <path d={EYE_R} fill="var(--cyan)" />
-          </g>
-          <path d={EYE_L} fill="var(--ink)" stroke="var(--cyan)" strokeWidth="2" />
-          <path d={EYE_R} fill="var(--ink)" stroke="var(--cyan)" strokeWidth="2" />
+          <g clipPath="url(#we-clipL)"><use href="#we-ink" filter="url(#we-glow)" className="we__glow" /></g>
+          <g clipPath="url(#we-clipR)"><use href="#we-ink" filter="url(#we-glow)" className="we__glow" /></g>
+          <g clipPath="url(#we-clipL)"><use href="#we-ink" className="we__ink" /></g>
+          <g clipPath="url(#we-clipR)"><use href="#we-ink" className="we__ink" /></g>
           <g clipPath="url(#we-clipL)">
             <rect x="80" y="16" width="8" height="52" rx="4" fill="var(--paper)"
               transform={`rotate(${axisDeg} 84 42)`} className="we__slit" />
@@ -121,7 +166,8 @@ export function WatchingEyes({
         .we.is-open .we__eyes { opacity: 1; transform: scaleY(1); }
         .we.is-open .we__lids { opacity: 0; }
         .we__slit { transition: transform 260ms cubic-bezier(0.2,0.9,0.3,1); }
-        .we__halo { opacity: 0.65; }
+        .we__glow { opacity: 0.55; }
+        .we__ink { opacity: 0.92; }
         .we.is-denied .we__lids { animation: we-refuse 260ms ease-in-out 2; }
         @keyframes we-refuse {
           0%,100% { transform: translateX(0); }
