@@ -73,7 +73,12 @@ export interface BurstLayer extends Base { type: "burst"; text: string; size: nu
 export interface PanelLayer extends Base {
   type: "panel"; w: number; h: number; fill: ColorKey | "none"; stroke: ColorKey; thickness: number; fold: boolean;
 }
-export type Layer = TextLayer | ImageLayer | LogoLayer | BracketLayer | RuleLayer | BurstLayer | PanelLayer;
+/** the decorative margin-burst shapes from Base.astro/about.astro, not the
+ *  comic-lettering "burst" above — kept as a separate layer type since they
+ *  share a name in casual conversation but nothing in how they're drawn. */
+export type StarStyle = "jagged" | "star8" | "scallop7" | "scallop5";
+export interface StarLayer extends Base { type: "star"; style: StarStyle; size: number; color: ColorKey; shadowColor: ColorKey; }
+export type Layer = TextLayer | ImageLayer | LogoLayer | BracketLayer | RuleLayer | BurstLayer | PanelLayer | StarLayer;
 
 export interface Halftone {
   on: boolean;
@@ -232,6 +237,93 @@ function drawLogo(ctx: CanvasRenderingContext2D, h: number) {
   ctx.restore();
 }
 
+// the same four decorative burst outlines used sitewide (Base.astro's
+// margin bursts burst--a/c/d/e, about.astro's photo frame) — jagged/star8
+// are point lists, scallop7/scallop5 are the cubic-bezier "d" strings,
+// each tagged with its own natural radius (its source viewBox's half-
+// extent) so drawStar can scale any of them to a requested pixel size.
+const STAR_SHAPES: Record<StarStyle, { r: number; pts?: [number, number][]; d?: string }> = {
+  jagged: {
+    r: 58,
+    pts: [[0, -58], [6.5, -22.1], [31.4, -48.8], [17.4, -15.1], [52.8, -24.1], [22.8, -3.3], [57.4, 8.3], [20.9, 9.6],
+      [43.8, 38.0], [12.4, 19.3], [16.3, 55.7], [0, 23.0], [-16.3, 55.7], [-12.4, 19.3], [-43.8, 38.0], [-20.9, 9.6],
+      [-57.4, 8.3], [-22.8, -3.3], [-52.8, -24.1], [-17.4, -15.1], [-31.4, -48.8], [-6.5, -22.1]],
+  },
+  star8: {
+    r: 50,
+    pts: [[0, -50], [5.4, -12.9], [35.4, -35.4], [12.9, -5.4], [50, 0], [12.9, 5.4], [35.4, 35.4], [5.4, 12.9],
+      [0, 50], [-5.4, 12.9], [-35.4, 35.4], [-12.9, 5.4], [-50, 0], [-12.9, -5.4], [-35.4, -35.4], [-5.4, -12.9]],
+  },
+  scallop7: {
+    r: 44,
+    d: "M0,-24 C9.8,-38.8 24.2,-31.8 18.8,-15.0 C36.4,-16.5 40.0,-0.9 23.4,5.3 C35.6,18.2 25.6,30.7 10.4,21.6 C8.0,39.2 -8.0,39.2 -10.4,21.6 C-25.6,30.7 -35.6,18.2 -23.4,5.3 C-40.0,-0.9 -36.4,-16.5 -18.8,-15.0 C-24.2,-31.8 -9.8,-38.8 0,-24 Z",
+  },
+  scallop5: {
+    r: 48,
+    d: "M0,-17 C14.9,-41.4 34.8,-27.0 16.2,-5.3 C44.0,1.4 36.4,24.7 10.0,13.8 C12.3,42.3 -12.3,42.3 -10.0,13.8 C-36.4,24.7 -44.0,1.4 -16.2,-5.3 C-34.8,-27.0 -14.9,-41.4 0,-17 Z",
+  },
+};
+export const STAR_STYLES = Object.keys(STAR_SHAPES) as StarStyle[];
+
+const starPath2D: Partial<Record<StarStyle, Path2D>> = {};
+function starOutline(style: StarStyle): Path2D {
+  let path = starPath2D[style];
+  if (!path) {
+    const shape = STAR_SHAPES[style];
+    if (shape.d) {
+      path = new Path2D(shape.d);
+    } else {
+      path = new Path2D();
+      shape.pts!.forEach(([x, y], i) => (i ? path!.lineTo(x, y) : path!.moveTo(x, y)));
+      path.closePath();
+    }
+    starPath2D[style] = path;
+  }
+  return path;
+}
+
+/**
+ * One of the site's four decorative burst shapes, scaled to `size` px. Same
+ * two-plate registration as the logo/burst lettering: a hard offset copy in
+ * `shadowColor`, then a halftone-dot-filled, stroked plate in `color` on
+ * top — never a flat single-colour fill, that's not how any burst on the
+ * site is drawn.
+ */
+function drawStar(ctx: CanvasRenderingContext2D, style: StarStyle, size: number, color: ColorKey, shadowColor: ColorKey) {
+  const shape = STAR_SHAPES[style];
+  const s = size / (2 * shape.r);
+  const path = starOutline(style);
+  ctx.save();
+  ctx.scale(s, s);
+
+  ctx.save();
+  ctx.translate(5, 5);
+  ctx.fillStyle = PALETTE[shadowColor];
+  ctx.fill(path);
+  ctx.restore();
+
+  ctx.save();
+  ctx.clip(path);
+  ctx.fillStyle = PALETTE[color];
+  const pitch = 7, dotR = 1.2;
+  const n = Math.ceil((shape.r + 10) / pitch);
+  for (let i = -n; i <= n; i++) {
+    for (let j = -n; j <= n; j++) {
+      ctx.beginPath();
+      ctx.arc(i * pitch, j * pitch, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = PALETTE[color];
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = "round";
+  ctx.stroke(path);
+
+  ctx.restore();
+}
+
 export interface Box { x: number; y: number; w: number; h: number }
 
 /**
@@ -311,6 +403,9 @@ function drawLayer(
       ctx.fillStyle = PALETTE[l.color]; ctx.fillText(t, 0, 0);
       return { x: -w / 2 - 10, y: -l.size * 0.6, w: w + 20, h: l.size * 1.2 };
     }
+    case "star":
+      drawStar(ctx, l.style, l.size, l.color, l.shadowColor);
+      return { x: -l.size / 2 - 8, y: -l.size / 2 - 8, w: l.size + 16, h: l.size + 16 };
     case "panel": {
       const w = l.w * W, h = l.h * W;
       const pts: [number, number][] = l.fold

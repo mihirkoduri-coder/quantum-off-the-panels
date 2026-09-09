@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  draw, uid, PALETTE, FONTS, SIZES,
+  draw, uid, PALETTE, FONTS, SIZES, STAR_STYLES,
   type Doc, type Layer, type Box, type ColorKey, type FontKey, type SizeKey,
 } from "./studio-core";
 import { PRESETS, blank } from "./presets";
@@ -151,6 +151,7 @@ export default function PostStudio() {
       bracket: { ...common, name: "Bracket", type: "bracket", size: 140, color: "cyan", flip: false },
       rule: { ...common, name: "Rule", type: "rule", length: 0.2, thickness: 6, color: "magenta" },
       burst: { ...common, name: "Burst", type: "burst", text: "Krakk!", size: 88, color: "yellow" },
+      star: { ...common, name: "Star", type: "star", style: "jagged", size: 140, color: "cyan", shadowColor: "magenta" },
       panel: { ...common, name: "Panel", type: "panel", w: 0.6, h: 0.4, fill: "ink2", stroke: "gutter", thickness: 4, fold: false },
       image: { ...common, name: "Image", type: "image", src: "", scale: 0.5, rounded: 0 },
     } as any;
@@ -294,7 +295,7 @@ export default function PostStudio() {
         <section className="ps__sec">
           <h3>Add</h3>
           <div className="ps__wrapbtn">
-            {(["text", "panel", "rule", "bracket", "burst", "logo"] as const).map((t) => (
+            {(["text", "panel", "rule", "bracket", "burst", "star", "logo"] as const).map((t) => (
               <button key={t} className="btn btn--sm" onClick={() => addLayer(t)}>{t}</button>
             ))}
             <label className="btn btn--sm ps__upload">
@@ -426,6 +427,22 @@ export default function PostStudio() {
                   <Num label="Size" value={selected.size} min={30} max={220} onChange={(v: number) => update(selected.id, { size: v } as any)} />
                   <label className="ps__f"><span>Colour</span>
                     <Swatches value={selected.color} onChange={(c) => update(selected.id, { color: c } as any)} /></label>
+                </>
+              )}
+
+              {selected.type === "star" && (
+                <>
+                  <div className="ps__wrapbtn">
+                    {STAR_STYLES.map((st) => (
+                      <button key={st} className={`btn btn--xs${selected.style === st ? " is-on" : ""}`}
+                        onClick={() => update(selected.id, { style: st } as any)}>{st}</button>
+                    ))}
+                  </div>
+                  <Num label="Size" value={selected.size} min={40} max={420} onChange={(v: number) => update(selected.id, { size: v } as any)} />
+                  <label className="ps__f"><span>Colour</span>
+                    <Swatches value={selected.color} onChange={(c) => update(selected.id, { color: c } as any)} /></label>
+                  <label className="ps__f"><span>Shadow colour</span>
+                    <Swatches value={selected.shadowColor} onChange={(c) => update(selected.id, { shadowColor: c } as any)} /></label>
                 </>
               )}
 

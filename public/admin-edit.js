@@ -119,7 +119,27 @@
     // matches Base.astro's `.site__nav a` rule by value — see the comment
     // on addAdminNavLink for why this can't just inherit that rule.
     ".qp-admin-link{font-family:var(--font-mono,ui-monospace,monospace);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--paper-dim,#9aa0b8);text-decoration:none;}" +
-    ".qp-admin-link:hover{color:var(--cyan,#22c4f0);background:none;}";
+    ".qp-admin-link:hover{color:var(--cyan,#22c4f0);background:none;}" +
+    // crop/zoom reticle — yellow ticks specifically (not cyan) to match
+    // the rest of the site's own convention: yellow marks user input.
+    ".qp-crop-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(11,14,26,0.82);display:flex;align-items:center;justify-content:center;padding:1.25rem;}" +
+    ".qp-crop-modal{background:#131829;border:2px solid #2b3358;border-radius:6px;padding:1.25rem;display:grid;gap:0.9rem;justify-items:center;max-width:22rem;width:100%;font-family:monospace;}" +
+    ".qp-crop-stage{position:relative;width:min(280px,70vw);aspect-ratio:1/1;}" +
+    ".qp-crop-canvas{width:100%;height:100%;display:block;border-radius:3px;background:#0b0e1a;touch-action:none;cursor:grab;}" +
+    ".qp-crop-canvas:active{cursor:grabbing;}" +
+    ".qp-crop-reticle{position:absolute;inset:0;pointer-events:none;}" +
+    ".qp-crop-tick{position:absolute;width:1.1rem;height:1.1rem;border:2px solid #ffd23f;}" +
+    ".qp-crop-tick--tl{top:-2px;left:-2px;border-right:none;border-bottom:none;}" +
+    ".qp-crop-tick--tr{top:-2px;right:-2px;border-left:none;border-bottom:none;}" +
+    ".qp-crop-tick--bl{bottom:-2px;left:-2px;border-right:none;border-top:none;}" +
+    ".qp-crop-tick--br{bottom:-2px;right:-2px;border-left:none;border-top:none;}" +
+    ".qp-crop-zoomrow{display:flex;align-items:center;gap:0.6rem;width:100%;font-size:0.72rem;color:#9aa0b8;text-transform:uppercase;letter-spacing:0.08em;}" +
+    ".qp-crop-zoomrow input{flex:1;}" +
+    ".qp-crop-hint{margin:0;font-size:0.72rem;color:#9aa0b8;text-align:center;}" +
+    ".qp-crop-actions{display:flex;gap:0.6rem;width:100%;}" +
+    ".qp-crop-cancel,.qp-crop-confirm{flex:1;min-height:44px;border-radius:4px;font-family:inherit;font-weight:bold;cursor:pointer;font-size:0.85rem;}" +
+    ".qp-crop-cancel{background:none;border:1px solid #9aa0b8;color:#ece7d9;}" +
+    ".qp-crop-confirm{background:#22c4f0;border:none;color:#0b0e1a;}";
   document.head.appendChild(style);
 
   function getKey(el) {
@@ -270,7 +290,10 @@
     var container = uploadTarget;
     uploadTarget = null;
     if (!file || !container) return;
-    uploadImage(container, file);
+    openCropModal(file).then(function (result) {
+      if (!result) return; // user cancelled the crop — nothing was touched yet, nothing to undo
+      uploadImage(container, result);
+    });
   });
 
   // the clickable container (data-copy-image) and the element whose
@@ -279,6 +302,159 @@
   // [data-copy-image-target] wins when present, else the container itself.
   function imageTarget(container) {
     return container.querySelector("[data-copy-image-target]") || container;
+  }
+
+  // ---- crop/zoom reticle, shown before a raster photo upload ----
+  // object-fit:cover on the display side means whatever crop the browser
+  // happens to pick is the only crop a reader will ever see, with no way to
+  // fix a shot the subject isn't centred in or correct which part of a
+  // wider photo gets cut off — this puts that framing choice in front of
+  // the person uploading instead of leaving it to CSS. One render()
+  // function draws both the live stage preview and the final export at a
+  // different target size, same "the preview IS the export" reasoning as
+  // the Studio's canvas (src/components/admin/studio-core.ts).
+  var CROP_TYPES = { "image/jpeg": true, "image/png": true, "image/webp": true };
+  var CROP_OUTPUT_SIZE = 640; // export px, square — plenty for a small display box at any pixel density
+
+  function openCropModal(file) {
+    if (!CROP_TYPES[file.type] || typeof createImageBitmap !== "function") {
+      return Promise.resolve(file); // vector/animated/unrecognised — nothing to crop, let it through
+    }
+    return createImageBitmap(file, { colorSpaceConversion: "default" })
+      .then(function (bitmap) {
+        return new Promise(function (resolve) {
+          var zoom = 1;
+          var cx = bitmap.width / 2, cy = bitmap.height / 2; // image-space point sitting at the reticle's centre
+
+          // "cover" fit: scale by whichever axis needs MORE magnification
+          // to fill a `size`-square frame — the fraction of the image this
+          // leaves visible doesn't depend on `size` itself, only on zoom,
+          // which is what lets clamp() below stay correct for either the
+          // small on-screen stage or the larger exported canvas.
+          function baseScale(size) { return Math.max(size / bitmap.width, size / bitmap.height); }
+          function clamp(size) {
+            var eff = baseScale(size) * zoom;
+            var halfW = (size / 2) / eff, halfH = halfW; // square frame either way
+            cx = Math.min(Math.max(cx, halfW), bitmap.width - halfW);
+            cy = Math.min(Math.max(cy, halfH), bitmap.height - halfH);
+          }
+          function render(ctx, size, res) {
+            var eff = baseScale(size) * zoom;
+            var k = res / size; // internal resolution vs. the logical square it represents
+            ctx.clearRect(0, 0, res, res);
+            ctx.save();
+            ctx.translate(res / 2, res / 2);
+            ctx.scale(eff * k, eff * k);
+            ctx.translate(-cx, -cy);
+            ctx.drawImage(bitmap, 0, 0);
+            ctx.restore();
+          }
+
+          var backdrop = document.createElement("div");
+          backdrop.className = "qp-crop-backdrop";
+          var modal = document.createElement("div");
+          modal.className = "qp-crop-modal";
+          var stage = document.createElement("div");
+          stage.className = "qp-crop-stage";
+          var canvas = document.createElement("canvas");
+          canvas.className = "qp-crop-canvas";
+          var reticle = document.createElement("div");
+          reticle.className = "qp-crop-reticle";
+          ["tl", "tr", "bl", "br"].forEach(function (corner) {
+            var tick = document.createElement("span");
+            tick.className = "qp-crop-tick qp-crop-tick--" + corner;
+            reticle.appendChild(tick);
+          });
+          stage.appendChild(canvas);
+          stage.appendChild(reticle);
+
+          var zoomRow = document.createElement("label");
+          zoomRow.className = "qp-crop-zoomrow";
+          var zoomText = document.createElement("span");
+          zoomText.textContent = "Zoom";
+          var zoomInput = document.createElement("input");
+          zoomInput.type = "range";
+          zoomInput.min = "1"; zoomInput.max = "4"; zoomInput.step = "0.01"; zoomInput.value = "1";
+          zoomRow.appendChild(zoomText);
+          zoomRow.appendChild(zoomInput);
+
+          var hint = document.createElement("p");
+          hint.className = "qp-crop-hint";
+          hint.textContent = "Drag to reposition, zoom to fill the frame.";
+
+          var actions = document.createElement("div");
+          actions.className = "qp-crop-actions";
+          var cancelBtn = document.createElement("button");
+          cancelBtn.type = "button"; cancelBtn.className = "qp-crop-cancel"; cancelBtn.textContent = "Cancel";
+          var confirmBtn = document.createElement("button");
+          confirmBtn.type = "button"; confirmBtn.className = "qp-crop-confirm"; confirmBtn.textContent = "Use photo";
+          actions.appendChild(cancelBtn);
+          actions.appendChild(confirmBtn);
+
+          modal.appendChild(stage);
+          modal.appendChild(zoomRow);
+          modal.appendChild(hint);
+          modal.appendChild(actions);
+          backdrop.appendChild(modal);
+          document.body.appendChild(backdrop);
+
+          // measured, not assumed — .qp-crop-stage's CSS width can shrink
+          // on a narrow phone screen, and the drag/zoom math below has to
+          // agree with whatever size actually got laid out or dragging
+          // would track the pointer at the wrong rate.
+          var dpr = Math.min(window.devicePixelRatio || 1, 3);
+          var stageCssPx = stage.getBoundingClientRect().width;
+          var stageRes = Math.round(stageCssPx * dpr);
+          canvas.width = stageRes;
+          canvas.height = stageRes;
+
+          var ctx = canvas.getContext("2d", { colorSpace: "srgb" });
+          function redraw() { render(ctx, stageCssPx, stageRes); }
+          redraw();
+
+          var dragging = null;
+          canvas.addEventListener("pointerdown", function (e) {
+            dragging = { x: e.clientX, y: e.clientY };
+            canvas.setPointerCapture(e.pointerId);
+          });
+          canvas.addEventListener("pointermove", function (e) {
+            if (!dragging) return;
+            var eff = baseScale(stageCssPx) * zoom;
+            cx -= (e.clientX - dragging.x) / eff;
+            cy -= (e.clientY - dragging.y) / eff;
+            dragging = { x: e.clientX, y: e.clientY };
+            clamp(stageCssPx);
+            redraw();
+          });
+          function endDrag() { dragging = null; }
+          canvas.addEventListener("pointerup", endDrag);
+          canvas.addEventListener("pointercancel", endDrag);
+
+          zoomInput.addEventListener("input", function () {
+            zoom = Math.max(1, +zoomInput.value || 1);
+            clamp(stageCssPx);
+            redraw();
+          });
+
+          function finish(result) { backdrop.remove(); bitmap.close(); resolve(result); }
+
+          cancelBtn.addEventListener("click", function () { finish(null); });
+          backdrop.addEventListener("click", function (e) { if (e.target === backdrop) finish(null); });
+          confirmBtn.addEventListener("click", function () {
+            var out = document.createElement("canvas");
+            out.width = CROP_OUTPUT_SIZE;
+            out.height = CROP_OUTPUT_SIZE;
+            var octx = out.getContext("2d", { colorSpace: "srgb" });
+            render(octx, CROP_OUTPUT_SIZE, CROP_OUTPUT_SIZE);
+            out.toBlob(function (blob) {
+              if (!blob) { finish(file); return; }
+              var base = file.name ? file.name.replace(/\.[^./\\]+$/, "") : "photo";
+              finish(new File([blob], base + "-cropped.jpg", { type: "image/jpeg" }));
+            }, "image/jpeg", 0.92);
+          });
+        });
+      })
+      .catch(function () { return file; }); // couldn't decode it here — let the server give its own error
   }
 
   // ---- client-side downscale before upload ----
