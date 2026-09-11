@@ -73,7 +73,7 @@ export const CONCEPTS: Concept[] = [
     tier: "B",
     prereqs: [],
     sims: ["amplitude-dial"],
-    published: false,
+    published: true,
     slug: "week-01-superposition",
   },
   {
