@@ -79,12 +79,16 @@ const mapLabel = live.length > 0
       <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
       <g class="calls"></g>
 
-      <!-- ═══ WEEK 1 ═══ unpublished again (superposition.published went
-           back to false in concepts.ts after testing) — no node until it
-           republishes. Was left here stale and live-linking to a post
-           that had gone back to a draft; the rule at the top of this file
-           is exactly "unpublished weeks do not get a node here at all",
-           so removing it is a correctness fix, not a design choice. ═══ -->
+      <!-- ═══ WEEK 1 ═══ published ═══ -->
+      <a href="/posts/week-01-superposition">
+        <g class="node is-live">
+          <rect x="0" y="0" width="176" height="108" rx="3" />
+          <text class="n-wk"    x="12" y="22">ISSUE 01</text>
+          <text class="n-title" x="12" y="48">Superposition</text>
+          <text class="n-char"  x="12" y="70">Doctor Manhattan</text>
+          <text class="n-state" x="12" y="92">READ →</text>
+        </g>
+      </a>
 
     </svg>
   </div>

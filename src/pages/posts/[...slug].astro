@@ -117,8 +117,16 @@ const { prev, next } = neighbours(c.id);
     .post__chrome { margin-top: 1.4rem; }
 
     .post__body :global(h2) { margin-top: 2.6em; }
-    /* sims break the measure — they get the full column */
-    .post__body :global(.sim), .post__body :global(.pr__gate), .post__body :global(.pr__result) {
+    /* sims break the measure — they get the full column. Targets
+       .sim-frame, not .sim: SimShell wraps every .sim in a .sim-frame that
+       carries the actual positioning context for a corner motif (see its
+       own comment on why), and .sim-frame has no width of its own —
+       without its own breakout rule it stays pinned to the narrow prose
+       column while .sim visually expands past it, so a motif anchored to
+       .sim-frame ends up positioned relative to where the panel USED to
+       be, not where it visually now is. .sim itself needs no rule here —
+       it's a plain block child that already fills .sim-frame's box. */
+    .post__body :global(.sim-frame), .post__body :global(.pr__gate), .post__body :global(.pr__result) {
       width: min(100vw - 2.5rem, 60rem);
       margin-inline: calc(50% - min(50vw - 1.25rem, 30rem));
     }
