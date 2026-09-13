@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
-import { CONCEPTS, allSims } from "../../data/concepts";
+import { CONCEPTS, allSims, isGrouped } from "../../data/concepts";
 import { copy, fullSiteTitle } from "../../lib/site-copy";
 import { listSims } from "../../sims/registry";
 
@@ -15,10 +15,15 @@ const usedBy = allSims();
 const session = Astro.locals.session!;
 
 // ---- issues list, grouped by arc ----
-const ungrouped = CONCEPTS.filter((c) => c.week === null || c.arc === null);
+// isGrouped, not a bare `c.arc === null` check: a concept can have an arc
+// picked out (it's headed there eventually) while its week is still
+// undecided — that's a real, intended state now, not an edge case. Such a
+// concept belongs in "Ungrouped" only; without checking week too, it used
+// to also land in its arc's own list with no week number to show.
+const ungrouped = CONCEPTS.filter((c) => !isGrouped(c));
 const arcGroups = new Map<number, typeof CONCEPTS>();
 for (const c of CONCEPTS) {
-  if (c.arc === null) continue;
+  if (!isGrouped(c)) continue;
   if (!arcGroups.has(c.arc)) arcGroups.set(c.arc, []);
   arcGroups.get(c.arc)!.push(c);
 }
