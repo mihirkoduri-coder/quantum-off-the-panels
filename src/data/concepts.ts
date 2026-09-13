@@ -22,6 +22,13 @@
 
 export type Tier = "A" | "B" | "C";
 
+/** src/components/sim/motifs.tsx's character motifs, redrawn on canvas in
+ *  src/lib/motif-canvas.ts. Optional and separate from `sims`: a motif is
+ *  bespoke art built for one specific character, not a byproduct of any
+ *  sim existing — most weeks won't have one, and that's the expected case,
+ *  not a gap to fill in. */
+export type StickerMotif = "hand" | "eyes";
+
 export interface Concept {
   /** stable id — used for prereq edges and post frontmatter. never change it. */
   id: string;
@@ -44,6 +51,9 @@ export interface Concept {
   published: boolean;
   /** matches the .mdx filename in src/content/posts/ */
   slug: string;
+  /** the stamp sheet's downloadable sticker for this week, if one's been
+   *  built. undefined = the stamp sheet falls back to its plain card. */
+  stickerMotif?: StickerMotif;
 }
 
 export const isGrouped = (c: Concept): c is Concept & { week: number; arc: number } =>
@@ -75,6 +85,7 @@ export const CONCEPTS: Concept[] = [
     sims: ["amplitude-dial"],
     published: true,
     slug: "week-01-superposition",
+    stickerMotif: "hand",
   },
   {
     id: "interference",
@@ -101,6 +112,7 @@ export const CONCEPTS: Concept[] = [
     sims: ["collapse-lab"],
     published: false,
     slug: "week-03-measurement",
+    stickerMotif: "eyes",
   },
   {
     id: "entanglement",

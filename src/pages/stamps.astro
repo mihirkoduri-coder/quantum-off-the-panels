@@ -11,7 +11,7 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
 // already has a real week number.
 const stamps = CONCEPTS.filter((c) => c.published).map((c) => ({
   id: c.id, week: c.week!, title: c.title, character: c.character,
-  slug: c.slug, sims: c.sims,
+  slug: c.slug, sims: c.sims, stickerMotif: c.stickerMotif,
 }));
 ---
 <Base title={`${copy.stamps.heading} — ${fullSiteTitle()}`} description={copy.stamps.intro}>

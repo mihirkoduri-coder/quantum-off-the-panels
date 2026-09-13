@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
 import { isUnlocked, onUnlockChange } from "../lib/unlocks";
 import { copy } from "../lib/site-copy";
+import type { StickerMotif } from "../data/concepts";
+import Sticker from "./Sticker";
 
 interface Stamp {
   id: string; week: number; title: string; character: string;
-  slug: string; sims: string[];
+  slug: string; sims: string[]; stickerMotif?: StickerMotif;
 }
 
 /**
  * A collection sheet, after Marvel's value stamps. Earned state is read from
  * the same localStorage the sims gallery already uses — no account, no server,
  * and it stays on the reader's device by design.
+ *
+ * A week with a built character motif (stickerMotif) gets a real, download-
+ * able sticker once earned, rendered by the exact same canvas code the
+ * Studio uses — not a generic placeholder standing in for "you did it."
+ * Everything else, and everything not yet earned, keeps the plain card:
+ * downloading is the payoff for actually meeting the sim, not a freebie
+ * for every row on the sheet.
  */
 export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
   const [earned, setEarned] = useState<Set<string>>(new Set());
@@ -35,9 +44,10 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
         {stamps.map((s) => {
           const got = earned.has(s.id);
           const hasSim = s.sims.length > 0;
+          const showSticker = got && s.stickerMotif;
           return (
-            <li key={s.id} className={`ss__i${got ? " is-got" : ""}`}>
-              <span className="ss__perf" />
+            <li key={s.id} className={`ss__i${got ? " is-got" : ""}${showSticker ? " has-sticker" : ""}`}>
+              {showSticker && <Sticker kind={s.stickerMotif!} character={s.character} />}
               <span className="ss__wk">No. {String(s.week).padStart(2, "0")}</span>
               <span className="ss__title">{s.title}</span>
               <span className="ss__char">{s.character}</span>
@@ -65,10 +75,12 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
           opacity: 0.5; filter: saturate(0.2);
         }
         .ss__i.is-got { opacity: 1; filter: none; border-style: solid; border-color: var(--cyan); }
+        .ss__i.has-sticker { grid-template-columns: 1fr; justify-items: center; text-align: center; padding-top: 0.7rem; }
         .ss__wk {
           font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em;
           text-transform: uppercase; color: var(--yellow);
         }
+        .has-sticker .ss__wk { margin-top: 0.6rem; }
         .ss__title { font-family: var(--font-head); font-weight: 900; font-size: 1rem; line-height: 1.15; }
         .ss__char { font-family: var(--font-body); font-style: italic; font-size: 0.85rem; color: var(--paper-dim); }
         .ss__link {
