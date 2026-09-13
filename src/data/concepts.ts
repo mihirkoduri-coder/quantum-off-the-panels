@@ -89,7 +89,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "interference",
-    week: 3,
+    week: null,
     arc: 1,
     title: "Phases & Interference",
     blurb: "The actual engine. Paths don't just add up — they cancel.",
@@ -102,7 +102,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "measurement",
-    week: 2,
+    week: null,
     arc: 1,
     title: "Measurement & Collapse",
     blurb: "A photon detector has no opinions. Consciousness is not required.",
@@ -116,7 +116,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "entanglement",
-    week: 4,
+    week: null,
     arc: 1,
     title: "Entanglement",
     blurb: "Two halves of one system. Correlation is not connection.",
@@ -129,7 +129,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "no-signalling",
-    week: 5,
+    week: null,
     arc: 1,
     title: "No-signalling",
     blurb: "Try to send a message with entanglement. Watch it fail.",
@@ -142,7 +142,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "bell",
-    week: 6,
+    week: null,
     arc: 1,
     title: "Bell's theorem",
     blurb: "There's no determined local truth underneath. The numbers rule it out.",
@@ -155,7 +155,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "decoherence",
-    week: 7,
+    week: null,
     arc: 1,
     title: "Decoherence",
     blurb: "The quantum realm isn't a place. So why isn't the world weird?",
@@ -168,7 +168,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "no-cloning",
-    week: 8,
+    week: null,
     arc: 1,
     title: "No-cloning",
     blurb: "You cannot copy an unknown state. This is why quantum cryptography works.",
@@ -181,7 +181,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "qubits",
-    week: 9,
+    week: null,
     arc: 1,
     title: "Qubits vs. bits",
     blurb: "n qubits is not n bits, and it is not 2ⁿ bits of storage either.",
@@ -194,7 +194,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "single-gates",
-    week: 10,
+    week: null,
     arc: 1,
     title: "Single-qubit gates",
     blurb: "Every gate is a rotation. Reversible, norm-preserving, no exceptions.",
@@ -207,7 +207,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "two-gates",
-    week: 11,
+    week: null,
     arc: 1,
     title: "Two-qubit gates",
     blurb: "Build a Bell state from scratch. Week 4, now with instructions.",
@@ -220,7 +220,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "deutsch-jozsa",
-    week: 12,
+    week: null,
     arc: 1,
     title: "Deutsch–Jozsa",
     blurb: "One question instead of many. The first honest advantage.",
@@ -253,7 +253,15 @@ export const publishedSims = () => allSims().filter(({ concept }) => concept.pub
 export const edges = (): [string, string][] =>
   CONCEPTS.flatMap((c) => c.prereqs.map((p) => [p, c.id] as [string, string]));
 
+/** prev/next by actual week order, not array position — the manifest's own
+ *  entry order stops meaning anything once ungrouped drafts (week: null)
+ *  can sit anywhere in the file, and even among grouped ones it was never
+ *  guaranteed to match reading order in the first place. Ungrouped
+ *  concepts are excluded entirely rather than sorted to one end: they
+ *  don't have a week to be "next" at. */
 export const neighbours = (id: string) => {
-  const i = CONCEPTS.findIndex((c) => c.id === id);
-  return { prev: CONCEPTS[i - 1] ?? null, next: CONCEPTS[i + 1] ?? null };
+  const ordered = CONCEPTS.filter(isGrouped).sort((a, b) => a.week - b.week);
+  const i = ordered.findIndex((c) => c.id === id);
+  if (i === -1) return { prev: null, next: null };
+  return { prev: ordered[i - 1] ?? null, next: ordered[i + 1] ?? null };
 };
