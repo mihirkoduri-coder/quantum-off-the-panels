@@ -1,4 +1,4 @@
-import { createClient, type QueryResultRow } from "@vercel/postgres";
+import { Client } from "pg";
 
 /**
  * Letters, questions and comments are structurally identical — a name, a body,
@@ -21,29 +21,46 @@ export interface Submission {
 }
 
 /**
- * One request, one short-lived connection via createClient() rather than
- * the package's default pooled `sql` export. Whatever landed in POSTGRES_URL
- * for this project is a direct (non-pooled) connection string — Vercel's
- * newer Postgres marketplace integrations don't always populate a pooled
- * one the way the older native product this library targets does, and the
- * pooled `sql`/createPool() path refuses to run against one at all
- * ("meant to be used with a direct connection"). A serverless invocation
- * has no persistent process to share a pool across anyway, so a fresh
- * client per call is the actually-correct shape here, not a workaround.
+ * Plain `pg` over a direct TCP+TLS connection, not @vercel/postgres. That
+ * package only speaks Neon's WebSocket proxy protocol (it's a thin wrapper
+ * around @neondatabase/serverless) — built for edge runtimes that can't
+ * open a raw socket at all. This project's API routes run as ordinary Node
+ * serverless functions, which can, and hitting that proxy live threw a
+ * flat "Unexpected server response: 404" (a version-skew symptom between
+ * the wrapper and Neon's current proxy, not a config problem this app can
+ * fix). Neon is a real Postgres underneath — POSTGRES_URL works with any
+ * standard client — so `pg` sidesteps the whole proxy-compatibility
+ * question rather than chasing it further.
  *
- * createClient() with no config looks specifically for
- * POSTGRES_URL_NON_POOLING, not POSTGRES_URL — confirmed live (this
- * project's env only has the latter) — so the connection string has to be
- * passed explicitly rather than relying on its default env lookup.
+ * One request, one short-lived connection: a serverless invocation has no
+ * persistent process to usefully share a pool across anyway.
  */
-async function withClient<T>(fn: (sql: ReturnType<typeof createClient>["sql"]) => Promise<T>): Promise<T> {
-  const client = createClient({ connectionString: process.env.POSTGRES_URL });
+async function withClient<T>(fn: (sql: SqlTag) => Promise<T>): Promise<T> {
+  const client = new Client({ connectionString: process.env.POSTGRES_URL });
   await client.connect();
   try {
-    return await fn(client.sql.bind(client));
+    return await fn(makeSqlTag(client));
   } finally {
     await client.end();
   }
+}
+
+/** A tagged-template wrapper over pg's positional ($1, $2, …) parameters,
+ *  so the query bodies below read the same as they would against any
+ *  tagged-template Postgres client — each interpolation becomes its own
+ *  placeholder, in order, exactly like `${x}` used twice becomes two
+ *  separate (identically-valued) parameters rather than one reused. */
+type SqlTag = <T = Record<string, unknown>>(
+  strings: TemplateStringsArray, ...values: unknown[]
+) => Promise<{ rows: T[] }>;
+
+function makeSqlTag(client: Client): SqlTag {
+  return async (strings, ...values) => {
+    let text = strings[0];
+    for (let i = 0; i < values.length; i++) text += `$${i + 1}${strings[i + 1]}`;
+    const result = await client.query(text, values as unknown[]);
+    return { rows: result.rows };
+  };
 }
 
 let ready: Promise<void> | null = null;
@@ -85,8 +102,8 @@ export async function listSubmissions(opts: {
   await init();
   const { kind, status, slug, limit = 200 } = opts;
   return withClient(async (sql) => {
-    const { rows } = await sql<Submission & QueryResultRow>`
-      SELECT id, kind, post_slug, name, body, status, reply, featured, created_at
+    const { rows } = await sql<Submission>`
+      SELECT id, kind, post_slug, name, body, status, reply, featured, created_at::text AS created_at
       FROM submissions
       WHERE (${kind ?? null}::text  IS NULL OR kind   = ${kind ?? null})
         AND (${status ?? null}::text IS NULL OR status = ${status ?? null})
