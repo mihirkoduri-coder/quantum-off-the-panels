@@ -6,6 +6,7 @@ import Claim from "../../components/Claim.astro";
 import Verdict from "../../components/Verdict.astro";
 import { byId, neighbours } from "../../data/concepts";
 import { copy, fullSiteTitle } from "../../lib/site-copy";
+import { Comments } from "../../components/Involve";
 
 export async function getStaticPaths() {
   const posts = await getCollection("posts", (p) => !p.data.draft);
@@ -57,6 +58,8 @@ const { prev, next } = neighbours(c.id);
           <slot name="verdict" />
         </Verdict>
       )}
+
+      <Comments client:visible slug={c.slug} />
 
       <nav class="post__nav">
         {prev && prev.week !== null ? <a href={prev.published ? `/posts/${prev.slug}` : "/compendium"}>← <span data-copy-key="labels.issue">{copy.labels.issue}</span> {prev.week}</a> : <span />}

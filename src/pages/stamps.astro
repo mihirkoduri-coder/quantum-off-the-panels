@@ -1,0 +1,23 @@
+---
+import Base from "../layouts/Base.astro";
+import StampSheet from "../components/StampSheet";
+import { CONCEPTS } from "../data/concepts";
+import { copy, fullSiteTitle } from "../lib/site-copy";
+
+// published only — same rule as everywhere else reader-facing (ConceptMap,
+// the homepage, the sims gallery): an unpublished week's title and
+// character don't leak onto this page just because a stamp slot exists
+// for it. "published implies grouped" (concepts.ts) means every row here
+// already has a real week number.
+const stamps = CONCEPTS.filter((c) => c.published).map((c) => ({
+  id: c.id, week: c.week!, title: c.title, character: c.character,
+  slug: c.slug, sims: c.sims,
+}));
+---
+<Base title={`${copy.stamps.heading} — ${fullSiteTitle()}`} description={copy.stamps.intro}>
+  <div class="wrap" style="padding-bottom:5rem">
+    <h1 data-copy-key="stamps.heading">{copy.stamps.heading}</h1>
+    <p class="dim" style="max-width:36rem" data-copy-key="stamps.intro">{copy.stamps.intro}</p>
+    <StampSheet client:load stamps={stamps} />
+  </div>
+</Base>

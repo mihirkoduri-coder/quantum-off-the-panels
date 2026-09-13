@@ -10,7 +10,8 @@
     "home": "Home",
     "compendium": "Compendium",
     "simulations": "Simulations",
-    "about": "About the author"
+    "about": "About the author",
+    "stamps": "Stamps"
   },
   "labels": {
     "issue": "Issue",
@@ -70,5 +71,38 @@
   "violationExplainer": {
     "youTriedToPrefix": "You tried to",
     "trySomethingElse": "Try something else"
+  },
+  "involve": {
+    "commentsEyebrow": "THE LETTERS PAGE",
+    "commentsEmpty": "Nothing here yet. Be first.",
+    "commentHeading": "Say something",
+    "commentNote": "Comments appear straight away, unless something about them looks off — then they're held for a quick look first.",
+    "commentCta": "Post comment",
+    "letterHeading": "Write a letter",
+    "letterNote": "Selected letters are printed in a future issue, with a reply.",
+    "letterCta": "Send letter",
+    "questionHeading": "Ask a question",
+    "questionNote": "Questions get answered in a future issue.",
+    "questionCta": "Send question",
+    "nameLabel": "Your name",
+    "messageLabel": "Message",
+    "sendAnother": "Send another",
+    "thanksHeading": "THANKS!",
+    "postedMessage": "Posted.",
+    "heldMessage": "Received — it'll be read before it appears.",
+    "replyLabel": "Reply"
+  },
+  "write": {
+    "heading": "Write to us",
+    "intro": "Comic letter columns took reader mail seriously — questions got answered, and good letters got printed with a reply. This is that, minus the mailbox.",
+    "footerLink": "Write to us"
+  },
+  "stamps": {
+    "heading": "The stamp sheet",
+    "intro": "Marvel printed cut-out value stamps in its comics through the mid-seventies — one per issue, collected into a book. This is the same idea, minus the scissors. A stamp fills in when you actually use that week's simulation.",
+    "collectedSuffix": "collected on this device",
+    "gotLabel": "collected",
+    "goEarnLabel": "go earn it",
+    "notIssuedLabel": "not issued"
   }
 }

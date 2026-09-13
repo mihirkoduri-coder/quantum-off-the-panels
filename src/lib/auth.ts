@@ -15,7 +15,7 @@
  * Acceptable for a single-editor personal blog; would need server-side
  * session storage (and therefore a database) to do better.
  */
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, createHash, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE = "qp_session";
 export const OAUTH_STATE_COOKIE = "qp_oauth_state";
@@ -73,4 +73,13 @@ export function verifySessionCookie(value: string | undefined): SessionPayload |
   if (payload.login !== ADMIN_GITHUB_LOGIN) return null;
 
   return payload;
+}
+
+/** Salted with SESSION_SECRET so a hash is useless outside this app, and
+ *  irreversible so the rate limiter (lib/db.ts's recentCount) never has to
+ *  store — or leak — an actual IP address. Comment/letter/question
+ *  submissions are the only callers; nothing else needs a reader's IP. */
+export function hashIp(ip: string): string {
+  const secret = import.meta.env.SESSION_SECRET ?? "";
+  return createHash("sha256").update(ip + secret).digest("base64url").slice(0, 22);
 }

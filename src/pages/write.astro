@@ -1,0 +1,28 @@
+---
+import Base from "../layouts/Base.astro";
+import { SubmitForm } from "../components/Involve";
+import { copy, fullSiteTitle } from "../lib/site-copy";
+---
+<Base title={`${copy.write.heading} — ${fullSiteTitle()}`} description={copy.write.intro}>
+  <div class="wrap write" style="padding-bottom:5rem">
+    <h1 data-copy-key="write.heading">{copy.write.heading}</h1>
+    <p class="dim write__intro" data-copy-key="write.intro">{copy.write.intro}</p>
+
+    <div class="write__forms">
+      <SubmitForm client:visible kind="letter" />
+      <SubmitForm client:visible kind="question" />
+    </div>
+  </div>
+
+  <style>
+    .write { padding: 2.5rem 0 0; }
+    .write h1 { margin-bottom: 0.5rem; }
+    .write__intro { max-width: 36rem; margin-bottom: 0; }
+    .write__forms {
+      display: grid; gap: 1.5rem; margin-top: 2rem;
+    }
+    @media (min-width: 46rem) {
+      .write__forms { grid-template-columns: 1fr 1fr; align-items: start; }
+    }
+  </style>
+</Base>

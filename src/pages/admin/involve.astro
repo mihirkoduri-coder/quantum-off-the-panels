@@ -1,0 +1,88 @@
+---
+export const prerender = false;
+import Base from "../../layouts/Base.astro";
+import Queue from "../../components/admin/Queue";
+import { listSubmissions, eventTotals, eventDaily } from "../../lib/db";
+import { fullSiteTitle } from "../../lib/site-copy";
+
+// middleware.ts guarantees this is set before this page ever renders
+const session = Astro.locals.session!;
+
+const rows = await listSubmissions({ limit: 300 });
+const totals = await eventTotals(30);
+const daily = await eventDaily(30);
+
+const views = totals.filter((t) => t.name === "view").reduce((s, t) => s + t.total, 0);
+const topPosts = totals.filter((t) => t.name === "view" && t.slug).slice(0, 8);
+const simEvents = totals.filter((t) => t.name.startsWith("sim:"));
+const peak = Math.max(1, ...daily.map((d) => d.total));
+---
+<Base title={`Reader mail — ${fullSiteTitle()}`} noindex={true}>
+  <div class="wrap" style="padding-bottom:5rem">
+    <p><a href="/admin#involve">&larr; Admin</a></p>
+    <p class="eyebrow"><span class="wk">ADMIN</span><span class="sep">/</span><span>{session.login}</span></p>
+    <h1>Reader mail &amp; analytics</h1>
+
+    <section class="ad">
+      <div class="ad__stat"><b>{views}</b><span>views · 30 days</span></div>
+      <div class="ad__stat"><b>{rows.filter((r) => r.status === "pending").length}</b><span>awaiting review</span></div>
+      <div class="ad__stat"><b>{rows.filter((r) => r.kind === "letter").length}</b><span>letters</span></div>
+      <div class="ad__stat"><b>{rows.filter((r) => r.kind === "question").length}</b><span>questions</span></div>
+    </section>
+
+    {daily.length > 0 && (
+      <section style="margin-top:2rem">
+        <p class="eyebrow"><span class="wk">VIEWS</span><span class="sep">/</span><span>last 30 days</span></p>
+        <div class="spark">
+          {daily.map((d) => (
+            <span class="spark__bar" style={`height:${Math.max(3, (d.total / peak) * 100)}%`} title={`${d.day}: ${d.total}`} />
+          ))}
+        </div>
+      </section>
+    )}
+
+    <div class="cols">
+      {topPosts.length > 0 && (
+        <section>
+          <p class="eyebrow"><span class="wk">TOP POSTS</span></p>
+          <ul class="bars">
+            {topPosts.map((t) => (
+              <li><span>{t.slug}</span><i style={`width:${(t.total / topPosts[0].total) * 100}%`} /><b>{t.total}</b></li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {simEvents.length > 0 && (
+        <section>
+          <p class="eyebrow"><span class="wk">SIMULATIONS</span></p>
+          <ul class="bars">
+            {simEvents.slice(0, 8).map((t) => (
+              <li><span>{t.name.replace("sim:", "")} {t.slug}</span><i style={`width:${(t.total / simEvents[0].total) * 100}%`} /><b>{t.total}</b></li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+
+    <section style="margin-top:2.5rem">
+      <p class="eyebrow"><span class="wk">QUEUE</span></p>
+      <Queue client:load initial={rows} />
+    </section>
+  </div>
+
+  <style>
+    .ad { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin-top: 1.5rem; }
+    .ad__stat { border: var(--panel-line) solid var(--gutter); border-radius: var(--radius); background: var(--ink-2); padding: 0.9rem; }
+    .ad__stat b { display: block; font-family: var(--font-head); font-weight: 900; font-size: 1.9rem; color: var(--cyan); }
+    .ad__stat span { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-dim); }
+    .spark { display: flex; align-items: flex-end; gap: 2px; height: 90px; border-bottom: 2px solid var(--gutter); }
+    .spark__bar { flex: 1; background: var(--cyan); min-width: 3px; border-radius: 1px 1px 0 0; }
+    .cols { display: grid; gap: 2rem; margin-top: 2rem; }
+    @media (min-width: 52rem) { .cols { grid-template-columns: 1fr 1fr; } }
+    .bars { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.4rem; }
+    .bars li { display: grid; grid-template-columns: 11rem 1fr 3rem; gap: 0.5rem; align-items: center; font-family: var(--font-mono); font-size: 0.7rem; }
+    .bars span { color: var(--paper-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bars i { display: block; height: 10px; background: var(--cyan); border-radius: 2px; }
+    .bars b { color: var(--yellow); text-align: right; }
+  </style>
+</Base>

@@ -22,7 +22,7 @@ export interface SiteCopy {
     description: string;
     footerNote: string;
   };
-  nav: { home: string; compendium: string; simulations: string; about: string };
+  nav: { home: string; compendium: string; simulations: string; about: string; stamps: string };
   labels: { issue: string; arc: string; buildsOn: string; notOutYet: string };
   homepage: {
     headline: string;
@@ -58,6 +58,19 @@ export interface SiteCopy {
     nudge: string;
   };
   violationExplainer: { youTriedToPrefix: string; trySomethingElse: string };
+  involve: {
+    commentsEyebrow: string; commentsEmpty: string;
+    commentHeading: string; commentNote: string; commentCta: string;
+    letterHeading: string; letterNote: string; letterCta: string;
+    questionHeading: string; questionNote: string; questionCta: string;
+    nameLabel: string; messageLabel: string; sendAnother: string;
+    thanksHeading: string; postedMessage: string; heldMessage: string; replyLabel: string;
+  };
+  write: { heading: string; intro: string; footerLink: string };
+  stamps: {
+    heading: string; intro: string; collectedSuffix: string;
+    gotLabel: string; goEarnLabel: string; notIssuedLabel: string;
+  };
 }
 
 export const copy: SiteCopy = raw as SiteCopy;
