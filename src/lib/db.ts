@@ -30,9 +30,14 @@ export interface Submission {
  * ("meant to be used with a direct connection"). A serverless invocation
  * has no persistent process to share a pool across anyway, so a fresh
  * client per call is the actually-correct shape here, not a workaround.
+ *
+ * createClient() with no config looks specifically for
+ * POSTGRES_URL_NON_POOLING, not POSTGRES_URL — confirmed live (this
+ * project's env only has the latter) — so the connection string has to be
+ * passed explicitly rather than relying on its default env lookup.
  */
 async function withClient<T>(fn: (sql: ReturnType<typeof createClient>["sql"]) => Promise<T>): Promise<T> {
-  const client = createClient();
+  const client = createClient({ connectionString: process.env.POSTGRES_URL });
   await client.connect();
   try {
     return await fn(client.sql.bind(client));
