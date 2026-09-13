@@ -90,7 +90,7 @@
     "thanksHeading": "THANKS!",
     "postedMessage": "Posted.",
     "heldMessage": "Received — it'll be read before it appears.",
-    "replyLabel": "Reply",
+    "replyLabel": "QotP",
     "genericError": "Something went wrong.",
     "networkError": "Couldn't reach the server.",
     "sendingLabel": "Sending…",
