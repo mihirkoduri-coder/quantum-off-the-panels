@@ -90,7 +90,14 @@
     "thanksHeading": "THANKS!",
     "postedMessage": "Posted.",
     "heldMessage": "Received — it'll be read before it appears.",
-    "replyLabel": "Reply"
+    "replyLabel": "Reply",
+    "genericError": "Something went wrong.",
+    "networkError": "Couldn't reach the server.",
+    "sendingLabel": "Sending…",
+    "loadingLabel": "loading",
+    "replySingular": "reply",
+    "replyPlural": "replies",
+    "honeypotLabel": "Website"
   },
   "write": {
     "heading": "Write to us",
@@ -103,6 +110,164 @@
     "collectedSuffix": "collected on this device",
     "gotLabel": "collected",
     "goEarnLabel": "go earn it",
-    "notIssuedLabel": "not issued"
+    "notIssuedLabel": "not issued",
+    "downloadSticker": "Download sticker"
+  },
+  "simCopy": {
+    "amplitudeDial": {
+      "title": "The amplitude dial",
+      "predict": {
+        "question": "Turn the phase dial — only the phase, leaving the first dial alone. What happens to the two probability bars?",
+        "choiceSwap": "They trade places",
+        "choiceShift": "They shift gradually",
+        "choiceNone": "Nothing at all",
+        "choiceEven": "They even out to 50/50",
+        "because": "Phase is invisible to a measurement on a single qubit. It's real, and it's doing something — but nothing you can see from here. Hold onto that; it's next week's whole story."
+      },
+      "watchForLive": "the bars never stop moving. The odds are exact; the outcome simply hasn't happened yet.",
+      "watchForCollapsed": "the sphere has snapped to a pole. That IS the state now — the superposition is gone.",
+      "controls": {
+        "tiltLabel": "Tilt away from |0⟩",
+        "phaseLabel": "Phase",
+        "measureButton": "Measure it",
+        "peekButton": "Peek without measuring",
+        "lockedNote": "The dials are dead. You don't have a superposition any more — you have an answer. Reset to prepare a new one."
+      },
+      "captions": {
+        "peeking": "i am looking without touching.",
+        "failing": "the state is intact. i would know.",
+        "lockedTemplate": "it is |{outcome}⟩. from here, it was always going to be.",
+        "phaseTurns": "the phase turns. nothing turns with it.",
+        "near0": "it is |0⟩ and it will be |0⟩. there is nothing to wait for.",
+        "near1": "it is |1⟩ and it will be |1⟩. there is nothing to wait for.",
+        "middle": "it is neither. i see both. neither is happening.",
+        "leaning0": "it leans toward |0⟩. leaning is not being.",
+        "leaning1": "it leans toward |1⟩. leaning is not being."
+      },
+      "speech": {
+        "who": "Manhattan",
+        "failing1": "I observed it without disturbing it.",
+        "failing2": "The state is unchanged. I would know.",
+        "lockedTemplate1": "It is |{outcome}⟩.",
+        "lockedTemplate2": "From here it was always going to be |{outcome}⟩. From a moment ago it was not going to be anything at all.",
+        "locked3": "I do not find this difficult."
+      },
+      "violation": {
+        "sfx": "KRAKK!",
+        "law": "Looking was measuring.",
+        "attempted": "read the state without disturbing it",
+        "why": "The reading was real — and taking it is what destroyed the thing you were reading. There was never a hidden answer sitting underneath waiting to be checked. Reset and turn the dials again: nothing about that state was ever a 0 or a 1."
+      },
+      "dial": {
+        "sphereCollapsed": "collapsed",
+        "sphereLive": "the state — fully known",
+        "histCollapsed": "one outcome, forever",
+        "histLive": "the odds — exact, but undecided",
+        "pocketLabel": "What am I looking at?",
+        "pocketP1": "This diagram is a Bloch Sphere: a visualization of a state that combines both phases along the equator (direction) and binary basis states at the poles (proximity to both 0 and 1).",
+        "pocketP2": "The vector you're controlling right now combines those pieces of information about our superposition!"
+      },
+      "readout": { "p0": "P(0)", "p1": "P(1)", "outcome": "outcome" },
+      "peek": { "reading": "reading…", "stateIntact": "state intact", "destabilising": "state destabilising" }
+    },
+    "watchersQuestion": {
+      "title": "The Watcher's question",
+      "predict": {
+        "question": "Take a qubit that is definitely UP. Ask 'up or down?' a hundred times and you get UP a hundred times. Now ask it 'left or right?' — what comes back?",
+        "choiceLeft": "Left, every time",
+        "choiceRight": "Right, every time",
+        "choiceCoin": "A 50/50 coin flip",
+        "choiceNone": "Nothing — the question doesn't apply",
+        "because": "A state that is perfectly certain about one question can be perfectly undecided about another. The certainty was never a property the qubit had on its own — it was a property of the question you kept asking."
+      },
+      "watchFor": "the certainty table. Watch it move between rows — and never add up to more than it started with.",
+      "questions": {
+        "upDown": "Up or down?",
+        "diagonal": "Diagonal?",
+        "leftRight": "Left or right?"
+      },
+      "eyesCaption": {
+        "seenEnough": "he has seen enough",
+        "looking": "he is looking",
+        "refuses": "he refuses to look",
+        "notLooking": "he is not looking"
+      },
+      "ending": {
+        "line1": "Seven questions, and the pattern is already the whole lesson: every answer that taught him something also cost him one he already had.",
+        "kicker": "There is no way to watch without choosing what to stop knowing. The vow was never available to him.",
+        "hint": "Reset to begin again."
+      },
+      "askPrompt": "Ask the qubit a question",
+      "watchOnlyButton": "Just watch — don't ask anything",
+      "readout": { "panels": "panels", "certainAbout": "certain about", "nothing": "nothing" },
+      "ledger": {
+        "heading": "What can be predicted right now",
+        "sureTemplate": "certain: {arrow}",
+        "note": "Notice what happened to the other rows when you asked."
+      },
+      "frames": {
+        "firstCaption": "Uatu prepares to watch.",
+        "firstSub": "The qubit is definitely ↑",
+        "alreadyKnew": "He already knew this answer.",
+        "oddsWereTemplate": "Odds were {pct}%",
+        "emptyHint": "Ask a question"
+      },
+      "pocket": {
+        "label": "What am I looking at?",
+        "p1": "The circle is every state this qubit can be in. Up is ↑, down is ↓, and the arrow is the qubit itself. There's no phase in play this week, so the picture is flat and complete — nothing is hidden behind it.",
+        "p2": "The dashed line is the question you asked. A measurement always has a direction: you don't ask \"what is it?\", you ask \"is it this way or that way?\" The answer can only ever be one of the two ends of that dashed line, so after asking, the arrow snaps onto it.",
+        "p3": "Which is why certainty moves around instead of accumulating. Line the arrow up with one question and you've lined it up sideways to another, and sideways means a coin flip. Ask that second question and the arrow snaps again — abandoning everything the first answer told you.",
+        "p4": "The uncomfortable part: before you asked, there was no answer waiting. A qubit pointing ↑ isn't secretly left or right. It genuinely has no left-or-right answer until a question forces one into existence."
+      },
+      "violation": {
+        "sfx": "THUNK!",
+        "law": "There is no view from nowhere.",
+        "attempted": "observe without choosing a question",
+        "why": "Nothing happened, and nothing was learned. A measurement is not a passive gaze that reveals what was already there — it is a specific question, and without one there is no answer to receive. Uatu's vow only holds while he learns nothing."
+      }
+    },
+    "twoPathInterference": {
+      "title": "Two-path interference",
+      "predict": {
+        "question": "Last week, turning a lone qubit's phase changed nothing a measurement could see. Slide the phase control on ONE of two recombining paths here — what happens to the two detectors?",
+        "choiceNothing": "Still nothing — phase stays invisible",
+        "choiceSwap": "They swap abruptly, like a coin landing the other way",
+        "choiceSwing": "They swing smoothly between certainty and 50/50",
+        "choiceRandom": "They go random, with no pattern at all",
+        "because": "Phase was invisible on one path because there was nothing to compare it against. Recombine two paths that picked up different phases, and the difference between them becomes the entire mechanism — interference is just phase, read out through addition."
+      },
+      "watchForLive": "the two bars swing smoothly from certain to 50/50 and back as you slide the phase. that swing IS the phase, made visible.",
+      "watchForTagged": "both bars are stuck at 50/50 — slide the phase all you want, the tag already erased the fringe.",
+      "watchForLocked": "one detector fired. that's the one path's worth of certainty this run bought.",
+      "controls": {
+        "phaseLabel": "Phase on path B",
+        "measureButton": "Open both detectors",
+        "tagButton": "Tag which path was taken",
+        "untagButton": "Remove the which-path tag",
+        "lockedNote": "One door fired. There's no path pair left to slide a phase between — reset to send another one through."
+      },
+      "captions": {
+        "lockedTemplate": "door {door}. that's the one i came out of. this time.",
+        "tagged": "you clocked me mid-run. now it's a coin flip — pick a door.",
+        "frontDoor": "front door. every time. no second path to speak of.",
+        "backDoor": "back door. every time. i'll tell you that much for free.",
+        "bothDoors": "both doors. neither door. ask me which and i've got nothing.",
+        "mostlyFront": "mostly the front door. don't push it.",
+        "mostlyBack": "mostly the back door. don't push it."
+      },
+      "readout": { "pA": "P(A)", "pB": "P(B)", "outcome": "outcome" },
+      "diagram": { "source": "source", "tagged": "tagged" },
+      "pocket": {
+        "label": "What am I looking at?",
+        "p1": "One source, two paths, one recombination point. Path B is the one carrying the phase you're setting — the magenta ring shows it directly, same dial the probability bars use elsewhere on this site.",
+        "p2": "A which-path tag doesn't just hide the interference from you — it removes it from the system. That's why the bars go flat the instant you add the tag, not the instant you check it."
+      },
+      "violation": {
+        "sfx": "FLATLINE!",
+        "law": "Which-path information kills interference.",
+        "attempted": "tag which path was taken and still see the paths interfere",
+        "why": "The instant anything, anywhere, carries a real record of which path was taken, the two paths stop being one wavefunction to recombine — they're just two separate, non-interfering possibilities now. It didn't matter that no one read the tag yet. The bars flattened the moment the detector existed, not the moment anyone looked at it."
+      }
+    }
   }
 }

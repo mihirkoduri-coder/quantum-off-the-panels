@@ -37,7 +37,7 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
     <>
       <p className="eyebrow ss__count">
         <span className="wk">{have} / {stamps.length}</span>
-        <span className="sep">/</span><span>{copy.stamps.collectedSuffix}</span>
+        <span className="sep">/</span><span data-copy-key="stamps.collectedSuffix">{copy.stamps.collectedSuffix}</span>
       </p>
 
       <ul className="ss">
@@ -52,11 +52,11 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
               <span className="ss__title">{s.title}</span>
               <span className="ss__char">{s.character}</span>
               {got ? (
-                <a className="ss__link" href={`/posts/${s.slug}`}>{copy.stamps.gotLabel}</a>
+                <a className="ss__link" href={`/posts/${s.slug}`} data-copy-key="stamps.gotLabel">{copy.stamps.gotLabel}</a>
               ) : hasSim ? (
-                <a className="ss__link is-todo" href={`/posts/${s.slug}`}>{copy.stamps.goEarnLabel}</a>
+                <a className="ss__link is-todo" href={`/posts/${s.slug}`} data-copy-key="stamps.goEarnLabel">{copy.stamps.goEarnLabel}</a>
               ) : (
-                <span className="ss__link is-soon">{copy.stamps.notIssuedLabel}</span>
+                <span className="ss__link is-soon" data-copy-key="stamps.notIssuedLabel">{copy.stamps.notIssuedLabel}</span>
               )}
             </li>
           );

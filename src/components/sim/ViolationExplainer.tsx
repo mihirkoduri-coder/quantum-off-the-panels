@@ -6,12 +6,16 @@ interface Props {
   violation: {
     /** the onomatopoeia. KRAKK, THUNK, FIZZ — pick one per sim and keep it. */
     sfx: string;
+    sfxKey: string;
     /** the name of the thing they just ran into */
     law: string;
+    lawKey: string;
     /** what they tried */
     attempted: string;
+    attemptedKey: string;
     /** why it can't work. two sentences max — the post does the long version. */
     why: ReactNode;
+    whyKey: string;
   } | null;
   onDismiss?: () => void;
 }
@@ -36,14 +40,15 @@ export default function ViolationExplainer({ violation, onDismiss }: Props) {
 
   return (
     <div className="vio dot-shadow" role="alert">
-      <span className="sfx sfx--break sfx--fire vio__sfx">{violation.sfx}</span>
+      <span className="sfx sfx--break sfx--fire vio__sfx" data-copy-key={violation.sfxKey}>{violation.sfx}</span>
 
       <div className="vio__body">
-        <p className="vio__law">{violation.law}</p>
+        <p className="vio__law" data-copy-key={violation.lawKey}>{violation.law}</p>
         <p className="vio__attempted">
-          <span data-copy-key="violationExplainer.youTriedToPrefix">{copy.violationExplainer.youTriedToPrefix}</span> <b>{violation.attempted}</b>.
+          <span data-copy-key="violationExplainer.youTriedToPrefix">{copy.violationExplainer.youTriedToPrefix}</span>{" "}
+          <b data-copy-key={violation.attemptedKey}>{violation.attempted}</b>.
         </p>
-        <p className="vio__why">{violation.why}</p>
+        <p className="vio__why" data-copy-key={violation.whyKey}>{violation.why}</p>
       </div>
 
       <button

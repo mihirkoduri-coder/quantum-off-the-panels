@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { drawHand, drawEyes, HAND_NATURAL, EYES_NATURAL } from "../lib/motif-canvas";
 import type { StickerMotif } from "../data/concepts";
+import { copy } from "../lib/site-copy";
 
 /**
  * A week's character motif, rendered on its own transparent canvas and
@@ -70,7 +71,9 @@ export default function Sticker({ kind, character }: { kind: StickerMotif; chara
   return (
     <div className="stk">
       <canvas ref={canvasRef} className="stk__canvas" role="img" aria-label={`${character}'s sticker`} />
-      <button className="btn btn--sm stk__dl" onClick={download}>Download sticker</button>
+      <button className="btn btn--sm stk__dl" onClick={download}>
+        <span data-copy-key="stamps.downloadSticker">{copy.stamps.downloadSticker}</span>
+      </button>
       <style>{`
         .stk { display: grid; justify-items: center; gap: 0.5rem; }
         .stk__canvas {

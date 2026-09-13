@@ -10,9 +10,21 @@ import { copy } from "../lib/site-copy";
  */
 
 function kindCopy(kind: "comment" | "letter" | "question") {
-  if (kind === "letter") return { title: copy.involve.letterHeading, note: copy.involve.letterNote, cta: copy.involve.letterCta };
-  if (kind === "question") return { title: copy.involve.questionHeading, note: copy.involve.questionNote, cta: copy.involve.questionCta };
-  return { title: copy.involve.commentHeading, note: copy.involve.commentNote, cta: copy.involve.commentCta };
+  if (kind === "letter") return {
+    title: copy.involve.letterHeading, titleKey: "involve.letterHeading",
+    note: copy.involve.letterNote, noteKey: "involve.letterNote",
+    cta: copy.involve.letterCta, ctaKey: "involve.letterCta",
+  };
+  if (kind === "question") return {
+    title: copy.involve.questionHeading, titleKey: "involve.questionHeading",
+    note: copy.involve.questionNote, noteKey: "involve.questionNote",
+    cta: copy.involve.questionCta, ctaKey: "involve.questionCta",
+  };
+  return {
+    title: copy.involve.commentHeading, titleKey: "involve.commentHeading",
+    note: copy.involve.commentNote, noteKey: "involve.commentNote",
+    cta: copy.involve.commentCta, ctaKey: "involve.commentCta",
+  };
 }
 
 export function SubmitForm({ kind, slug = "" }: { kind: "comment" | "letter" | "question"; slug?: string }) {
@@ -33,22 +45,24 @@ export function SubmitForm({ kind, slug = "" }: { kind: "comment" | "letter" | "
         body: JSON.stringify({ kind, slug, name, body, website: trap, elapsed: Date.now() - opened.current }),
       });
       const d = await r.json();
-      if (!r.ok) { setState("error"); setMsg(d.error ?? "Something went wrong."); return; }
+      // a spam-screen rejection returns its own message; anything else falls
+      // back to the generic, editable one rather than a raw server string
+      if (!r.ok) { setState("error"); setMsg(d.error ?? copy.involve.genericError); return; }
       setState("done");
       setMsg(d.status === "approved" ? copy.involve.postedMessage : copy.involve.heldMessage);
       setName(""); setBody("");
     } catch {
-      setState("error"); setMsg("Couldn't reach the server.");
+      setState("error"); setMsg(copy.involve.networkError);
     }
   };
 
   if (state === "done") {
     return (
       <div className="inv__done">
-        <span className="sfx sfx--fire inv__thanks">{copy.involve.thanksHeading}</span>
+        <span className="sfx sfx--fire inv__thanks" data-copy-key="involve.thanksHeading">{copy.involve.thanksHeading}</span>
         <p>{msg}</p>
         <button className="btn" onClick={() => { setState("idle"); opened.current = Date.now(); }}>
-          {copy.involve.sendAnother}
+          <span data-copy-key="involve.sendAnother">{copy.involve.sendAnother}</span>
         </button>
       </div>
     );
@@ -56,23 +70,28 @@ export function SubmitForm({ kind, slug = "" }: { kind: "comment" | "letter" | "
 
   return (
     <div className="inv__form">
-      <p className="inv__head">{c.title}</p>
-      <p className="inv__note">{c.note}</p>
+      <p className="inv__head" data-copy-key={c.titleKey}>{c.title}</p>
+      <p className="inv__note" data-copy-key={c.noteKey}>{c.note}</p>
 
-      <label className="inv__f"><span>{copy.involve.nameLabel}</span>
+      <label className="inv__f"><span data-copy-key="involve.nameLabel">{copy.involve.nameLabel}</span>
         <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} /></label>
-      <label className="inv__f"><span>{copy.involve.messageLabel}</span>
+      <label className="inv__f"><span data-copy-key="involve.messageLabel">{copy.involve.messageLabel}</span>
         <textarea rows={kind === "comment" ? 3 : 5} value={body}
           onChange={(e) => setBody(e.target.value)} maxLength={4000} /></label>
 
-      {/* honeypot: off-screen, not hidden, so bots that check display still fill it */}
+      {/* honeypot: off-screen, not hidden, so bots that check display still fill it.
+          Its label is never seen by a real reader, but it's still real page text —
+          wired the same as everything else rather than left as a special case. */}
       <label className="inv__trap" aria-hidden="true">
-        Website<input tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
+        <span data-copy-key="involve.honeypotLabel">{copy.involve.honeypotLabel}</span>
+        <input tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} />
       </label>
 
       <div className="row">
         <button className="btn btn--go" onClick={send} disabled={state === "sending" || !name.trim() || !body.trim()}>
-          {state === "sending" ? "Sending…" : c.cta}
+          {state === "sending"
+            ? <span data-copy-key="involve.sendingLabel">{copy.involve.sendingLabel}</span>
+            : <span data-copy-key={c.ctaKey}>{c.cta}</span>}
         </button>
         {state === "error" && <span className="inv__err">{msg}</span>}
       </div>
@@ -93,8 +112,17 @@ export function Comments({ slug }: { slug: string }) {
 
   return (
     <section className="inv">
-      <p className="eyebrow"><span className="wk">{copy.involve.commentsEyebrow}</span><span className="sep">/</span>
-        <span>{rows ? `${rows.length} ${rows.length === 1 ? "reply" : "replies"}` : "loading"}</span></p>
+      <p className="eyebrow">
+        <span className="wk" data-copy-key="involve.commentsEyebrow">{copy.involve.commentsEyebrow}</span>
+        <span className="sep">/</span>
+        <span>
+          {rows
+            ? <>{rows.length} <span data-copy-key={rows.length === 1 ? "involve.replySingular" : "involve.replyPlural"}>
+                {rows.length === 1 ? copy.involve.replySingular : copy.involve.replyPlural}
+              </span></>
+            : <span data-copy-key="involve.loadingLabel">{copy.involve.loadingLabel}</span>}
+        </span>
+      </p>
 
       {rows && rows.length > 0 && (
         <ul className="inv__list">
@@ -104,7 +132,7 @@ export function Comments({ slug }: { slug: string }) {
               <p className="inv__body">{c.body}</p>
               {c.reply && (
                 <div className="inv__reply">
-                  <span className="inv__replyWho">{copy.involve.replyLabel}</span>
+                  <span className="inv__replyWho" data-copy-key="involve.replyLabel">{copy.involve.replyLabel}</span>
                   <p>{c.reply}</p>
                 </div>
               )}
@@ -112,7 +140,7 @@ export function Comments({ slug }: { slug: string }) {
           ))}
         </ul>
       )}
-      {rows && rows.length === 0 && <p className="dim inv__empty">{copy.involve.commentsEmpty}</p>}
+      {rows && rows.length === 0 && <p className="dim inv__empty" data-copy-key="involve.commentsEmpty">{copy.involve.commentsEmpty}</p>}
 
       <SubmitForm kind="comment" slug={slug} />
       <Styles />

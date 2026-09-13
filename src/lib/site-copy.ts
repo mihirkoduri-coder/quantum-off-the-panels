@@ -65,11 +65,69 @@ export interface SiteCopy {
     questionHeading: string; questionNote: string; questionCta: string;
     nameLabel: string; messageLabel: string; sendAnother: string;
     thanksHeading: string; postedMessage: string; heldMessage: string; replyLabel: string;
+    genericError: string; networkError: string; sendingLabel: string; loadingLabel: string;
+    replySingular: string; replyPlural: string; honeypotLabel: string;
   };
   write: { heading: string; intro: string; footerLink: string };
   stamps: {
     heading: string; intro: string; collectedSuffix: string;
-    gotLabel: string; goEarnLabel: string; notIssuedLabel: string;
+    gotLabel: string; goEarnLabel: string; notIssuedLabel: string; downloadSticker: string;
+  };
+  /** Per-sim narrative/UI text — separate from `sims` above (the gallery
+   *  page's own chrome) since these are keyed one object per sim slug.
+   *  `{placeholder}` fields here follow the same format()-only templating
+   *  as everywhere else. */
+  simCopy: {
+    amplitudeDial: {
+      title: string;
+      predict: { question: string; choiceSwap: string; choiceShift: string; choiceNone: string; choiceEven: string; because: string };
+      watchForLive: string; watchForCollapsed: string;
+      controls: { tiltLabel: string; phaseLabel: string; measureButton: string; peekButton: string; lockedNote: string };
+      captions: {
+        peeking: string; failing: string; lockedTemplate: string; phaseTurns: string;
+        near0: string; near1: string; middle: string; leaning0: string; leaning1: string;
+      };
+      speech: {
+        who: string; failing1: string; failing2: string;
+        lockedTemplate1: string; lockedTemplate2: string; locked3: string;
+      };
+      violation: { sfx: string; law: string; attempted: string; why: string };
+      dial: {
+        sphereCollapsed: string; sphereLive: string; histCollapsed: string; histLive: string;
+        pocketLabel: string; pocketP1: string; pocketP2: string;
+      };
+      readout: { p0: string; p1: string; outcome: string };
+      peek: { reading: string; stateIntact: string; destabilising: string };
+    };
+    watchersQuestion: {
+      title: string;
+      predict: { question: string; choiceLeft: string; choiceRight: string; choiceCoin: string; choiceNone: string; because: string };
+      watchFor: string;
+      questions: { upDown: string; diagonal: string; leftRight: string };
+      eyesCaption: { seenEnough: string; looking: string; refuses: string; notLooking: string };
+      ending: { line1: string; kicker: string; hint: string };
+      askPrompt: string;
+      watchOnlyButton: string;
+      readout: { panels: string; certainAbout: string; nothing: string };
+      ledger: { heading: string; sureTemplate: string; note: string };
+      frames: { firstCaption: string; firstSub: string; alreadyKnew: string; oddsWereTemplate: string; emptyHint: string };
+      pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
+      violation: { sfx: string; law: string; attempted: string; why: string };
+    };
+    twoPathInterference: {
+      title: string;
+      predict: { question: string; choiceNothing: string; choiceSwap: string; choiceSwing: string; choiceRandom: string; because: string };
+      watchForLive: string; watchForTagged: string; watchForLocked: string;
+      controls: { phaseLabel: string; measureButton: string; tagButton: string; untagButton: string; lockedNote: string };
+      captions: {
+        lockedTemplate: string; tagged: string; frontDoor: string; backDoor: string;
+        bothDoors: string; mostlyFront: string; mostlyBack: string;
+      };
+      readout: { pA: string; pB: string; outcome: string };
+      diagram: { source: string; tagged: string };
+      pocket: { label: string; p1: string; p2: string };
+      violation: { sfx: string; law: string; attempted: string; why: string };
+    };
   };
 }
 

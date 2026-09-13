@@ -2,11 +2,14 @@ import { useMemo, useRef, useState } from "react";
 import SimShell from "../components/sim/SimShell";
 import Predict from "../components/sim/Predict";
 import Pocket from "../components/sim/Pocket";
+import CopyTemplate from "../components/sim/CopyTemplate";
 import { WatchingEyes } from "../components/sim/motifs";
 import ViolationExplainer from "../components/sim/ViolationExplainer";
 import { QuantumState, RY } from "../lib/quantum";
+import { copy } from "../lib/site-copy";
 
 const SLUG = "watchers-question";
+const C = copy.simCopy.watchersQuestion;
 
 /**
  * WEEK 2 — Measurement & collapse.
@@ -29,14 +32,15 @@ interface Question {
   /** angle of the measurement axis from +Z, radians */
   theta: number;
   label: string;
+  labelKey: string;
   plus: string;
   minus: string;
 }
 
 const QUESTIONS: Question[] = [
-  { id: "z", theta: 0, label: "Up or down?", plus: "↑", minus: "↓" },
-  { id: "d", theta: Math.PI / 4, label: "Diagonal?", plus: "↗", minus: "↙" },
-  { id: "x", theta: Math.PI / 2, label: "Left or right?", plus: "→", minus: "←" },
+  { id: "z", theta: 0, label: C.questions.upDown, labelKey: "simCopy.watchersQuestion.questions.upDown", plus: "↑", minus: "↓" },
+  { id: "d", theta: Math.PI / 4, label: C.questions.diagonal, labelKey: "simCopy.watchersQuestion.questions.diagonal", plus: "↗", minus: "↙" },
+  { id: "x", theta: Math.PI / 2, label: C.questions.leftRight, labelKey: "simCopy.watchersQuestion.questions.leftRight", plus: "→", minus: "←" },
 ];
 
 interface Panel {
@@ -140,17 +144,10 @@ export default function WatchersQuestion() {
       window.setTimeout(() => setGaze((g) => ({ ...g, denied: false })), 700),
     );
     setViolation({
-      sfx: "THUNK!",
-      law: "There is no view from nowhere.",
-      attempted: "observe without choosing a question",
-      why: (
-        <>
-          Nothing happened, and nothing was learned. A measurement is not a
-          passive gaze that reveals what was already there — it is a specific
-          question, and without one there is no answer to receive. Uatu's vow
-          only holds while he learns nothing.
-        </>
-      ),
+      sfx: C.violation.sfx, sfxKey: "simCopy.watchersQuestion.violation.sfx",
+      law: C.violation.law, lawKey: "simCopy.watchersQuestion.violation.law",
+      attempted: C.violation.attempted, attemptedKey: "simCopy.watchersQuestion.violation.attempted",
+      why: C.violation.why, whyKey: "simCopy.watchersQuestion.violation.why",
     });
   };
 
@@ -160,29 +157,36 @@ export default function WatchersQuestion() {
   // separately — see the comment in ask() for why that used to drift.
   const ended = panels.length >= 7;
 
+  const eyesCaptionKey = ended ? "simCopy.watchersQuestion.eyesCaption.seenEnough"
+    : gaze.open ? "simCopy.watchersQuestion.eyesCaption.looking"
+    : gaze.denied ? "simCopy.watchersQuestion.eyesCaption.refuses"
+    : "simCopy.watchersQuestion.eyesCaption.notLooking";
+  const eyesCaptionText = ended ? C.eyesCaption.seenEnough
+    : gaze.open ? C.eyesCaption.looking
+    : gaze.denied ? C.eyesCaption.refuses
+    : C.eyesCaption.notLooking;
+
   return (
     <Predict
       slug={SLUG}
-      question="Take a qubit that is definitely UP. Ask 'up or down?' a hundred times and you get UP a hundred times. Now ask it 'left or right?' — what comes back?"
+      question={C.predict.question}
+      questionKey="simCopy.watchersQuestion.predict.question"
       choices={[
-        { id: "left", label: "Left, every time" },
-        { id: "right", label: "Right, every time" },
-        { id: "coin", label: "A 50/50 coin flip" },
-        { id: "none", label: "Nothing — the question doesn't apply" },
+        { id: "left", label: C.predict.choiceLeft, labelKey: "simCopy.watchersQuestion.predict.choiceLeft" },
+        { id: "right", label: C.predict.choiceRight, labelKey: "simCopy.watchersQuestion.predict.choiceRight" },
+        { id: "coin", label: C.predict.choiceCoin, labelKey: "simCopy.watchersQuestion.predict.choiceCoin" },
+        { id: "none", label: C.predict.choiceNone, labelKey: "simCopy.watchersQuestion.predict.choiceNone" },
       ]}
       answer="coin"
-      because={
-        <>
-          A state that is perfectly certain about one question can be perfectly
-          undecided about another. The certainty was never a property the qubit
-          had on its own — it was a property of the question you kept asking.
-        </>
-      }
+      because={C.predict.because}
+      becauseKey="simCopy.watchersQuestion.predict.because"
     >
       <SimShell
         slug={SLUG}
-        title="The Watcher's question"
-        watchFor="the certainty table. Watch it move between rows — and never add up to more than it started with."
+        title={C.title}
+        titleKey="simCopy.watchersQuestion.title"
+        watchFor={C.watchFor}
+        watchForKey="simCopy.watchersQuestion.watchFor"
         onReset={reset}
         controls={
           <div className="stack">
@@ -193,43 +197,28 @@ export default function WatchersQuestion() {
                 to scroll back up to catch it. */}
             <div className="wq__eyes">
               <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
-              <p className="wq__eyesCap">
-                {ended
-                  ? "he has seen enough"
-                  : gaze.open
-                    ? "he is looking"
-                    : gaze.denied
-                      ? "he refuses to look"
-                      : "he is not looking"}
-              </p>
+              <p className="wq__eyesCap" data-copy-key={eyesCaptionKey}>{eyesCaptionText}</p>
 
               {ended && (
                 <div className="wq__end">
-                  <p>
-                    Seven questions, and the pattern is already the whole lesson:
-                    every answer that taught him something also cost him one he
-                    already had.
-                  </p>
-                  <p className="wq__endKicker">
-                    There is no way to watch without choosing what to stop knowing.
-                    The vow was never available to him.
-                  </p>
-                  <p className="wq__endHint">Reset to begin again.</p>
+                  <p data-copy-key="simCopy.watchersQuestion.ending.line1">{C.ending.line1}</p>
+                  <p className="wq__endKicker" data-copy-key="simCopy.watchersQuestion.ending.kicker">{C.ending.kicker}</p>
+                  <p className="wq__endHint" data-copy-key="simCopy.watchersQuestion.ending.hint">{C.ending.hint}</p>
                 </div>
               )}
             </div>
 
-            <p className="wq__prompt">Ask the qubit a question</p>
+            <p className="wq__prompt" data-copy-key="simCopy.watchersQuestion.askPrompt">{C.askPrompt}</p>
             <div className="row">
               {QUESTIONS.map((q) => (
                 <button key={q.id} className="btn btn--go" onClick={() => ask(q)} disabled={ended}>
-                  {q.label}
+                  <span data-copy-key={q.labelKey}>{q.label}</span>
                 </button>
               ))}
             </div>
             <div className="row">
               <button className="btn btn--break" onClick={watchOnly} disabled={ended}>
-                Just watch — don't ask anything
+                <span data-copy-key="simCopy.watchersQuestion.watchOnlyButton">{C.watchOnlyButton}</span>
               </button>
             </div>
           </div>
@@ -237,11 +226,11 @@ export default function WatchersQuestion() {
         readout={
           <>
             <span>
-              panels <b>{panels.length}</b>
+              <span data-copy-key="simCopy.watchersQuestion.readout.panels">{C.readout.panels}</span> <b>{panels.length}</b>
             </span>
             <span>
-              certain about{" "}
-              <b>{certain ? certain.q.label.replace("?", "") : "nothing"}</b>
+              <span data-copy-key="simCopy.watchersQuestion.readout.certainAbout">{C.readout.certainAbout}</span>{" "}
+              <b>{certain ? certain.q.label.replace("?", "") : <span data-copy-key="simCopy.watchersQuestion.readout.nothing">{C.readout.nothing}</span>}</b>
             </span>
           </>
         }
@@ -249,10 +238,11 @@ export default function WatchersQuestion() {
         <div className="wq">
           {/* ---- the certainty ledger ---- */}
           <div className="wq__ledger">
-            <p className="wq__ledgerHead">What can be predicted right now</p>
+            <p className="wq__ledgerHead" data-copy-key="simCopy.watchersQuestion.ledger.heading">{C.ledger.heading}</p>
             {odds.map(({ q, p }) => {
               const sure = p > 0.999 || p < 0.001;
               const pct = Math.max(p, 1 - p) * 100;
+              const arrow = p > 0.5 ? q.plus : q.minus;
               return (
                 <div key={q.id} className={`wq__row${sure ? " is-sure" : ""}`}>
                   <span className="wq__rowQ">{q.label}</span>
@@ -260,14 +250,16 @@ export default function WatchersQuestion() {
                     <span className="wq__barFill" style={{ width: `${pct}%` }} />
                   </span>
                   <span className="wq__rowV">
-                    {sure ? `certain: ${p > 0.5 ? q.plus : q.minus}` : `${pct.toFixed(0)}% ${p > 0.5 ? q.plus : q.minus}`}
+                    {sure
+                      ? <CopyTemplate keyPath="simCopy.watchersQuestion.ledger.sureTemplate" template={C.ledger.sureTemplate} vars={{ arrow }} />
+                      : `${pct.toFixed(0)}% ${arrow}`}
                   </span>
                 </div>
               );
             })}
             {destroyed && (
-              <p className="wq__note">
-                Notice what happened to the other rows when you asked.
+              <p className="wq__note" data-copy-key="simCopy.watchersQuestion.ledger.note">
+                {C.ledger.note}
               </p>
             )}
           </div>
@@ -275,7 +267,10 @@ export default function WatchersQuestion() {
           {/* ---- the panel strip ---- */}
           <div className="wq__stripWrap">
             <div className="wq__page">
-              <Frame caption="Uatu prepares to watch." sub="The qubit is definitely ↑">
+              <Frame
+                caption={<span data-copy-key="simCopy.watchersQuestion.frames.firstCaption">{C.frames.firstCaption}</span>}
+                sub={<span data-copy-key="simCopy.watchersQuestion.frames.firstSub">{C.frames.firstSub}</span>}
+              >
                 <Diagram dir={{ x: 0, z: 1 }} />
               </Frame>
 
@@ -285,8 +280,9 @@ export default function WatchersQuestion() {
                   caption={`“${p.q.label}”`}
                   sub={
                     p.wasCertain
-                      ? "He already knew this answer."
-                      : `Odds were ${(Math.max(p.pPlus, 1 - p.pPlus) * 100).toFixed(0)}%`
+                      ? <span data-copy-key="simCopy.watchersQuestion.frames.alreadyKnew">{C.frames.alreadyKnew}</span>
+                      : <CopyTemplate keyPath="simCopy.watchersQuestion.frames.oddsWereTemplate" template={C.frames.oddsWereTemplate}
+                          vars={{ pct: (Math.max(p.pPlus, 1 - p.pPlus) * 100).toFixed(0) }} />
                   }
                   fresh={i === panels.length - 1}
                 >
@@ -304,38 +300,19 @@ export default function WatchersQuestion() {
               ))}
 
               {panels.length === 0 && (
-                <div className="wq__hint">
-                  Ask a question
+                <div className="wq__hint" data-copy-key="simCopy.watchersQuestion.frames.emptyHint">
+                  {C.frames.emptyHint}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        <Pocket label="What am I looking at?">
-          <p>
-            The circle is every state this qubit can be in. Up is ↑, down is ↓,
-            and the arrow is the qubit itself. There's no phase in play this
-            week, so the picture is flat and complete — nothing is hidden behind
-            it.
-          </p>
-          <p>
-            The dashed line is <b>the question you asked</b>. A measurement always
-            has a direction: you don't ask "what is it?", you ask "is it this way
-            or that way?" The answer can only ever be one of the two ends of that
-            dashed line, so after asking, the arrow snaps onto it.
-          </p>
-          <p>
-            Which is why certainty moves around instead of accumulating. Line the
-            arrow up with one question and you've lined it up sideways to another,
-            and sideways means a coin flip. Ask that second question and the arrow
-            snaps again — abandoning everything the first answer told you.
-          </p>
-          <p className="wq__quirk">
-            The uncomfortable part: before you asked, there was no answer waiting.
-            A qubit pointing ↑ isn't secretly left or right. It genuinely has no
-            left-or-right answer until a question forces one into existence.
-          </p>
+        <Pocket label={C.pocket.label} labelKey="simCopy.watchersQuestion.pocket.label">
+          <p data-copy-key="simCopy.watchersQuestion.pocket.p1">{C.pocket.p1}</p>
+          <p data-copy-key="simCopy.watchersQuestion.pocket.p2">{C.pocket.p2}</p>
+          <p data-copy-key="simCopy.watchersQuestion.pocket.p3">{C.pocket.p3}</p>
+          <p className="wq__quirk" data-copy-key="simCopy.watchersQuestion.pocket.p4">{C.pocket.p4}</p>
         </Pocket>
 
         <ViolationExplainer violation={violation} onDismiss={() => setViolation(null)} />
@@ -441,8 +418,8 @@ function Frame({
   children,
   fresh = false,
 }: {
-  caption: string;
-  sub?: string;
+  caption: React.ReactNode;
+  sub?: React.ReactNode;
   children: React.ReactNode;
   fresh?: boolean;
 }) {
@@ -496,10 +473,10 @@ function Diagram({
   plus?: string;
   minus?: string;
 }) {
-  const C = 70, R = 44;
+  const C2 = 70, R = 44;
   const pt = (v: { x: number; z: number }, r = R) => ({
-    x: C + v.x * r,
-    y: C - v.z * r,
+    x: C2 + v.x * r,
+    y: C2 - v.z * r,
   });
   const a1 = axis ? pt(axis, R + 8) : null;
   const a2 = axis ? pt({ x: -axis.x, z: -axis.z }, R + 8) : null;
@@ -509,9 +486,9 @@ function Diagram({
   return (
     <svg viewBox="0 0 140 140" width="100%" role="img"
       aria-label={axis ? "State and the measurement axis" : "State direction"}>
-      <circle cx={C} cy={C} r={R} fill="none" stroke="var(--gutter)" strokeWidth="1.5" />
-      <line x1={C} y1={C - R} x2={C} y2={C + R} stroke="var(--gutter)" strokeWidth="1" strokeDasharray="2 3" />
-      <line x1={C - R} y1={C} x2={C + R} y2={C} stroke="var(--gutter)" strokeWidth="1" strokeDasharray="2 3" />
+      <circle cx={C2} cy={C2} r={R} fill="none" stroke="var(--gutter)" strokeWidth="1.5" />
+      <line x1={C2} y1={C2 - R} x2={C2} y2={C2 + R} stroke="var(--gutter)" strokeWidth="1" strokeDasharray="2 3" />
+      <line x1={C2 - R} y1={C2} x2={C2 + R} y2={C2} stroke="var(--gutter)" strokeWidth="1" strokeDasharray="2 3" />
 
       {a1 && a2 && (
         <>
@@ -523,13 +500,13 @@ function Diagram({
       )}
 
       {/* prior state — faded once an answer exists */}
-      <line x1={C} y1={C} x2={tip.x} y2={tip.y}
+      <line x1={C2} y1={C2} x2={tip.x} y2={tip.y}
         stroke="var(--cyan)" strokeWidth={res ? 2 : 3} opacity={res ? 0.3 : 1} />
       <circle cx={tip.x} cy={tip.y} r={res ? 3 : 4.5} fill="var(--cyan)" opacity={res ? 0.3 : 1} />
 
       {res && (
         <>
-          <line x1={C} y1={C} x2={res.x} y2={res.y} stroke="var(--magenta)" strokeWidth="3.5" />
+          <line x1={C2} y1={C2} x2={res.x} y2={res.y} stroke="var(--magenta)" strokeWidth="3.5" />
           <circle cx={res.x} cy={res.y} r="5" fill="var(--magenta)" />
         </>
       )}

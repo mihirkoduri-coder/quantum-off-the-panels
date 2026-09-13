@@ -5,10 +5,13 @@ import ViolationExplainer from "../components/sim/ViolationExplainer";
 import ProbabilityHistogram from "../components/sim/ProbabilityHistogram";
 import BlochSphere from "../components/sim/BlochSphere";
 import Pocket from "../components/sim/Pocket";
+import CopyTemplate from "../components/sim/CopyTemplate";
 import { GlowHand } from "../components/sim/motifs";
 import { QuantumState, RY, RZ } from "../lib/quantum";
+import { copy } from "../lib/site-copy";
 
 const SLUG = "amplitude-dial";
+const C = copy.simCopy.amplitudeDial;
 
 /**
  * WEEK 1 — Superposition.
@@ -162,17 +165,10 @@ export default function AmplitudeDial() {
         setPeekValue(null);
         doCollapse(outcome);
         setViolation({
-          sfx: "KRAKK!",
-          law: "Looking was measuring.",
-          attempted: "read the state without disturbing it",
-          why: (
-            <>
-              The reading was real — and taking it is what destroyed the thing
-              you were reading. There was never a hidden answer sitting
-              underneath waiting to be checked. Reset and turn the dials again:
-              nothing about that state was ever a 0 or a 1.
-            </>
-          ),
+          sfx: C.violation.sfx, sfxKey: "simCopy.amplitudeDial.violation.sfx",
+          law: C.violation.law, lawKey: "simCopy.amplitudeDial.violation.law",
+          attempted: C.violation.attempted, attemptedKey: "simCopy.amplitudeDial.violation.attempted",
+          why: C.violation.why, whyKey: "simCopy.amplitudeDial.violation.why",
         });
       }, 1570),
     );
@@ -191,75 +187,58 @@ export default function AmplitudeDial() {
    * you press the button. He is never corrected and never corrects himself.
    * The apparatus disagrees with him on screen; that is the whole argument.
    */
-  const caption = (() => {
-    if (phase === "peeking") return "i am looking without touching.";
-    if (phase === "failing") return "the state is intact. i would know.";
-    if (locked) return `it is |${collapse?.outcome}⟩. from here, it was always going to be.`;
-    if (touched === "phi") return "the phase turns. nothing turns with it.";
-    if (degTilt < 10) return "it is |0⟩ and it will be |0⟩. there is nothing to wait for.";
-    if (degTilt > 170) return "it is |1⟩ and it will be |1⟩. there is nothing to wait for.";
-    if (degTilt > 80 && degTilt < 100) return "it is neither. i see both. neither is happening.";
+  const captionNode = (() => {
+    if (phase === "peeking") return <span data-copy-key="simCopy.amplitudeDial.captions.peeking">{C.captions.peeking}</span>;
+    if (phase === "failing") return <span data-copy-key="simCopy.amplitudeDial.captions.failing">{C.captions.failing}</span>;
+    if (locked) return (
+      <CopyTemplate keyPath="simCopy.amplitudeDial.captions.lockedTemplate" template={C.captions.lockedTemplate}
+        vars={{ outcome: collapse?.outcome ?? "" }} />
+    );
+    if (touched === "phi") return <span data-copy-key="simCopy.amplitudeDial.captions.phaseTurns">{C.captions.phaseTurns}</span>;
+    if (degTilt < 10) return <span data-copy-key="simCopy.amplitudeDial.captions.near0">{C.captions.near0}</span>;
+    if (degTilt > 170) return <span data-copy-key="simCopy.amplitudeDial.captions.near1">{C.captions.near1}</span>;
+    if (degTilt > 80 && degTilt < 100) return <span data-copy-key="simCopy.amplitudeDial.captions.middle">{C.captions.middle}</span>;
     return degTilt < 90
-      ? "it leans toward |0⟩. leaning is not being."
-      : "it leans toward |1⟩. leaning is not being.";
+      ? <span data-copy-key="simCopy.amplitudeDial.captions.leaning0">{C.captions.leaning0}</span>
+      : <span data-copy-key="simCopy.amplitudeDial.captions.leaning1">{C.captions.leaning1}</span>;
   })();
 
-  const speech =
-    phase === "failing" || (violation && locked)
-      ? {
-          lines: [
-            "I observed it without disturbing it.",
-            "The state is unchanged. I would know.",
-          ],
-        }
-      : locked
-        ? {
-            lines: [
-              `It is |${collapse?.outcome}⟩.`,
-              `From here it was always going to be |${collapse?.outcome}⟩. From a moment ago it was not going to be anything at all.`,
-              "I do not find this difficult.",
-            ],
-          }
-        : null;
-
+  const showFailingSpeech = phase === "failing" || (violation && locked);
+  const showLockedSpeech = locked && !showFailingSpeech;
   const busy = phase === "peeking" || phase === "failing";
   const shimmering = phase !== "collapsed";
 
-  const watchFor =
-    phase === "collapsed"
-      ? "the sphere has snapped to a pole. That IS the state now — the superposition is gone."
-      : "the bars never stop moving. The odds are exact; the outcome simply hasn't happened yet.";
+  const watchFor = phase === "collapsed" ? C.watchForCollapsed : C.watchForLive;
+  const watchForKey = phase === "collapsed" ? "simCopy.amplitudeDial.watchForCollapsed" : "simCopy.amplitudeDial.watchForLive";
 
   return (
     <Predict
       slug={SLUG}
-      question="Turn the phase dial — only the phase, leaving the first dial alone. What happens to the two probability bars?"
+      question={C.predict.question}
+      questionKey="simCopy.amplitudeDial.predict.question"
       choices={[
-        { id: "swap", label: "They trade places" },
-        { id: "shift", label: "They shift gradually" },
-        { id: "none", label: "Nothing at all" },
-        { id: "even", label: "They even out to 50/50" },
+        { id: "swap", label: C.predict.choiceSwap, labelKey: "simCopy.amplitudeDial.predict.choiceSwap" },
+        { id: "shift", label: C.predict.choiceShift, labelKey: "simCopy.amplitudeDial.predict.choiceShift" },
+        { id: "none", label: C.predict.choiceNone, labelKey: "simCopy.amplitudeDial.predict.choiceNone" },
+        { id: "even", label: C.predict.choiceEven, labelKey: "simCopy.amplitudeDial.predict.choiceEven" },
       ]}
       answer="none"
-      because={
-        <>
-          Phase is invisible to a measurement on a single qubit. It's real, and
-          it's doing something — but nothing you can see from here. Hold onto
-          that; it's next week's whole story.
-        </>
-      }
+      because={C.predict.because}
+      becauseKey="simCopy.amplitudeDial.predict.because"
     >
       <SimShell
         slug={SLUG}
-        title="The amplitude dial"
+        title={C.title}
+        titleKey="simCopy.amplitudeDial.title"
         watchFor={watchFor}
+        watchForKey={watchForKey}
         motif={<GlowHand alive={!locked} size={220} />}
         onReset={reset}
         controls={
           <div className="stack">
             <div className="ctrl">
               <label htmlFor="th">
-                <span>Tilt away from |0⟩</span>
+                <span data-copy-key="simCopy.amplitudeDial.controls.tiltLabel">{C.controls.tiltLabel}</span>
                 <span className="val">{((theta / Math.PI) * 180).toFixed(0)}°</span>
               </label>
               <input
@@ -270,7 +249,7 @@ export default function AmplitudeDial() {
             </div>
             <div className="ctrl">
               <label htmlFor="ph">
-                <span>Phase</span>
+                <span data-copy-key="simCopy.amplitudeDial.controls.phaseLabel">{C.controls.phaseLabel}</span>
                 <span className="val">{((phi / Math.PI) * 180).toFixed(0)}°</span>
               </label>
               <input
@@ -281,49 +260,41 @@ export default function AmplitudeDial() {
             </div>
             <div className="row">
               <button className="btn btn--go" onClick={measure} disabled={locked || busy}>
-                Measure it
+                <span data-copy-key="simCopy.amplitudeDial.controls.measureButton">{C.controls.measureButton}</span>
               </button>
               <button className="btn btn--break" onClick={peek} disabled={locked || busy}>
-                Peek without measuring
+                <span data-copy-key="simCopy.amplitudeDial.controls.peekButton">{C.controls.peekButton}</span>
               </button>
             </div>
             {locked && (
-              <p className="ad__locked">
-                The dials are dead. You don't have a superposition any more — you
-                have an answer. Reset to prepare a new one.
+              <p className="ad__locked" data-copy-key="simCopy.amplitudeDial.controls.lockedNote">
+                {C.controls.lockedNote}
               </p>
             )}
           </div>
         }
         readout={
           <>
-            <span>P(0) <b>{(shownProbs[0] * 100).toFixed(1)}%</b></span>
-            <span>P(1) <b>{(shownProbs[1] * 100).toFixed(1)}%</b></span>
+            <span><span data-copy-key="simCopy.amplitudeDial.readout.p0">{C.readout.p0}</span> <b>{(shownProbs[0] * 100).toFixed(1)}%</b></span>
+            <span><span data-copy-key="simCopy.amplitudeDial.readout.p1">{C.readout.p1}</span> <b>{(shownProbs[1] * 100).toFixed(1)}%</b></span>
             <span>
-              outcome{" "}
+              <span data-copy-key="simCopy.amplitudeDial.readout.outcome">{C.readout.outcome}</span>{" "}
               <b>{collapse ? `|${collapse.outcome}⟩` : shimmering ? "—" : "—"}</b>
             </span>
           </>
         }
       >
-        <p className="ad__caption">{caption}</p>
+        <p className="ad__caption">{captionNode}</p>
 
         <div className="dial">
           <div className="dial__sphere">
             <BlochSphere vector={shownBloch} size={220} />
-            <p className="dial__cap">
-              {locked ? "collapsed" : "the state — fully known"}
+            <p className="dial__cap" data-copy-key={locked ? "simCopy.amplitudeDial.dial.sphereCollapsed" : "simCopy.amplitudeDial.dial.sphereLive"}>
+              {locked ? C.dial.sphereCollapsed : C.dial.sphereLive}
             </p>
-            <Pocket label="What am I looking at?">
-              <p>
-                This diagram is a Bloch Sphere: a visualization of a state
-                that combines both phases along the equator (direction) and
-                binary basis states at the poles (proximity to both 0 and 1).
-              </p>
-              <p>
-                The vector you're controlling right now combines those
-                pieces of information about our superposition!
-              </p>
+            <Pocket label={C.dial.pocketLabel} labelKey="simCopy.amplitudeDial.dial.pocketLabel">
+              <p data-copy-key="simCopy.amplitudeDial.dial.pocketP1">{C.dial.pocketP1}</p>
+              <p data-copy-key="simCopy.amplitudeDial.dial.pocketP2">{C.dial.pocketP2}</p>
             </Pocket>
           </div>
 
@@ -337,29 +308,38 @@ export default function AmplitudeDial() {
               turbulence={turbulence}
               height={220}
             />
-            <p className="dial__cap">
-              {locked ? "one outcome, forever" : "the odds — exact, but undecided"}
+            <p className="dial__cap" data-copy-key={locked ? "simCopy.amplitudeDial.dial.histCollapsed" : "simCopy.amplitudeDial.dial.histLive"}>
+              {locked ? C.dial.histCollapsed : C.dial.histLive}
             </p>
 
             {phase === "peeking" && (
               <div className="ad__peek">
-                <span className="ad__peekLabel">reading…</span>
+                <span className="ad__peekLabel" data-copy-key="simCopy.amplitudeDial.peek.reading">{C.peek.reading}</span>
                 <span className="ad__peekVal">|{peekValue}⟩</span>
-                <span className="ad__peekOk">state intact</span>
+                <span className="ad__peekOk" data-copy-key="simCopy.amplitudeDial.peek.stateIntact">{C.peek.stateIntact}</span>
               </div>
             )}
             {phase === "failing" && (
               <div className="ad__peek is-bad">
-                <span className="ad__peekLabel">state destabilising</span>
+                <span className="ad__peekLabel" data-copy-key="simCopy.amplitudeDial.peek.destabilising">{C.peek.destabilising}</span>
               </div>
             )}
           </div>
         </div>
 
-        {speech && (
+        {showFailingSpeech && (
           <aside className="ad__speech">
-            <span className="ad__speechWho">Manhattan</span>
-            {speech.lines.map((l, i) => <p key={i}>{l}</p>)}
+            <span className="ad__speechWho" data-copy-key="simCopy.amplitudeDial.speech.who">{C.speech.who}</span>
+            <p data-copy-key="simCopy.amplitudeDial.speech.failing1">{C.speech.failing1}</p>
+            <p data-copy-key="simCopy.amplitudeDial.speech.failing2">{C.speech.failing2}</p>
+          </aside>
+        )}
+        {showLockedSpeech && (
+          <aside className="ad__speech">
+            <span className="ad__speechWho" data-copy-key="simCopy.amplitudeDial.speech.who">{C.speech.who}</span>
+            <p><CopyTemplate keyPath="simCopy.amplitudeDial.speech.lockedTemplate1" template={C.speech.lockedTemplate1} vars={{ outcome: collapse?.outcome ?? "" }} /></p>
+            <p><CopyTemplate keyPath="simCopy.amplitudeDial.speech.lockedTemplate2" template={C.speech.lockedTemplate2} vars={{ outcome: collapse?.outcome ?? "" }} /></p>
+            <p data-copy-key="simCopy.amplitudeDial.speech.locked3">{C.speech.locked3}</p>
           </aside>
         )}
 

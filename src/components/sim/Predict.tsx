@@ -5,16 +5,23 @@ import { copy } from "../../lib/site-copy";
 interface Choice {
   id: string;
   label: string;
+  /** data-copy-key for this choice's own label — every sim's question text
+   *  is per-instance, so (unlike predict.eyebrowLabel etc., which are the
+   *  same for every sim and just hardcoded here) the key has to travel
+   *  with the value from whichever sim is asking. */
+  labelKey: string;
 }
 
 interface Props {
   slug: string;
   question: string;
+  questionKey: string;
   choices: Choice[];
   /** id of the correct choice */
   answer: string;
   /** shown after they commit — why the answer is what it is. one or two sentences. */
   because: ReactNode;
+  becauseKey: string;
   /** the sim, locked until they commit */
   children: ReactNode;
 }
@@ -25,7 +32,7 @@ interface Props {
  *
  * No aggregate stats, no server — their guess is theirs.
  */
-export default function Predict({ slug, question, choices, answer, because, children }: Props) {
+export default function Predict({ slug, question, questionKey, choices, answer, because, becauseKey, children }: Props) {
   const [picked, setPicked] = useState<string | null>(null);
   const [committed, setCommitted] = useState(false);
 
@@ -46,7 +53,7 @@ export default function Predict({ slug, question, choices, answer, because, chil
             <span className="sep">/</span>
             <span data-copy-key="predict.beforeYouRunIt">{copy.predict.beforeYouRunIt}</span>
           </p>
-          <p className="pr__q">{question}</p>
+          <p className="pr__q" data-copy-key={questionKey}>{question}</p>
 
           <div className="pr__choices" role="radiogroup" aria-label={question}>
             {choices.map((c) => (
@@ -57,7 +64,7 @@ export default function Predict({ slug, question, choices, answer, because, chil
                 className={`pr__choice${picked === c.id ? " is-picked" : ""}`}
                 onClick={() => setPicked(c.id)}
               >
-                {c.label}
+                <span data-copy-key={c.labelKey}>{c.label}</span>
               </button>
             ))}
           </div>
@@ -81,7 +88,7 @@ export default function Predict({ slug, question, choices, answer, because, chil
                 <span data-copy-key="predict.itsActuallyPrefix">{copy.predict.itsActuallyPrefix}</span> <b>{choices.find((c) => c.id === answer)?.label}</b>.
               </>
             )}{" "}
-            {because}
+            <span data-copy-key={becauseKey}>{because}</span>
           </p>
           <p className="dim pr__nudge" data-copy-key="predict.nudge">{copy.predict.nudge}</p>
         </div>

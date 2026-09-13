@@ -5,8 +5,12 @@ import { copy } from "../../lib/site-copy";
 interface Props {
   slug: string;
   title: string;
+  /** data-copy-key for `title` — every sim's own, unlike simShell.eyebrowLabel
+   *  etc. below, which are the same for every sim and stay hardcoded here. */
+  titleKey: string;
   /** what the reader should be watching for. one line, plain language. */
   watchFor: string;
+  watchForKey: string;
   /** the interactive surface */
   children: ReactNode;
   /** sliders and buttons */
@@ -31,7 +35,9 @@ interface Props {
 export default function SimShell({
   slug,
   title,
+  titleKey,
   watchFor,
+  watchForKey,
   children,
   controls,
   readout,
@@ -80,9 +86,10 @@ export default function SimShell({
             <span className="sep">/</span>
             <span>{slug}</span>
           </div>
-          <h3 className="sim__title">{title}</h3>
+          <h3 className="sim__title" data-copy-key={titleKey}>{title}</h3>
           <p className="sim__watch">
-            <span className="sim__watchLabel" data-copy-key="simShell.watchForLabel">{copy.simShell.watchForLabel}</span> {watchFor}
+            <span className="sim__watchLabel" data-copy-key="simShell.watchForLabel">{copy.simShell.watchForLabel}</span>{" "}
+            <span data-copy-key={watchForKey}>{watchFor}</span>
           </p>
         </header>
 

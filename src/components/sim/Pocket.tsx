@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 interface Props {
   /** the invitation, e.g. "What am I looking at?" */
   label: string;
+  /** data-copy-key for `label` — every sim's own invitation text, so (like
+   *  Predict/SimShell) the key travels with the value from the caller. */
+  labelKey: string;
   children: ReactNode;
   /** open on first render. Default closed so it never competes with the prose. */
   defaultOpen?: boolean;
@@ -15,12 +18,12 @@ interface Props {
  * open/closed state survives an island failing to hydrate. Closed by default —
  * a reader who already gets it should never have to scroll past an explanation.
  */
-export default function Pocket({ label, children, defaultOpen = false }: Props) {
+export default function Pocket({ label, labelKey, children, defaultOpen = false }: Props) {
   return (
     <details className="pocket" open={defaultOpen}>
       <summary className="pocket__sum">
         <span className="pocket__chev" aria-hidden="true">▸</span>
-        {label}
+        <span data-copy-key={labelKey}>{label}</span>
       </summary>
       <div className="pocket__body">{children}</div>
 

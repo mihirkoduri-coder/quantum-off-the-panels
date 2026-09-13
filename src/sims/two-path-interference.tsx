@@ -4,9 +4,12 @@ import Predict from "../components/sim/Predict";
 import ViolationExplainer from "../components/sim/ViolationExplainer";
 import ProbabilityHistogram from "../components/sim/ProbabilityHistogram";
 import Pocket from "../components/sim/Pocket";
+import CopyTemplate from "../components/sim/CopyTemplate";
 import { QuantumState, GATES, RZ } from "../lib/quantum";
+import { copy } from "../lib/site-copy";
 
 const SLUG = "two-path-interference";
+const C = copy.simCopy.twoPathInterference;
 
 /**
  * INTERFERENCE — phase, made visible.
@@ -90,18 +93,10 @@ export default function TwoPathInterference() {
     if (next && !seenViolation) {
       setSeenViolation(true);
       setViolation({
-        sfx: "FLATLINE!",
-        law: "Which-path information kills interference.",
-        attempted: "tag which path was taken and still see the paths interfere",
-        why: (
-          <>
-            The instant anything, anywhere, carries a real record of which path
-            was taken, the two paths stop being one wavefunction to recombine —
-            they're just two separate, non-interfering possibilities now. It
-            didn't matter that no one read the tag yet. The bars flattened the
-            moment the detector existed, not the moment anyone looked at it.
-          </>
-        ),
+        sfx: C.violation.sfx, sfxKey: "simCopy.twoPathInterference.violation.sfx",
+        law: C.violation.law, lawKey: "simCopy.twoPathInterference.violation.law",
+        attempted: C.violation.attempted, attemptedKey: "simCopy.twoPathInterference.violation.attempted",
+        why: C.violation.why, whyKey: "simCopy.twoPathInterference.violation.why",
       });
     }
   };
@@ -137,20 +132,24 @@ export default function TwoPathInterference() {
    * covered twice. The apparatus behind him does something his own
    * account has no room for.
    */
-  const caption = (() => {
-    if (locked) return `door ${collapse?.outcome === 0 ? "a" : "b"}. that's the one i came out of. this time.`;
-    if (whichPath) return "you clocked me mid-run. now it's a coin flip — pick a door.";
-    if (phiDeg < 15 || phiDeg > 345) return "front door. every time. no second path to speak of.";
-    if (phiDeg > 165 && phiDeg < 195) return "back door. every time. i'll tell you that much for free.";
-    if (phiDeg > 75 && phiDeg < 105) return "both doors. neither door. ask me which and i've got nothing.";
-    return phiDeg < 180 ? "mostly the front door. don't push it." : "mostly the back door. don't push it.";
+  const captionNode = (() => {
+    if (locked) return (
+      <CopyTemplate keyPath="simCopy.twoPathInterference.captions.lockedTemplate" template={C.captions.lockedTemplate}
+        vars={{ door: collapse?.outcome === 0 ? "a" : "b" }} />
+    );
+    if (whichPath) return <span data-copy-key="simCopy.twoPathInterference.captions.tagged">{C.captions.tagged}</span>;
+    if (phiDeg < 15 || phiDeg > 345) return <span data-copy-key="simCopy.twoPathInterference.captions.frontDoor">{C.captions.frontDoor}</span>;
+    if (phiDeg > 165 && phiDeg < 195) return <span data-copy-key="simCopy.twoPathInterference.captions.backDoor">{C.captions.backDoor}</span>;
+    if (phiDeg > 75 && phiDeg < 105) return <span data-copy-key="simCopy.twoPathInterference.captions.bothDoors">{C.captions.bothDoors}</span>;
+    return phiDeg < 180
+      ? <span data-copy-key="simCopy.twoPathInterference.captions.mostlyFront">{C.captions.mostlyFront}</span>
+      : <span data-copy-key="simCopy.twoPathInterference.captions.mostlyBack">{C.captions.mostlyBack}</span>;
   })();
 
-  const watchFor = locked
-    ? "one detector fired. that's the one path's worth of certainty this run bought."
-    : whichPath
-      ? "both bars are stuck at 50/50 — slide the phase all you want, the tag already erased the fringe."
-      : "the two bars swing smoothly from certain to 50/50 and back as you slide the phase. that swing IS the phase, made visible.";
+  const watchFor = locked ? C.watchForLocked : whichPath ? C.watchForTagged : C.watchForLive;
+  const watchForKey = locked
+    ? "simCopy.twoPathInterference.watchForLocked"
+    : whichPath ? "simCopy.twoPathInterference.watchForTagged" : "simCopy.twoPathInterference.watchForLive";
 
   // ── the interferometer diagram — two paths from one source, recombined at
   // one detector pair. Path B carries a phase ring (same visual language as
@@ -165,33 +164,30 @@ export default function TwoPathInterference() {
   return (
     <Predict
       slug={SLUG}
-      question="Last week, turning a lone qubit's phase changed nothing a measurement could see. Slide the phase control on ONE of two recombining paths here — what happens to the two detectors?"
+      question={C.predict.question}
+      questionKey="simCopy.twoPathInterference.predict.question"
       choices={[
-        { id: "nothing", label: "Still nothing — phase stays invisible" },
-        { id: "swap", label: "They swap abruptly, like a coin landing the other way" },
-        { id: "swing", label: "They swing smoothly between certainty and 50/50" },
-        { id: "random", label: "They go random, with no pattern at all" },
+        { id: "nothing", label: C.predict.choiceNothing, labelKey: "simCopy.twoPathInterference.predict.choiceNothing" },
+        { id: "swap", label: C.predict.choiceSwap, labelKey: "simCopy.twoPathInterference.predict.choiceSwap" },
+        { id: "swing", label: C.predict.choiceSwing, labelKey: "simCopy.twoPathInterference.predict.choiceSwing" },
+        { id: "random", label: C.predict.choiceRandom, labelKey: "simCopy.twoPathInterference.predict.choiceRandom" },
       ]}
       answer="swing"
-      because={
-        <>
-          Phase was invisible on one path because there was nothing to compare
-          it against. Recombine two paths that picked up different phases, and
-          the difference between them becomes the entire mechanism —
-          interference is just phase, read out through addition.
-        </>
-      }
+      because={C.predict.because}
+      becauseKey="simCopy.twoPathInterference.predict.because"
     >
       <SimShell
         slug={SLUG}
-        title="Two-path interference"
+        title={C.title}
+        titleKey="simCopy.twoPathInterference.title"
         watchFor={watchFor}
+        watchForKey={watchForKey}
         onReset={reset}
         controls={
           <div className="stack">
             <div className="ctrl">
               <label htmlFor="phi">
-                <span>Phase on path B</span>
+                <span data-copy-key="simCopy.twoPathInterference.controls.phaseLabel">{C.controls.phaseLabel}</span>
                 <span className="val">{phiDeg.toFixed(0)}°</span>
               </label>
               <input
@@ -202,39 +198,40 @@ export default function TwoPathInterference() {
             </div>
             <div className="row">
               <button className="btn btn--go" onClick={measure} disabled={locked}>
-                Open both detectors
+                <span data-copy-key="simCopy.twoPathInterference.controls.measureButton">{C.controls.measureButton}</span>
               </button>
               <button
                 className={`btn btn--break${whichPath ? " is-on" : ""}`}
                 onClick={toggleWhichPath}
                 disabled={locked}
               >
-                {whichPath ? "Remove the which-path tag" : "Tag which path was taken"}
+                <span data-copy-key={whichPath ? "simCopy.twoPathInterference.controls.untagButton" : "simCopy.twoPathInterference.controls.tagButton"}>
+                  {whichPath ? C.controls.untagButton : C.controls.tagButton}
+                </span>
               </button>
             </div>
             {locked && (
-              <p className="tpi__locked">
-                One door fired. There's no path pair left to slide a phase
-                between — reset to send another one through.
+              <p className="tpi__locked" data-copy-key="simCopy.twoPathInterference.controls.lockedNote">
+                {C.controls.lockedNote}
               </p>
             )}
           </div>
         }
         readout={
           <>
-            <span>P(A) <b>{(shownProbs[0] * 100).toFixed(1)}%</b></span>
-            <span>P(B) <b>{(shownProbs[1] * 100).toFixed(1)}%</b></span>
-            <span>outcome <b>{collapse ? (collapse.outcome === 0 ? "A" : "B") : "—"}</b></span>
+            <span><span data-copy-key="simCopy.twoPathInterference.readout.pA">{C.readout.pA}</span> <b>{(shownProbs[0] * 100).toFixed(1)}%</b></span>
+            <span><span data-copy-key="simCopy.twoPathInterference.readout.pB">{C.readout.pB}</span> <b>{(shownProbs[1] * 100).toFixed(1)}%</b></span>
+            <span><span data-copy-key="simCopy.twoPathInterference.readout.outcome">{C.readout.outcome}</span> <b>{collapse ? (collapse.outcome === 0 ? "A" : "B") : "—"}</b></span>
           </>
         }
       >
-        <p className="tpi__caption">{caption}</p>
+        <p className="tpi__caption">{captionNode}</p>
 
         <div className="tpi">
           <svg viewBox="0 0 320 160" className="tpi__diagram" role="img"
             aria-label={`Two paths from one source, recombining at two detectors. Path B currently carries a phase of ${phiDeg.toFixed(0)} degrees${whichPath ? "; a which-path tag is active, so the paths no longer interfere" : ""}.`}>
             <circle cx="26" cy="80" r="7" fill="var(--cyan)" />
-            <text x="26" y="102" textAnchor="middle" className="tpi__lbl">source</text>
+            <text x="26" y="102" textAnchor="middle" className="tpi__lbl">{C.diagram.source}</text>
 
             <line x1="62" y1="70" x2="78" y2="90" stroke="var(--paper-dim)" strokeWidth="3" strokeLinecap="round" />
             <line x1="242" y1="70" x2="258" y2="90" stroke="var(--paper-dim)" strokeWidth="3" strokeLinecap="round" />
@@ -258,7 +255,7 @@ export default function TwoPathInterference() {
               stroke={whichPath ? "var(--paper-dim)" : "var(--magenta)"} strokeWidth="2"
             />
             {whichPath && (
-              <text x={ringX} y={ringY + 26} textAnchor="middle" className="tpi__tag">tagged</text>
+              <text x={ringX} y={ringY + 26} textAnchor="middle" className="tpi__tag">{C.diagram.tagged}</text>
             )}
 
             <circle
@@ -273,18 +270,9 @@ export default function TwoPathInterference() {
             <text x="285" y="121.5" textAnchor="middle" className="tpi__det">B</text>
           </svg>
 
-          <Pocket label="What am I looking at?">
-            <p>
-              One source, two paths, one recombination point. Path B is the
-              one carrying the phase you're setting — the magenta ring shows
-              it directly, same dial the probability bars use elsewhere on
-              this site.
-            </p>
-            <p>
-              A which-path tag doesn't just hide the interference from you —
-              it removes it from the system. That's why the bars go flat the
-              instant you add the tag, not the instant you check it.
-            </p>
+          <Pocket label={C.pocket.label} labelKey="simCopy.twoPathInterference.pocket.label">
+            <p data-copy-key="simCopy.twoPathInterference.pocket.p1">{C.pocket.p1}</p>
+            <p data-copy-key="simCopy.twoPathInterference.pocket.p2">{C.pocket.p2}</p>
           </Pocket>
 
           <ProbabilityHistogram
