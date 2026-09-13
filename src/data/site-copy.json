@@ -106,7 +106,7 @@
   },
   "stamps": {
     "heading": "The stamp sheet",
-    "intro": "Marvel printed cut-out value stamps in its comics through the mid-seventies — one per issue, collected into a book. This is the same idea, minus the scissors. A stamp fills in when you actually use that week's simulation.",
+    "intro": "Marvel printed cut-out value stamps in its comics through the mid-seventies — one per issue, collected into a book. This is the same idea, minus the scissors. Collect stamps as you read!",
     "collectedSuffix": "collected on this device",
     "gotLabel": "collected",
     "goEarnLabel": "go earn it",
@@ -167,8 +167,16 @@
         "pocketP1": "This diagram is a Bloch Sphere: a visualization of a state that combines both phases along the equator (direction) and binary basis states at the poles (proximity to both 0 and 1).",
         "pocketP2": "The vector you're controlling right now combines those pieces of information about our superposition!"
       },
-      "readout": { "p0": "P(0)", "p1": "P(1)", "outcome": "outcome" },
-      "peek": { "reading": "reading…", "stateIntact": "state intact", "destabilising": "state destabilising" }
+      "readout": {
+        "p0": "P(0)",
+        "p1": "P(1)",
+        "outcome": "outcome"
+      },
+      "peek": {
+        "reading": "reading…",
+        "stateIntact": "state intact",
+        "destabilising": "state destabilising"
+      }
     },
     "watchersQuestion": {
       "title": "The Watcher's question",
@@ -199,7 +207,11 @@
       },
       "askPrompt": "Ask the qubit a question",
       "watchOnlyButton": "Just watch — don't ask anything",
-      "readout": { "panels": "panels", "certainAbout": "certain about", "nothing": "nothing" },
+      "readout": {
+        "panels": "panels",
+        "certainAbout": "certain about",
+        "nothing": "nothing"
+      },
       "ledger": {
         "heading": "What can be predicted right now",
         "sureTemplate": "certain: {arrow}",
@@ -255,8 +267,15 @@
         "mostlyFront": "mostly the front door. don't push it.",
         "mostlyBack": "mostly the back door. don't push it."
       },
-      "readout": { "pA": "P(A)", "pB": "P(B)", "outcome": "outcome" },
-      "diagram": { "source": "source", "tagged": "tagged" },
+      "readout": {
+        "pA": "P(A)",
+        "pB": "P(B)",
+        "outcome": "outcome"
+      },
+      "diagram": {
+        "source": "source",
+        "tagged": "tagged"
+      },
       "pocket": {
         "label": "What am I looking at?",
         "p1": "One source, two paths, one recombination point. Path B is the one carrying the phase you're setting — the magenta ring shows it directly, same dial the probability bars use elsewhere on this site.",
