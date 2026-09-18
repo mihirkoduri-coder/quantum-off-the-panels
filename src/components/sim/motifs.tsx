@@ -11,6 +11,8 @@
  * language as the probability bars.
  */
 
+import { W_VB, W_EYE_Y, W_OUTLINE, W_LID, W_LIGHT, nearestAngle, type Dot } from "./watcher-dots";
+
 // ─────────────────────────────────────────────────────────────
 // WEEK 1 — a glowing hand, dotted like everything else on the site.
 // alive: the qubit is still in superposition. dim: it has collapsed.
@@ -51,134 +53,91 @@ export function GlowHand({ alive = true, size = 200 }: { alive?: boolean; size?:
 }
 
 // ─────────────────────────────────────────────────────────────
-// WEEK 2 — eyes rendered in the same halftone-dot technique as the
+// WEEK 2 — Uatu's hood, in the same halftone-dot technique as the
 // glowing hand above: dot area stands in for brightness, not a filled
 // silhouette, so the two motifs read as the same print language rather
 // than one being a photo-traced dot field and the other a plain vector
-// icon sitting next to it. Eyes that open only when a question is
-// asked, with the pupil aligned to the axis of that question. Closed
-// means nothing was learned, which is the entire point of the week.
+// icon sitting next to it. Traced from a silhouette, same rule as the
+// hand: this is photographed data, not a formula, so it's ported
+// verbatim from watcher-dots.ts rather than regenerated.
+//
+// The eye-light only fans out when a question is asked, angled to match
+// that question's axis. Closed means nothing was learned, which is the
+// entire point of the week. Only three axes are ever asked, so the light
+// is pre-screened for each rather than rotated at runtime — rotating a
+// dot screen would resample it into mush.
 // ─────────────────────────────────────────────────────────────
 
-const EYE_L = "M58,42 Q84,19 110,42 Q84,65 58,42 Z";
-const EYE_R = "M130,42 Q156,19 182,42 Q156,65 130,42 Z";
-const LID_L = "M58,42 Q84,38 110,42 Q84,46 58,42 Z";
-const LID_R = "M130,42 Q156,38 182,42 Q156,46 130,42 Z";
-
-/** Halftone dot-fill for a symmetric lens shape — same idea as the
- *  hand's traced ink (dot area = brightness), generated rather than
- *  traced since there's no photograph to trace a cartoon eye from the
- *  way there was for a hand. Radius falls off from the shape's OWN
- *  center, so it reads as a shaded lens rather than a circular spotlight
- *  cropped by a lens-shaped window. */
-function lensDots(cx: number, cy: number, halfW: number, halfH: number, pitch: number) {
-  const dots: { x: number; y: number; r: number }[] = [];
-  const rowPitch = pitch * 0.87; // staggered rows, same hex-ish grid the histogram/burst dots use
-  const rows = Math.ceil(halfH / rowPitch) + 1;
-  const cols = Math.ceil(halfW / pitch) + 1;
-  for (let row = -rows; row <= rows; row++) {
-    const y = row * rowPitch;
-    const rowOffset = row % 2 !== 0 ? pitch / 2 : 0;
-    for (let col = -cols; col <= cols; col++) {
-      const x = col * pitch + rowOffset;
-      const fx = x / halfW;
-      const fy = y / halfH;
-      const d2 = fx * fx + fy * fy;
-      if (d2 > 1) continue;
-      const r = pitch * 0.44 * Math.sqrt(1 - d2);
-      if (r < 0.35) continue;
-      dots.push({ x: cx + x, y: cy + y, r: Math.round(r * 100) / 100 });
-    }
-  }
-  return dots;
-}
-
-// same geometry the old solid EYE_L/EYE_R paths described — center, half-
-// width, half-height — just filled with dots instead of a flat shape.
-const EYE_DOTS = [
-  ...lensDots(84, 42, 26, 23, 4.4),
-  ...lensDots(156, 42, 26, 23, 4.4),
-];
+const dots = (d: Dot[], fill: string, cls?: string, op?: number) => (
+  <g fill={fill} className={cls} opacity={op}>
+    {d.map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} />)}
+  </g>
+);
 
 export function WatchingEyes({
   open,
   axisDeg = 0,
   denied = false,
+  size = 260,
 }: {
   open: boolean;
-  /** rotation of the pupil, degrees from vertical — matches the question's axis */
+  /** the question's measurement axis, degrees from vertical — picks which
+   *  of the three pre-screened light patterns lights up */
   axisDeg?: number;
   /** the reader tried to watch without asking: a refusal twitch */
   denied?: boolean;
+  size?: number;
 }) {
+  const lit = W_LIGHT[nearestAngle(axisDeg)] ?? W_LIGHT[0];
   return (
     <div className={`we${open ? " is-open" : ""}${denied ? " is-denied" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 240 84" width="100%" style={{ maxWidth: 300 }}>
-        <defs>
-          <radialGradient id="we-shroud">
-            <stop offset="0%" stopColor="var(--ink-3)" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="var(--ink-3)" stopOpacity="0" />
-          </radialGradient>
-          <filter id="we-glow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="2.4" />
-          </filter>
-          <clipPath id="we-clipL"><path d={EYE_L} /></clipPath>
-          <clipPath id="we-clipR"><path d={EYE_R} /></clipPath>
-          {/* both eyes' halftone screen, defined once and reused twice below
-              (blurred for the glow, sharp for the ink) — same technique
-              GlowHand uses for exactly the same reason: a filled silhouette
-              blurs into a slab, but blurring the dots themselves keeps the
-              glow reading as light coming off a textured surface. */}
-          <g id="we-ink" fill="var(--cyan)">
-            {EYE_DOTS.map((d, i) => <circle key={i} cx={d.x} cy={d.y} r={d.r} />)}
-          </g>
-        </defs>
-
-        <ellipse cx="120" cy="42" rx="112" ry="36" fill="url(#we-shroud)" />
-
-        {/* closed lids */}
-        <g className="we__lids">
-          <path d={LID_L} fill="var(--ink)" stroke="var(--gutter)" strokeWidth="2" />
-          <path d={LID_R} fill="var(--ink)" stroke="var(--gutter)" strokeWidth="2" />
-        </g>
-
-        {/* open eyes */}
-        <g className="we__eyes">
-          <g clipPath="url(#we-clipL)"><use href="#we-ink" filter="url(#we-glow)" className="we__glow" /></g>
-          <g clipPath="url(#we-clipR)"><use href="#we-ink" filter="url(#we-glow)" className="we__glow" /></g>
-          <g clipPath="url(#we-clipL)"><use href="#we-ink" className="we__ink" /></g>
-          <g clipPath="url(#we-clipR)"><use href="#we-ink" className="we__ink" /></g>
-          <g clipPath="url(#we-clipL)">
-            <rect x="80" y="16" width="8" height="52" rx="4" fill="var(--paper)"
-              transform={`rotate(${axisDeg} 84 42)`} className="we__slit" />
-          </g>
-          <g clipPath="url(#we-clipR)">
-            <rect x="152" y="16" width="8" height="52" rx="4" fill="var(--paper)"
-              transform={`rotate(${axisDeg} 156 42)`} className="we__slit" />
-          </g>
+      <svg viewBox={W_VB} width="100%" style={{ maxWidth: size }}>
+        {dots(W_OUTLINE, "var(--yellow)", "we__ink")}
+        {dots(W_LID, "var(--yellow)", "we__lid")}
+        <g className="we__light">
+          {dots(lit.cy, "var(--cyan)")}
+          {dots(lit.wh, "#EAFBFF")}
         </g>
       </svg>
 
       <style>{`
         .we { line-height: 0; display: grid; justify-items: center; pointer-events: none; }
-        .we__eyes { opacity: 0; transform-origin: 120px 42px; transform: scaleY(0.12); transition: opacity 120ms ease, transform 160ms cubic-bezier(0.2,1.5,0.4,1); }
-        .we__lids { opacity: 1; transition: opacity 120ms ease; }
-        .we.is-open .we__eyes { opacity: 1; transform: scaleY(1); }
-        .we.is-open .we__lids { opacity: 0; }
-        .we__slit { transition: transform 260ms cubic-bezier(0.2,0.9,0.3,1); }
-        .we__glow { opacity: 0.55; }
-        .we__ink { opacity: 0.92; }
-        .we.is-denied .we__lids { animation: we-refuse 260ms ease-in-out 2; }
+        .we__ink { opacity: 0.55; transition: opacity 260ms ease; }
+        .we.is-open .we__ink { opacity: 1; }
+        .we__lid { transition: opacity 140ms ease; }
+        .we.is-open .we__lid { opacity: 0; transition-duration: 90ms; }
+        .we__light {
+          opacity: 0;
+          transform: scaleY(0.06);
+          transform-box: view-box;
+          transform-origin: 50% ${W_EYE_Y}px;
+          transition: opacity 140ms ease, transform 300ms cubic-bezier(0.2, 1.5, 0.35, 1);
+        }
+        .we.is-open .we__light { opacity: 1; transform: scaleY(1); }
+        .we.is-denied { animation: we-refuse 240ms ease-in-out 2; }
         @keyframes we-refuse {
           0%,100% { transform: translateX(0); }
-          25% { transform: translateX(-3px); }
-          75% { transform: translateX(3px); }
+          25% { transform: translateX(-4px); }
+          75% { transform: translateX(4px); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .we__eyes, .we__slit { transition: none; }
-          .we.is-denied .we__lids { animation: none; }
+          .we__light { transition: opacity 140ms ease; transform: scaleY(1); }
+          .we.is-denied { animation: none; }
         }
       `}</style>
     </div>
+  );
+}
+
+/** Static, non-interactive Watcher emblem for the stamp sheet — always the
+ *  left/right light pattern, since there's no live question to align to. */
+export function WatcherMark({ size = 150 }: { size?: number }) {
+  const lit = W_LIGHT[90];
+  return (
+    <svg viewBox={W_VB} width={size} height={size * 0.92} aria-hidden="true" style={{ display: "block" }}>
+      {dots(W_OUTLINE, "var(--yellow)")}
+      {dots(lit.cy, "var(--cyan)")}
+      {dots(lit.wh, "#EAFBFF")}
+    </svg>
   );
 }

@@ -5,15 +5,21 @@
  * downloadable stickers (src/components/StampSheet.tsx). One copy of the
  * dot data and drawing code — extracted here specifically so a second
  * consumer didn't mean a second, driftable copy of either.
+ *
+ * These colours are the dark theme's values, hardcoded rather than read
+ * from CSS custom properties: a canvas fillStyle can't resolve a var(),
+ * and a downloaded sticker or Studio layer should look like the sim always
+ * looks, not flip with whatever theme the viewer happens to have on.
  */
 
+import { W_NATURAL, W_OUTLINE, W_LID, W_LIGHT, nearestAngle, type Dot } from "../components/sim/watcher-dots";
+
 const CYAN = "#22C4F0";
-const INK = "#0B0E1A";
-const GUTTER = "#2B3358";
-const PAPER = "#ECE7D9";
+const YELLOW = "#FFD23F";
+const LIGHT_WHITE = "#EAFBFF";
 
 export const HAND_NATURAL = { w: 401, h: 284 };
-export const EYES_NATURAL = { w: 240, h: 84 };
+export const EYES_NATURAL = W_NATURAL;
 
 // GlowHand's exact dot field, extracted from its baked <circle> list rather
 // than retraced — this is a photo trace, not a generated pattern, so there
@@ -48,92 +54,34 @@ export function drawHand(ctx: CanvasRenderingContext2D, size: number, alive: boo
   ctx.restore();
 }
 
-// WatchingEyes' exact geometry: the eye-lens outlines and closed-lid
-// outlines as Path2D (built from the same "Q" paths, not retraced), and
-// the same lensDots() generator producing the same 214-dot fill — copied
-// rather than re-derived so the shape this draws is provably the one the
-// sim actually shows.
-const EYE_PATH_L = "M58,42 Q84,19 110,42 Q84,65 58,42 Z";
-const EYE_PATH_R = "M130,42 Q156,19 182,42 Q156,65 130,42 Z";
-const LID_PATH_L = "M58,42 Q84,38 110,42 Q84,46 58,42 Z";
-const LID_PATH_R = "M130,42 Q156,38 182,42 Q156,46 130,42 Z";
-
-function lensDots(cx: number, cy: number, halfW: number, halfH: number, pitch: number) {
-  const dots: { x: number; y: number; r: number }[] = [];
-  const rowPitch = pitch * 0.87;
-  const rows = Math.ceil(halfH / rowPitch) + 1;
-  const cols = Math.ceil(halfW / pitch) + 1;
-  for (let row = -rows; row <= rows; row++) {
-    const y = row * rowPitch;
-    const rowOffset = row % 2 !== 0 ? pitch / 2 : 0;
-    for (let col = -cols; col <= cols; col++) {
-      const x = col * pitch + rowOffset;
-      const fx = x / halfW, fy = y / halfH;
-      const d2 = fx * fx + fy * fy;
-      if (d2 > 1) continue;
-      const r = pitch * 0.44 * Math.sqrt(1 - d2);
-      if (r < 0.35) continue;
-      dots.push({ x: cx + x, y: cy + y, r: Math.round(r * 100) / 100 });
-    }
-  }
-  return dots;
-}
-const EYE_DOTS = [...lensDots(84, 42, 26, 23, 4.4), ...lensDots(156, 42, 26, 23, 4.4)];
-
-let eyeClipL: Path2D | null = null, eyeClipR: Path2D | null = null;
-let lidL: Path2D | null = null, lidR: Path2D | null = null;
-
-function drawEyeDots(ctx: CanvasRenderingContext2D, clip: Path2D, blur: boolean, alpha: number) {
-  ctx.save();
-  ctx.clip(clip);
-  if (blur) ctx.filter = "blur(2.4px)";
+// WatchingEyes' exact geometry: the hood outline, closed-lid bars, and the
+// three pre-screened eye-light patterns, all imported from watcher-dots.ts
+// rather than retraced — same dot data the SVG sim component draws, so the
+// sticker/Studio layer is provably the same shape the sim actually shows.
+function drawDots(ctx: CanvasRenderingContext2D, d: Dot[], fill: string, alpha: number) {
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = CYAN;
-  EYE_DOTS.forEach((d) => { ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill(); });
-  ctx.restore();
+  ctx.fillStyle = fill;
+  d.forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
 }
 
 export function drawEyes(ctx: CanvasRenderingContext2D, size: number, open: boolean, axisDeg: number) {
-  if (!eyeClipL) {
-    eyeClipL = new Path2D(EYE_PATH_L); eyeClipR = new Path2D(EYE_PATH_R);
-    lidL = new Path2D(LID_PATH_L); lidR = new Path2D(LID_PATH_R);
-  }
   const s = size / EYES_NATURAL.w;
   ctx.save();
   ctx.scale(s, s);
   ctx.translate(-EYES_NATURAL.w / 2, -EYES_NATURAL.h / 2); // centre on the layer origin
 
+  // outline is always drawn — dim when closed, at full ink when open —
+  // same layering the SVG's .we__ink opacity rule uses
+  drawDots(ctx, W_OUTLINE, YELLOW, open ? 1 : 0.55);
+
   if (!open) {
-    ctx.fillStyle = INK;
-    ctx.strokeStyle = GUTTER;
-    ctx.lineWidth = 2;
-    ctx.fill(lidL!); ctx.stroke(lidL!);
-    ctx.fill(lidR!); ctx.stroke(lidR!);
-    ctx.restore();
-    return;
+    drawDots(ctx, W_LID, YELLOW, 1);
+  } else {
+    const lit = W_LIGHT[nearestAngle(axisDeg)] ?? W_LIGHT[0];
+    drawDots(ctx, lit.cy, CYAN, 1);
+    drawDots(ctx, lit.wh, LIGHT_WHITE, 1);
   }
 
-  drawEyeDots(ctx, eyeClipL!, true, 0.55);
-  drawEyeDots(ctx, eyeClipR!, true, 0.55);
-  drawEyeDots(ctx, eyeClipL!, false, 0.92);
-  drawEyeDots(ctx, eyeClipR!, false, 0.92);
   ctx.globalAlpha = 1;
-
-  const rad = (axisDeg * Math.PI) / 180;
-  const slit = (cx: number, clip: Path2D) => {
-    ctx.save();
-    ctx.clip(clip);
-    ctx.translate(cx, 42);
-    ctx.rotate(rad);
-    ctx.fillStyle = PAPER;
-    ctx.beginPath();
-    if ((ctx as any).roundRect) (ctx as any).roundRect(-4, -26, 8, 52, 4);
-    else ctx.rect(-4, -26, 8, 52);
-    ctx.fill();
-    ctx.restore();
-  };
-  slit(84, eyeClipL!);
-  slit(156, eyeClipR!);
-
   ctx.restore();
 }

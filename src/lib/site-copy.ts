@@ -70,7 +70,7 @@ export interface SiteCopy {
   };
   write: { heading: string; intro: string; footerLink: string };
   stamps: {
-    heading: string; intro: string; collectedSuffix: string;
+    heading: string; intro: string; markCaption: string; collectedSuffix: string;
     gotLabel: string; goEarnLabel: string; notIssuedLabel: string; downloadSticker: string;
   };
   /** Per-sim narrative/UI text — separate from `sims` above (the gallery
@@ -109,7 +109,7 @@ export interface SiteCopy {
       askPrompt: string;
       watchOnlyButton: string;
       readout: { panels: string; certainAbout: string; nothing: string };
-      ledger: { heading: string; sureTemplate: string; note: string };
+      ledger: { heading: string; sureLabel: string; note: string };
       frames: { firstCaption: string; firstSub: string; alreadyKnew: string; oddsWereTemplate: string; emptyHint: string };
       pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
       violation: { sfx: string; law: string; attempted: string; why: string };

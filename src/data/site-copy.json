@@ -107,6 +107,7 @@
   "stamps": {
     "heading": "The stamp sheet",
     "intro": "Marvel printed cut-out value stamps in its comics through the mid-seventies — one per issue, collected into a book. This is the same idea, minus the scissors. A stamp fills in when you actually use that week's simulation.",
+    "markCaption": "He is keeping count.",
     "collectedSuffix": "collected on this device",
     "gotLabel": "collected",
     "goEarnLabel": "go earn it",
@@ -202,7 +203,7 @@
       "readout": { "panels": "panels", "certainAbout": "certain about", "nothing": "nothing" },
       "ledger": {
         "heading": "What can be predicted right now",
-        "sureTemplate": "certain: {arrow}",
+        "sureLabel": "certain:",
         "note": "Notice what happened to the other rows when you asked."
       },
       "frames": {

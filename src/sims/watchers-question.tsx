@@ -33,15 +33,31 @@ interface Question {
   theta: number;
   label: string;
   labelKey: string;
-  plus: string;
-  minus: string;
 }
 
 const QUESTIONS: Question[] = [
-  { id: "z", theta: 0, label: C.questions.upDown, labelKey: "simCopy.watchersQuestion.questions.upDown", plus: "↑", minus: "↓" },
-  { id: "d", theta: Math.PI / 4, label: C.questions.diagonal, labelKey: "simCopy.watchersQuestion.questions.diagonal", plus: "↗", minus: "↙" },
-  { id: "x", theta: Math.PI / 2, label: C.questions.leftRight, labelKey: "simCopy.watchersQuestion.questions.leftRight", plus: "→", minus: "←" },
+  { id: "z", theta: 0, label: C.questions.upDown, labelKey: "simCopy.watchersQuestion.questions.upDown" },
+  { id: "d", theta: Math.PI / 4, label: C.questions.diagonal, labelKey: "simCopy.watchersQuestion.questions.diagonal" },
+  { id: "x", theta: Math.PI / 2, label: C.questions.leftRight, labelKey: "simCopy.watchersQuestion.questions.leftRight" },
 ];
+
+/** One consistent rotating arrow — replaces the old mix of Unicode glyphs
+ *  (↑↗→↓↙←), which never quite lined up with each other at a glance. */
+function Arrow({ deg, size = 26, className = "" }: { deg: number; size?: number; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} className={className} aria-hidden="true">
+      <g transform={`rotate(${deg} 12 12)`} stroke="currentColor" strokeWidth="2.6"
+        strokeLinecap="round" strokeLinejoin="round" fill="none">
+        <line x1="12" y1="20" x2="12" y2="5" />
+        <polyline points="6,11 12,4.5 18,11" />
+      </g>
+    </svg>
+  );
+}
+/** rotation for an outcome arrow: theta is the axis from +Z (up), and a
+ *  minus outcome points the opposite way */
+const arrowDeg = (theta: number, outcome: 1 | -1) =>
+  (theta * 180) / Math.PI + (outcome === 1 ? 0 : 180);
 
 interface Panel {
   key: number;
@@ -196,7 +212,7 @@ export default function WatchersQuestion() {
                 the reaction where the click already is means you never have
                 to scroll back up to catch it. */}
             <div className="wq__eyes">
-              <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} />
+              <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} size={200} />
               <p className="wq__eyesCap" data-copy-key={eyesCaptionKey}>{eyesCaptionText}</p>
 
               {ended && (
@@ -242,7 +258,7 @@ export default function WatchersQuestion() {
             {odds.map(({ q, p }) => {
               const sure = p > 0.999 || p < 0.001;
               const pct = Math.max(p, 1 - p) * 100;
-              const arrow = p > 0.5 ? q.plus : q.minus;
+              const deg = arrowDeg(q.theta, p > 0.5 ? 1 : -1);
               return (
                 <div key={q.id} className={`wq__row${sure ? " is-sure" : ""}`}>
                   <span className="wq__rowQ">{q.label}</span>
@@ -251,8 +267,9 @@ export default function WatchersQuestion() {
                   </span>
                   <span className="wq__rowV">
                     {sure
-                      ? <CopyTemplate keyPath="simCopy.watchersQuestion.ledger.sureTemplate" template={C.ledger.sureTemplate} vars={{ arrow }} />
-                      : `${pct.toFixed(0)}% ${arrow}`}
+                      ? <span data-copy-key="simCopy.watchersQuestion.ledger.sureLabel">{C.ledger.sureLabel}</span>
+                      : `${pct.toFixed(0)}%`}
+                    <Arrow deg={deg} size={15} className="wq__inlineArrow" />
                   </span>
                 </div>
               );
@@ -289,12 +306,11 @@ export default function WatchersQuestion() {
                   <Diagram
                     dir={p.before}
                     axis={axisOf(p.q.theta)}
+                    axisDeg={(p.q.theta * 180) / Math.PI}
                     result={p.after}
-                    plus={p.q.plus}
-                    minus={p.q.minus}
                   />
                   <span className={`sfx sfx--fire wq__answer${p.wasCertain ? " is-dull" : ""}`}>
-                    {p.outcome === 1 ? p.q.plus : p.q.minus}
+                    <Arrow deg={arrowDeg(p.q.theta, p.outcome)} size={30} />
                   </span>
                 </Frame>
               ))}
@@ -393,10 +409,12 @@ export default function WatchersQuestion() {
             padding: 0.5rem;
           }
           .wq__answer {
-            position: absolute; right: 0.4rem; bottom: 0.3rem;
-            font-size: 1.9rem;
+            position: absolute; right: 0.5rem; bottom: 0.4rem;
+            color: var(--yellow); line-height: 0;
+            filter: drop-shadow(2px 2px 0 var(--ink));
           }
           .wq__answer.is-dull { opacity: 0.45; }
+          .wq__inlineArrow { vertical-align: -3px; margin-left: 0.15rem; }
           .wq__quirk {
             border-left: 3px solid var(--magenta); padding-left: 0.75rem;
             color: var(--paper-dim); font-size: 0.9rem;
@@ -463,15 +481,14 @@ function Frame({
 function Diagram({
   dir,
   axis,
+  axisDeg,
   result,
-  plus,
-  minus,
 }: {
   dir: { x: number; z: number };
   axis?: { x: number; z: number };
+  /** measurement axis, degrees from +Z — draws the arrows at the axis ends */
+  axisDeg?: number;
   result?: { x: number; z: number };
-  plus?: string;
-  minus?: string;
 }) {
   const C2 = 70, R = 44;
   const pt = (v: { x: number; z: number }, r = R) => ({
@@ -494,8 +511,12 @@ function Diagram({
         <>
           <line x1={a1.x} y1={a1.y} x2={a2.x} y2={a2.y}
             stroke="var(--yellow)" strokeWidth="2" strokeDasharray="5 4" opacity="0.9" />
-          <text x={a1.x} y={a1.y} className="dg__end" textAnchor="middle" dominantBaseline="middle">{plus}</text>
-          <text x={a2.x} y={a2.y} className="dg__end" textAnchor="middle" dominantBaseline="middle">{minus}</text>
+          <g className="dg__end" transform={`translate(${a1.x - 7} ${a1.y - 7})`}>
+            <Arrow deg={axisDeg ?? 0} size={14} />
+          </g>
+          <g className="dg__end" transform={`translate(${a2.x - 7} ${a2.y - 7})`}>
+            <Arrow deg={(axisDeg ?? 0) + 180} size={14} />
+          </g>
         </>
       )}
 
@@ -512,9 +533,7 @@ function Diagram({
       )}
 
       <style>{`
-        .dg__end {
-          font-family: var(--font-mono); font-size: 11px; fill: var(--yellow);
-        }
+        .dg__end { color: var(--yellow); }
       `}</style>
     </svg>
   );

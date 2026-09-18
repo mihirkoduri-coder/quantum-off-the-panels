@@ -3,6 +3,7 @@ import { isUnlocked, onUnlockChange } from "../lib/unlocks";
 import { copy } from "../lib/site-copy";
 import type { StickerMotif } from "../data/concepts";
 import Sticker from "./Sticker";
+import { WatcherMark } from "./sim/motifs";
 
 interface Stamp {
   id: string; week: number; title: string; character: string;
@@ -35,6 +36,14 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
 
   return (
     <>
+      {/* a page-level mascot, not tied to any one row's earned state — Uatu
+          watches the whole collection, which is the joke of a tracker page
+          existing at all. Doesn't reveal anything about unpublished weeks. */}
+      <div className="ss__mark">
+        <WatcherMark size={170} />
+        <p className="ss__markCap" data-copy-key="stamps.markCaption">{copy.stamps.markCaption}</p>
+      </div>
+
       <p className="eyebrow ss__count">
         <span className="wk">{have} / {stamps.length}</span>
         <span className="sep">/</span><span data-copy-key="stamps.collectedSuffix">{copy.stamps.collectedSuffix}</span>
@@ -64,7 +73,15 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
       </ul>
 
       <style>{`
-        .ss__count { margin: 1.5rem 0 0.9rem; }
+        .ss__mark {
+          display: grid; justify-items: center; gap: 0.4rem;
+          margin: 2rem 0 0.5rem;
+        }
+        .ss__markCap {
+          font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.16em;
+          text-transform: uppercase; color: var(--paper-dim); margin: 0;
+        }
+        .ss__count { margin: 1rem 0 0.9rem; }
         .ss { list-style: none; padding: 0; margin: 0;
               display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); }
         .ss__i {
