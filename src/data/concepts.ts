@@ -113,6 +113,7 @@ export const CONCEPTS: Concept[] = [
     sims: ["collapse-lab"],
     published: true,
     slug: "week-02-measurement-and-collapse",
+    stickerMotif: "eyes",
   },
   {
     id: "entanglement",

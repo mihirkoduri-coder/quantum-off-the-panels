@@ -60,7 +60,7 @@ const mapLabel = live.length > 0
   </figcaption>
 
   <div class="map__scroll">
-    <svg viewBox="-16 -16 208 140" class="map__svg" role="img" aria-label={mapLabel}>
+    <svg viewBox="-16 -16 424 140" class="map__svg" role="img" aria-label={mapLabel}>
 
       <defs>
         <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
@@ -73,8 +73,10 @@ const mapLabel = live.length > 0
         </marker>
       </defs>
 
-      <!-- ═══ THE SPINE ═══ nothing yet — needs two adjacent published weeks ═══ -->
-      <g class="spine"></g>
+      <!-- ═══ THE SPINE ═══ week 1 → week 2, the only adjacent pair live so far ═══ -->
+      <g class="spine">
+        <line x1="176" y1="54" x2="216" y2="54" marker-end="url(#tip)" />
+      </g>
 
       <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
       <g class="calls"></g>
@@ -87,6 +89,19 @@ const mapLabel = live.length > 0
           <text class="n-title" x="12" y="48">Superposition</text>
           <text class="n-char"  x="12" y="70">Doctor Manhattan</text>
           <text class="n-state" x="12" y="92">READ →</text>
+        </g>
+      </a>
+
+      <!-- ═══ WEEK 2 ═══ published ═══ title's long enough to need a smaller
+           size than week 1's node got away with — first case of that, and
+           the reason this is a per-node override rather than a shared rule. -->
+      <a href="/posts/week-02-measurement-and-collapse">
+        <g class="node is-live">
+          <rect x="216" y="0" width="176" height="108" rx="3" />
+          <text class="n-wk"    x="228" y="22">ISSUE 02</text>
+          <text class="n-title" x="228" y="46" style="font-size:13px">Measurement &amp; Collapse</text>
+          <text class="n-char"  x="228" y="70">Uatu the Watcher</text>
+          <text class="n-state" x="228" y="92">READ →</text>
         </g>
       </a>
 
