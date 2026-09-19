@@ -27,7 +27,7 @@ export type Tier = "A" | "B" | "C";
  *  bespoke art built for one specific character, not a byproduct of any
  *  sim existing — most weeks won't have one, and that's the expected case,
  *  not a gap to fill in. */
-export type StickerMotif = "hand" | "eyes";
+export type StickerMotif = "hand" | "eyes" | "logo";
 
 export interface Concept {
   /** stable id — used for prereq edges and post frontmatter. never change it. */
@@ -72,6 +72,7 @@ export const CONCEPTS: Concept[] = [
     sims: [],
     published: true,
     slug: "week-00-intro",
+    stickerMotif: "logo",
   },
   {
     id: "superposition",

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { drawHand, drawEyes, HAND_NATURAL, EYES_NATURAL } from "../lib/motif-canvas";
+import { drawHand, drawEyes, drawLogo, HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL } from "../lib/motif-canvas";
 import type { StickerMotif } from "../data/concepts";
 import { copy } from "../lib/site-copy";
 
@@ -17,10 +17,13 @@ const EXPORT_SIZE = 512;
 const PREVIEW_CSS_PX = 140;
 const FIT_FRACTION = 0.82; // inset from the square's edge, so nothing touches the border
 
-const NATURAL: Record<StickerMotif, { w: number; h: number }> = { hand: HAND_NATURAL, eyes: EYES_NATURAL };
+const NATURAL: Record<StickerMotif, { w: number; h: number }> = {
+  hand: HAND_NATURAL, eyes: EYES_NATURAL, logo: LOGO_NATURAL,
+};
 
-/** contain-fit: the largest width (the unit drawHand/drawEyes' `size` takes)
- *  that keeps BOTH the motif's width and height inside an `avail`-square. */
+/** contain-fit: the largest width (the unit drawHand/drawEyes/drawLogo's
+ *  `size` takes) that keeps BOTH the motif's width and height inside an
+ *  `avail`-square. */
 function fitWidth(kind: StickerMotif, avail: number): number {
   const { w, h } = NATURAL[kind];
   return w * Math.min(avail / w, avail / h);
@@ -32,7 +35,8 @@ function drawSticker(ctx: CanvasRenderingContext2D, kind: StickerMotif, canvasSi
   ctx.translate(canvasSize / 2, canvasSize / 2);
   const size = fitWidth(kind, canvasSize * FIT_FRACTION);
   if (kind === "hand") drawHand(ctx, size, true);
-  else drawEyes(ctx, size, true, 0);
+  else if (kind === "eyes") drawEyes(ctx, size, true, 0);
+  else drawLogo(ctx, size);
   ctx.restore();
 }
 

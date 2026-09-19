@@ -70,7 +70,7 @@ export interface SiteCopy {
   };
   write: { heading: string; intro: string; footerLink: string };
   stamps: {
-    heading: string; intro: string; markCaption: string; collectedSuffix: string;
+    heading: string; intro: string; collectedSuffix: string;
     gotLabel: string; goEarnLabel: string; notIssuedLabel: string; downloadSticker: string;
   };
   /** Per-sim narrative/UI text — separate from `sims` above (the gallery

@@ -128,16 +128,3 @@ export function WatchingEyes({
     </div>
   );
 }
-
-/** Static, non-interactive Watcher emblem for the stamp sheet — always the
- *  left/right light pattern, since there's no live question to align to. */
-export function WatcherMark({ size = 150 }: { size?: number }) {
-  const lit = W_LIGHT[90];
-  return (
-    <svg viewBox={W_VB} width={size} height={size * 0.92} aria-hidden="true" style={{ display: "block" }}>
-      {dots(W_OUTLINE, "var(--yellow)")}
-      {dots(lit.cy, "var(--cyan)")}
-      {dots(lit.wh, "#EAFBFF")}
-    </svg>
-  );
-}
