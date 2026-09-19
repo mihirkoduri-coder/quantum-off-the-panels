@@ -203,42 +203,6 @@ export default function WatchersQuestion() {
         titleKey="simCopy.watchersQuestion.title"
         watchFor={C.watchFor}
         watchForKey="simCopy.watchersQuestion.watchFor"
-        onReset={reset}
-        controls={
-          <div className="stack">
-            {/* Right above the buttons that trigger it, not up in the stage —
-                the eyes only open for ~1.4s, and that used to happen well
-                out of view of whatever you'd scrolled down to click. Putting
-                the reaction where the click already is means you never have
-                to scroll back up to catch it. */}
-            <div className="wq__eyes">
-              <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} size={200} />
-              <p className="wq__eyesCap" data-copy-key={eyesCaptionKey}>{eyesCaptionText}</p>
-
-              {ended && (
-                <div className="wq__end">
-                  <p data-copy-key="simCopy.watchersQuestion.ending.line1">{C.ending.line1}</p>
-                  <p className="wq__endKicker" data-copy-key="simCopy.watchersQuestion.ending.kicker">{C.ending.kicker}</p>
-                  <p className="wq__endHint" data-copy-key="simCopy.watchersQuestion.ending.hint">{C.ending.hint}</p>
-                </div>
-              )}
-            </div>
-
-            <p className="wq__prompt" data-copy-key="simCopy.watchersQuestion.askPrompt">{C.askPrompt}</p>
-            <div className="row">
-              {QUESTIONS.map((q) => (
-                <button key={q.id} className="btn btn--go" onClick={() => ask(q)} disabled={ended}>
-                  <span data-copy-key={q.labelKey}>{q.label}</span>
-                </button>
-              ))}
-            </div>
-            <div className="row">
-              <button className="btn btn--break" onClick={watchOnly} disabled={ended}>
-                <span data-copy-key="simCopy.watchersQuestion.watchOnlyButton">{C.watchOnlyButton}</span>
-              </button>
-            </div>
-          </div>
-        }
         readout={
           <>
             <span>
@@ -251,75 +215,112 @@ export default function WatchersQuestion() {
           </>
         }
       >
+        {/* Uatu and everything the reader clicks live in one fixed-height
+            left column, so they never end up buried below a panel strip
+            that keeps growing — the actual thing that made this sim too
+            tall to fit a screen. The strip and the ledger are the part
+            that grows; only that side scrolls further. */}
         <div className="wq">
-          {/* ---- the certainty ledger ---- */}
-          <div className="wq__ledger">
-            <p className="wq__ledgerHead" data-copy-key="simCopy.watchersQuestion.ledger.heading">{C.ledger.heading}</p>
-            {odds.map(({ q, p }) => {
-              const sure = p > 0.999 || p < 0.001;
-              const pct = Math.max(p, 1 - p) * 100;
-              const deg = arrowDeg(q.theta, p > 0.5 ? 1 : -1);
-              return (
-                <div key={q.id} className={`wq__row${sure ? " is-sure" : ""}`}>
-                  <span className="wq__rowQ">{q.label}</span>
-                  <span className="wq__bar">
-                    <span className="wq__barFill" style={{ width: `${pct}%` }} />
-                  </span>
-                  <span className="wq__rowV">
-                    {sure
-                      ? <span data-copy-key="simCopy.watchersQuestion.ledger.sureLabel">{C.ledger.sureLabel}</span>
-                      : `${pct.toFixed(0)}%`}
-                    <Arrow deg={deg} size={15} className="wq__inlineArrow" />
-                  </span>
-                </div>
-              );
-            })}
-            {destroyed && (
-              <p className="wq__note" data-copy-key="simCopy.watchersQuestion.ledger.note">
-                {C.ledger.note}
-              </p>
-            )}
-          </div>
+          <div className="wq__side">
+            <div className="wq__eyes">
+              <WatchingEyes open={gaze.open} axisDeg={gaze.deg} denied={gaze.denied} size={170} />
+              <p className="wq__eyesCap" data-copy-key={eyesCaptionKey}>{eyesCaptionText}</p>
 
-          {/* ---- the panel strip ---- */}
-          <div className="wq__stripWrap">
-            <div className="wq__page">
-              <Frame
-                caption={<span data-copy-key="simCopy.watchersQuestion.frames.firstCaption">{C.frames.firstCaption}</span>}
-                sub={<span data-copy-key="simCopy.watchersQuestion.frames.firstSub">{C.frames.firstSub}</span>}
-              >
-                <Diagram dir={{ x: 0, z: 1 }} />
-              </Frame>
-
-              {panels.map((p, i) => (
-                <Frame
-                  key={p.key}
-                  caption={`“${p.q.label}”`}
-                  sub={
-                    p.wasCertain
-                      ? <span data-copy-key="simCopy.watchersQuestion.frames.alreadyKnew">{C.frames.alreadyKnew}</span>
-                      : <CopyTemplate keyPath="simCopy.watchersQuestion.frames.oddsWereTemplate" template={C.frames.oddsWereTemplate}
-                          vars={{ pct: (Math.max(p.pPlus, 1 - p.pPlus) * 100).toFixed(0) }} />
-                  }
-                  fresh={i === panels.length - 1}
-                >
-                  <Diagram
-                    dir={p.before}
-                    axis={axisOf(p.q.theta)}
-                    axisDeg={(p.q.theta * 180) / Math.PI}
-                    result={p.after}
-                  />
-                  <span className={`sfx sfx--fire wq__answer${p.wasCertain ? " is-dull" : ""}`}>
-                    <Arrow deg={arrowDeg(p.q.theta, p.outcome)} size={30} />
-                  </span>
-                </Frame>
-              ))}
-
-              {panels.length === 0 && (
-                <div className="wq__hint" data-copy-key="simCopy.watchersQuestion.frames.emptyHint">
-                  {C.frames.emptyHint}
+              {ended && (
+                <div className="wq__end">
+                  <p data-copy-key="simCopy.watchersQuestion.ending.line1">{C.ending.line1}</p>
+                  <p className="wq__endKicker" data-copy-key="simCopy.watchersQuestion.ending.kicker">{C.ending.kicker}</p>
+                  <p className="wq__endHint" data-copy-key="simCopy.watchersQuestion.ending.hint">{C.ending.hint}</p>
                 </div>
               )}
+            </div>
+
+            <p className="wq__prompt" data-copy-key="simCopy.watchersQuestion.askPrompt">{C.askPrompt}</p>
+            <div className="wq__btnCol">
+              {QUESTIONS.map((q) => (
+                <button key={q.id} className="btn btn--go" onClick={() => ask(q)} disabled={ended}>
+                  <span data-copy-key={q.labelKey}>{q.label}</span>
+                </button>
+              ))}
+              <button className="btn btn--break" onClick={watchOnly} disabled={ended}>
+                <span data-copy-key="simCopy.watchersQuestion.watchOnlyButton">{C.watchOnlyButton}</span>
+              </button>
+              <button className="btn wq__resetBtn" onClick={reset}>
+                <span data-copy-key="simShell.resetButton">{copy.simShell.resetButton}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="wq__main">
+            {/* ---- the certainty ledger ---- */}
+            <div className="wq__ledger">
+              <p className="wq__ledgerHead" data-copy-key="simCopy.watchersQuestion.ledger.heading">{C.ledger.heading}</p>
+              {odds.map(({ q, p }) => {
+                const sure = p > 0.999 || p < 0.001;
+                const pct = Math.max(p, 1 - p) * 100;
+                const deg = arrowDeg(q.theta, p > 0.5 ? 1 : -1);
+                return (
+                  <div key={q.id} className={`wq__row${sure ? " is-sure" : ""}`}>
+                    <span className="wq__rowQ">{q.label}</span>
+                    <span className="wq__bar">
+                      <span className="wq__barFill" style={{ width: `${pct}%` }} />
+                    </span>
+                    <span className="wq__rowV">
+                      {sure
+                        ? <span data-copy-key="simCopy.watchersQuestion.ledger.sureLabel">{C.ledger.sureLabel}</span>
+                        : `${pct.toFixed(0)}%`}
+                      <Arrow deg={deg} size={15} className="wq__inlineArrow" />
+                    </span>
+                  </div>
+                );
+              })}
+              {destroyed && (
+                <p className="wq__note" data-copy-key="simCopy.watchersQuestion.ledger.note">
+                  {C.ledger.note}
+                </p>
+              )}
+            </div>
+
+            {/* ---- the panel strip ---- */}
+            <div className="wq__stripWrap">
+              <div className="wq__page">
+                <Frame
+                  caption={<span data-copy-key="simCopy.watchersQuestion.frames.firstCaption">{C.frames.firstCaption}</span>}
+                  sub={<span data-copy-key="simCopy.watchersQuestion.frames.firstSub">{C.frames.firstSub}</span>}
+                >
+                  <Diagram dir={{ x: 0, z: 1 }} />
+                </Frame>
+
+                {panels.map((p, i) => (
+                  <Frame
+                    key={p.key}
+                    caption={`“${p.q.label}”`}
+                    sub={
+                      p.wasCertain
+                        ? <span data-copy-key="simCopy.watchersQuestion.frames.alreadyKnew">{C.frames.alreadyKnew}</span>
+                        : <CopyTemplate keyPath="simCopy.watchersQuestion.frames.oddsWereTemplate" template={C.frames.oddsWereTemplate}
+                            vars={{ pct: (Math.max(p.pPlus, 1 - p.pPlus) * 100).toFixed(0) }} />
+                    }
+                    fresh={i === panels.length - 1}
+                  >
+                    <Diagram
+                      dir={p.before}
+                      axis={axisOf(p.q.theta)}
+                      axisDeg={(p.q.theta * 180) / Math.PI}
+                      result={p.after}
+                    />
+                    <span className={`sfx sfx--fire wq__answer${p.wasCertain ? " is-dull" : ""}`}>
+                      <Arrow deg={arrowDeg(p.q.theta, p.outcome)} size={30} />
+                    </span>
+                  </Frame>
+                ))}
+
+                {panels.length === 0 && (
+                  <div className="wq__hint" data-copy-key="simCopy.watchersQuestion.frames.emptyHint">
+                    {C.frames.emptyHint}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -335,6 +336,17 @@ export default function WatchersQuestion() {
 
         <style>{`
           .wq { display: grid; gap: 1.25rem; width: 100%; }
+          /* Side column fixed-width, top-aligned: it holds still at whatever
+             height Uatu + the buttons need, while .wq__main is free to grow
+             past it as panels accumulate — that growth no longer pushes the
+             controls down with it, which is the whole point of splitting
+             these into columns instead of stacking the entire sim. */
+          @media (min-width: 46rem) {
+            .wq { grid-template-columns: 13.5rem 1fr; align-items: start; gap: 1.5rem; }
+          }
+          .wq__side { display: grid; gap: 0.85rem; align-content: start; }
+          .wq__main { display: grid; gap: 1rem; min-width: 0; }
+
           .wq__eyes { display: grid; justify-items: center; gap: 0.3rem; }
           .wq__end {
             border-top: 2px solid var(--magenta);
@@ -358,6 +370,9 @@ export default function WatchersQuestion() {
             font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em;
             text-transform: uppercase; color: var(--paper-dim); margin: 0;
           }
+          .wq__btnCol { display: grid; gap: 0.5rem; }
+          .wq__btnCol .btn { width: 100%; }
+          .wq__resetBtn { color: var(--paper-dim); }
 
           .wq__ledger {
             border: var(--panel-line) solid var(--gutter);
@@ -367,15 +382,18 @@ export default function WatchersQuestion() {
             font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.14em;
             text-transform: uppercase; color: var(--yellow); margin: 0 0 0.7rem;
           }
+          /* auto/minmax rather than fixed widths — this row now has to fit
+             both a full-width mobile column and whatever's left of a wide
+             screen after the side column, and can't assume either. */
           .wq__row {
-            display: grid; grid-template-columns: 8.5rem 1fr 7rem;
-            gap: 0.6rem; align-items: center; padding: 0.25rem 0;
+            display: grid; grid-template-columns: minmax(5rem, auto) 1fr auto;
+            gap: 0.5rem; align-items: center; padding: 0.25rem 0;
             font-size: 0.85rem;
           }
           .wq__rowQ { color: var(--paper-dim); }
           .wq__rowV {
             font-family: var(--font-mono); font-size: 0.72rem; text-align: right;
-            color: var(--paper-dim);
+            color: var(--paper-dim); white-space: nowrap;
           }
           .wq__row.is-sure .wq__rowQ, .wq__row.is-sure .wq__rowV { color: var(--yellow); }
           .wq__bar {
@@ -394,13 +412,14 @@ export default function WatchersQuestion() {
 
           .wq__stripWrap { position: relative; }
           /* A comic page, not a filmstrip: every panel stays on screen, so the
-             boring certain ones are still visible when the coin flip lands. */
+             boring certain ones are still visible when the coin flip lands.
+             auto-fill sizes off the CONTAINER, not the viewport — needed now
+             that this sits in a column next to the side rail rather than
+             spanning the sim's full width. */
           .wq__page {
-            display: grid; gap: 0.6rem;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            display: grid; gap: 0.5rem; max-width: 42rem;
+            grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
           }
-          @media (min-width: 30rem) { .wq__page { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-          @media (min-width: 46rem) { .wq__page { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
           .wq__hint {
             display: grid; place-items: center; min-height: 7rem;
             border: var(--panel-line) dashed var(--gutter); border-radius: var(--radius);
@@ -418,10 +437,6 @@ export default function WatchersQuestion() {
           .wq__quirk {
             border-left: 3px solid var(--magenta); padding-left: 0.75rem;
             color: var(--paper-dim); font-size: 0.9rem;
-          }
-          @media (max-width: 34rem) {
-            .wq__row { grid-template-columns: 6.5rem 1fr; }
-            .wq__rowV { grid-column: 2; text-align: left; }
           }
         `}</style>
       </SimShell>
