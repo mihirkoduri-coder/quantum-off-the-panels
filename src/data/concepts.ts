@@ -110,7 +110,7 @@ export const CONCEPTS: Concept[] = [
     character: "Uatu the Watcher",
     tier: "B",
     prereqs: ["superposition"],
-    sims: ["watchers-question"],
+    sims: ["collapse-lab"],
     published: true,
     slug: "week-02-measurement-and-collapse",
   },
