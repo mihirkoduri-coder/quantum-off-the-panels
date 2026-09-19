@@ -5,32 +5,43 @@
  * ── HOW TO EDIT ────────────────────────────────────────────────────────────
  * Unpublished weeks do not get a node here at all — the map only ever shows
  * what a reader can actually open. To publish a week:
- *   1. add its <g class="node is-live"> at its grid position (below)
+ *   1. add its <g class="node is-live"> at a position that reflects its real
+ *      prereqs (see concepts.ts) — a week branches off whichever published
+ *      node it actually builds on, it doesn't just queue up next in a row
  *   2. wrap it in <a href="/posts/week-NN-slug"> … </a>, text reads READ →
- *   3. reconnect the spine line to/from whichever adjacent weeks are also
- *      live, and re-add any callback edge that now has both ends published
- * Everything else is literal coordinates you can move freely.
- *
- * ── THE GRID ───────────────────────────────────────────────────────────────
- * Serpentine, 4 across. Week order reads continuously: → → → ↓ ← ← ← ↓ → → →
- *   columns x = 0, 216, 432, 648   (nodes are 176 wide)
- *   rows    y = 0, 162, 324        (nodes are 108 tall)
+ *   3. draw a solid edge from each of its live prereqs into it (an elbow
+ *      path, not a straight line, reads as a tree rather than a flowchart —
+ *      see wk1→wk2 below), and re-add any callback edge that now has both
+ *      ends published
+ * Node size, position, and every path's coordinates are all literal — move
+ * them freely as the tree grows and starts needing its own shape.
  *
  * ── EDGE PHILOSOPHY ────────────────────────────────────────────────────────
- * Solid line = the spine. Just week N to week N+1, in reading order.
- * Dashed arc = a callback: a week that reaches back to a non-adjacent one.
- * There are only three callbacks, once every week is live, and they are the
- * three moments where the arc closes a loop. Do NOT draw every prerequisite
- * here — the full dependency list lives in concepts.ts and renders as text
- * on each post. A map that draws twenty edges communicates less than one
- * that draws four. The three callback paths (kept for reference, currently
- * unused since their far end isn't published yet):
- *   wk2 interference → wk7 decoherence   M304,108 C304,140 304,150 304,156
- *   wk4 entanglement → wk11 two-qubit gates  M824,108 C848,200 848,300 760,340
- *   wk2 interference → wk12 Deutsch–Jozsa    M260,108 C200,240 300,440 640,412
+ * Solid elbow = a real prereq edge: this week actually builds on that one,
+ * drawn as a branch off it rather than assumed from reading order. Dashed
+ * arc = a callback: a week that reaches back to a non-adjacent one it
+ * doesn't strictly require. There are only three callbacks, once every week
+ * is live, and they are the three moments where the arc closes a loop. Do
+ * NOT draw every prerequisite as a callback — the full dependency list
+ * already lives in concepts.ts and renders as text on each post; this map
+ * is for the shape of the tree, not a duplicate of that list. The three
+ * callback paths (kept for reference, currently unused since their far end
+ * isn't published yet — coordinates will need redoing against whatever the
+ * tree looks like once they're live):
+ *   wk2 interference → wk7 decoherence
+ *   wk4 entanglement → wk11 two-qubit gates
+ *   wk2 interference → wk12 Deutsch–Jozsa
  */
 import { published, CONCEPTS } from "../data/concepts";
 import { copy, format } from "../lib/site-copy";
+
+// Arc 1 doesn't have a name field in concepts.ts (arcs are just numbers
+// there — see `arc: number | null`), so this is hand-authored the same way
+// the map's own node text is: a real string, not derived, because there's
+// exactly one arc using this file today and giving it a generic naming
+// system before a second arc exists would be solving a problem that
+// doesn't exist yet.
+const ARC_ONE_NAME = "Superposition Basics";
 
 // scoped to arc 1 — issue 0 (arc 0) is the project's intro, not a physics
 // concept, and doesn't belong on this grid. See concepts.ts for why.
@@ -57,10 +68,11 @@ const mapLabel = live.length > 0
         data-copy-vars={JSON.stringify({ count: live.length, total: arc1.length })}
       >{progressText}</span>
     </span>
+    <h2 class="map__name">{ARC_ONE_NAME}</h2>
   </figcaption>
 
   <div class="map__scroll">
-    <svg viewBox="-16 -16 424 140" class="map__svg" role="img" aria-label={mapLabel}>
+    <svg viewBox="-16 -16 422 372" class="map__svg" role="img" aria-label={mapLabel}>
 
       <defs>
         <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
@@ -73,35 +85,39 @@ const mapLabel = live.length > 0
         </marker>
       </defs>
 
-      <!-- ═══ THE SPINE ═══ week 1 → week 2, the only adjacent pair live so far ═══ -->
+      <!-- ═══ THE TREE ═══ week 2 actually requires week 1 (see concepts.ts
+           prereqs), so it branches off week 1's bottom edge — an elbow, not
+           a straight line, so it reads as "grows out of" rather than "comes
+           after". ═══ -->
       <g class="spine">
-        <line x1="176" y1="54" x2="216" y2="54" marker-end="url(#tip)" />
+        <path d="M110,130 L110,170 L280,170 L280,210" marker-end="url(#tip)" />
       </g>
 
       <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
       <g class="calls"></g>
 
-      <!-- ═══ WEEK 1 ═══ published ═══ -->
+      <!-- ═══ WEEK 1 ═══ published, the root of the tree so far ═══ -->
       <a href="/posts/week-01-superposition">
         <g class="node is-live">
-          <rect x="0" y="0" width="176" height="108" rx="3" />
-          <text class="n-wk"    x="12" y="22">ISSUE 01</text>
-          <text class="n-title" x="12" y="48">Superposition</text>
-          <text class="n-char"  x="12" y="70">Doctor Manhattan</text>
-          <text class="n-state" x="12" y="92">READ →</text>
+          <rect x="0" y="0" width="220" height="130" rx="3" />
+          <text class="n-wk"    x="16" y="28">ISSUE 01</text>
+          <text class="n-title" x="16" y="62">Superposition</text>
+          <text class="n-char"  x="16" y="90">Doctor Manhattan</text>
+          <text class="n-state" x="16" y="114">READ →</text>
         </g>
       </a>
 
-      <!-- ═══ WEEK 2 ═══ published ═══ title's long enough to need a smaller
-           size than week 1's node got away with — first case of that, and
-           the reason this is a per-node override rather than a shared rule. -->
+      <!-- ═══ WEEK 2 ═══ published, branches off week 1 above ═══ title's
+           long enough to need a smaller size than week 1's got away with —
+           first case of that, and the reason this is a per-node override
+           rather than a shared rule. -->
       <a href="/posts/week-02-measurement-and-collapse">
         <g class="node is-live">
-          <rect x="216" y="0" width="176" height="108" rx="3" />
-          <text class="n-wk"    x="228" y="22">ISSUE 02</text>
-          <text class="n-title" x="228" y="46" style="font-size:13px">Measurement &amp; Collapse</text>
-          <text class="n-char"  x="228" y="70">Uatu the Watcher</text>
-          <text class="n-state" x="228" y="92">READ →</text>
+          <rect x="170" y="210" width="220" height="130" rx="3" />
+          <text class="n-wk"    x="186" y="238">ISSUE 02</text>
+          <text class="n-title" x="186" y="270" style="font-size:14px">Measurement &amp; Collapse</text>
+          <text class="n-char"  x="186" y="300">Uatu the Watcher</text>
+          <text class="n-state" x="186" y="324">READ →</text>
         </g>
       </a>
 
@@ -111,11 +127,15 @@ const mapLabel = live.length > 0
 
 <style>
   .map { margin: 0; }
-  .map__cap { margin-bottom: 0.85rem; }
+  .map__cap { margin-bottom: 1rem; }
+  .map__name {
+    font-family: var(--font-head); font-weight: 900; font-size: 1.5rem;
+    margin: 0.3rem 0 0; letter-spacing: -0.01em;
+  }
   .map__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .map__svg { width: 100%; max-width: 260px; height: auto; }
+  .map__svg { width: 100%; max-width: 420px; height: auto; }
 
-  .spine line { stroke: var(--gutter); stroke-width: 1.5; }
+  .spine path, .spine line { stroke: var(--gutter); stroke-width: 2; fill: none; }
   .calls path {
     stroke: var(--magenta);
     stroke-width: 1.5;
@@ -133,19 +153,19 @@ const mapLabel = live.length > 0
   .node.is-live rect { stroke: var(--cyan); stroke-dasharray: 0; }
 
   .n-wk {
-    font-family: var(--font-mono); font-size: 11px;
+    font-family: var(--font-mono); font-size: 13px;
     letter-spacing: 0.12em; fill: var(--yellow);
   }
   .n-title {
-    font-family: var(--font-head); font-weight: 900; font-size: 16px;
+    font-family: var(--font-head); font-weight: 900; font-size: 19px;
     fill: var(--paper); letter-spacing: -0.01em;
   }
   .n-char {
-    font-family: var(--font-body); font-size: 13px;
+    font-family: var(--font-body); font-size: 16px;
     font-style: italic; fill: var(--paper-dim);
   }
   .n-state {
-    font-family: var(--font-mono); font-size: 10px;
+    font-family: var(--font-mono); font-size: 12px;
     letter-spacing: 0.14em; fill: var(--gutter);
   }
   .node.is-live .n-state { fill: var(--cyan); }
