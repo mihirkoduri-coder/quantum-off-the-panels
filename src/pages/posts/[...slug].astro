@@ -59,6 +59,13 @@ const { prev, next } = neighbours(c.id);
         </Verdict>
       )}
 
+      <!-- marks the issue "read" once this scrolls into view — the stamp
+           sheet's other earn path alongside actually using the sim (see
+           src/lib/reads.ts). Sits after the verdict but before comments:
+           the argument and its conclusion are "the issue"; the letters
+           page below is optional discussion, not part of what got read. -->
+      <div id="issue-end" data-concept-id={c.id}></div>
+
       <Comments client:visible slug={c.slug} />
 
       <nav class="post__nav">
@@ -67,6 +74,25 @@ const { prev, next } = neighbours(c.id);
       </nav>
     </div>
   </article>
+
+  <script>
+    import { markRead } from "../../lib/reads";
+
+    const sentinel = document.getElementById("issue-end");
+    const conceptId = sentinel?.dataset.conceptId;
+    if (sentinel && conceptId && "IntersectionObserver" in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            markRead(conceptId);
+            io.disconnect();
+          }
+        },
+        { threshold: 0 },
+      );
+      io.observe(sentinel);
+    }
+  </script>
 
   <style>
     .post__head { padding-top: 1rem; }

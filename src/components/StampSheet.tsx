@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isUnlocked, onUnlockChange } from "../lib/unlocks";
+import { isRead, onReadChange } from "../lib/reads";
 import { copy } from "../lib/site-copy";
 import type { StickerMotif } from "../data/concepts";
 import Sticker from "./Sticker";
@@ -17,13 +18,17 @@ interface Stamp {
  * A week with a built character motif (stickerMotif) gets a real, download-
  * able sticker once earned, rendered by the exact same canvas code the
  * Studio uses — not a generic placeholder standing in for "you did it."
- * Everything else, and everything not yet earned, keeps the plain card:
- * downloading is the payoff for actually meeting the sim, not a freebie
- * for every row on the sheet.
+ * Everything else, and everything not yet earned, keeps the plain card.
  *
- * A week with no sims (the intro post) has nothing to "use" to earn it, so
- * it's counted as collected automatically rather than stuck permanently
- * unreachable — that's how the logo stamp works.
+ * Earning a stamp is an OR of two signals: actually meeting the week's sim
+ * (unlocks.ts), or just reading the post to its end (reads.ts). A week
+ * whose sim slug doesn't match anything built, or that a reader reads
+ * without ever touching the sim, shouldn't be permanently unreachable —
+ * finishing the issue is itself the payoff, same as a real comic.
+ *
+ * A week with no sims (the intro post) has nothing to "use" to earn it
+ * either way, so it's counted as collected automatically rather than
+ * stuck permanently unreachable — that's how the logo stamp works.
  */
 export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
   const [earned, setEarned] = useState<Set<string>>(new Set());
@@ -31,10 +36,14 @@ export default function StampSheet({ stamps }: { stamps: Stamp[] }) {
   useEffect(() => {
     const sync = () =>
       setEarned(new Set(
-        stamps.filter((s) => s.sims.length === 0 || s.sims.some((x) => isUnlocked(x))).map((s) => s.id),
+        stamps
+          .filter((s) => s.sims.length === 0 || s.sims.some((x) => isUnlocked(x)) || isRead(s.id))
+          .map((s) => s.id),
       ));
     sync();
-    return onUnlockChange(sync);
+    const offUnlock = onUnlockChange(sync);
+    const offRead = onReadChange(sync);
+    return () => { offUnlock(); offRead(); };
   }, [stamps]);
 
   const have = earned.size;
