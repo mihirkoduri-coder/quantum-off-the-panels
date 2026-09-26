@@ -1,10 +1,11 @@
 /**
- * Canvas renderers for the two character motifs (src/components/sim/
- * motifs.tsx's GlowHand and WatchingEyes), shared between the Studio
- * (src/components/admin/studio-core.ts) and the public stamp sheet's
- * downloadable stickers (src/components/StampSheet.tsx). One copy of the
- * dot data and drawing code — extracted here specifically so a second
- * consumer didn't mean a second, driftable copy of either.
+ * Canvas renderers for the site's character motifs (src/components/sim/
+ * motifs.tsx's GlowHand, WatchingEyes, and FlashBolt) plus the QP logo
+ * mark, shared with the Studio (src/components/admin/studio-core.ts) and,
+ * for hand/eyes/logo so far, the public stamp sheet's downloadable
+ * stickers (src/components/StampSheet.tsx). One copy of the dot data and
+ * drawing code — extracted here specifically so a second consumer didn't
+ * mean a second, driftable copy of any of them.
  *
  * These colours are the dark theme's values, hardcoded rather than read
  * from CSS custom properties: a canvas fillStyle can't resolve a var(),
@@ -21,12 +22,18 @@ const MAGENTA = "#FF3D8B";
 const PAPER = "#ECE7D9";
 const INK2 = "#131829";
 const GUTTER = "#2B3358";
+const ORANGE = "#ff8a2b";
+const BOLT_STROKE = "#8c1109";
 
 export const HAND_NATURAL = { w: 401, h: 284 };
 export const EYES_NATURAL = W_NATURAL;
 // aspect ratio only (130.2:100 == 1.302:1) — see drawLogo for where that
 // ratio comes from.
 export const LOGO_NATURAL = { w: 130.2, h: 100 };
+// matches FlashBolt's own viewBox ("-60 -115 120 230") exactly — that
+// viewBox is already centred on (0,0), unlike the other three motifs, so
+// drawFlash below skips the translate-to-centre step they all need.
+export const FLASH_NATURAL = { w: 120, h: 230 };
 
 // GlowHand's exact dot field, extracted from its baked <circle> list rather
 // than retraced — this is a photo trace, not a generated pattern, so there
@@ -162,6 +169,48 @@ export function drawLogo(ctx: CanvasRenderingContext2D, size: number) {
   ctx.fillStyle = YELLOW;
   ctx.beginPath(); ctx.arc(136, 26, 3.6, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(168, 174, 3.6, 0, Math.PI * 2); ctx.fill();
+
+  ctx.restore();
+}
+
+// FlashBolt's exact ten-point polygon (see motifs.tsx) and its -12.6°
+// tilt, scaled by the same S=70 the SVG version uses — copied rather than
+// re-derived so the shape the Studio exports is provably the one the sim's
+// own corner motif shows. alive: the copies are mid-run. dim: idle.
+const FLASH_POLY: [number, number][] = [
+  [0.46, -1.34], [-0.06, -0.58], [0.3, -0.72], [-0.22, 0.04], [0.14, -0.1],
+  [-0.46, 1.34], [0.06, 0.58], [-0.3, 0.72], [0.22, -0.04], [-0.14, 0.1],
+];
+const FLASH_S = 70;
+
+export function drawFlash(ctx: CanvasRenderingContext2D, size: number, alive: boolean) {
+  const s = size / FLASH_NATURAL.w;
+  ctx.save();
+  ctx.scale(s, s);
+  ctx.rotate((-12.6 * Math.PI) / 180); // already centred — no translate needed
+
+  const path = () => {
+    ctx.beginPath();
+    FLASH_POLY.forEach(([x, y], i) => {
+      const px = x * FLASH_S, py = y * FLASH_S;
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    });
+    ctx.closePath();
+  };
+
+  ctx.save();
+  ctx.filter = "blur(9px)";
+  ctx.globalAlpha = alive ? 0.4 : 0.12;
+  ctx.fillStyle = YELLOW;
+  path(); ctx.fill();
+  ctx.restore();
+
+  path();
+  const g = ctx.createLinearGradient(0, -FLASH_S * 1.34, 0, FLASH_S * 1.34);
+  g.addColorStop(0, YELLOW); g.addColorStop(1, ORANGE);
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = BOLT_STROKE; ctx.lineWidth = 5; ctx.lineJoin = "miter";
+  ctx.stroke();
 
   ctx.restore();
 }

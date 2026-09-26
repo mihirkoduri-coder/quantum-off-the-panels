@@ -8,7 +8,10 @@
  * layout survives switching between square and story. Font sizes are px against
  * a 1080-wide baseline — both target sizes are 1080 wide, so they carry over.
  */
-import { drawHand, drawEyes, drawLogo, LOGO_NATURAL } from "../../lib/motif-canvas";
+import {
+  drawHand, drawEyes, drawLogo, drawFlash,
+  HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL, FLASH_NATURAL,
+} from "../../lib/motif-canvas";
 
 export const PALETTE = {
   paper: "#ECE7D9",
@@ -87,9 +90,12 @@ export interface HandLayer extends Base { type: "hand"; size: number; alive: boo
 /** src/components/sim/motifs.tsx's WatchingEyes. `axis` mirrors the sim's
  *  own axisDeg — which question the pupils are turned toward. */
 export interface EyesLayer extends Base { type: "eyes"; size: number; open: boolean; axis: number; }
+/** src/components/sim/motifs.tsx's FlashBolt. Same fixed-opacity treatment
+ *  as HandLayer, for the same reason — a static export can't breathe. */
+export interface FlashLayer extends Base { type: "flash"; size: number; alive: boolean; }
 export type Layer =
   | TextLayer | ImageLayer | LogoLayer | BracketLayer | RuleLayer | BurstLayer | PanelLayer | StarLayer
-  | HandLayer | EyesLayer;
+  | HandLayer | EyesLayer | FlashLayer;
 
 export interface Halftone {
   on: boolean;
@@ -359,12 +365,22 @@ function drawLayer(
       return { x: -l.size / 2 - 8, y: -l.size / 2 - 8, w: l.size + 16, h: l.size + 16 };
     case "hand": {
       drawHand(ctx, l.size, l.alive);
-      const h = l.size * (284 / 401);
+      const h = l.size * (HAND_NATURAL.h / HAND_NATURAL.w);
       return { x: -l.size / 2, y: -h / 2, w: l.size, h };
     }
     case "eyes": {
       drawEyes(ctx, l.size, l.open, l.axis);
-      const h = l.size * (84 / 240);
+      // EYES_NATURAL used to be 240x84 (the old two-lens design) — this
+      // ratio silently went stale when WatchingEyes was redrawn as Uatu's
+      // full hood (460x420) and nothing here was updated to match, so the
+      // layer's selection/export bounds were ~2.6x too short. Reading the
+      // ratio from motif-canvas.ts instead means it can't drift again.
+      const h = l.size * (EYES_NATURAL.h / EYES_NATURAL.w);
+      return { x: -l.size / 2, y: -h / 2, w: l.size, h };
+    }
+    case "flash": {
+      drawFlash(ctx, l.size, l.alive);
+      const h = l.size * (FLASH_NATURAL.h / FLASH_NATURAL.w);
       return { x: -l.size / 2, y: -h / 2, w: l.size, h };
     }
     case "panel": {

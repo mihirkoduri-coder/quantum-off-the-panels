@@ -154,6 +154,7 @@ export default function PostStudio() {
       star: { ...common, name: "Star", type: "star", style: "jagged", size: 140, color: "cyan", shadowColor: "magenta" },
       hand: { ...common, name: "Hand", type: "hand", size: 260, alive: true },
       eyes: { ...common, name: "Eyes", type: "eyes", size: 220, open: true, axis: 0 },
+      flash: { ...common, name: "Flash", type: "flash", size: 220, alive: true },
       panel: { ...common, name: "Panel", type: "panel", w: 0.6, h: 0.4, fill: "ink2", stroke: "gutter", thickness: 4, fold: false },
       image: { ...common, name: "Image", type: "image", src: "", scale: 0.5, rounded: 0 },
     } as any;
@@ -306,7 +307,7 @@ export default function PostStudio() {
           </div>
           <p className="dim ps__empty" style={{ marginBottom: "0.55rem" }}>Sim motifs, exact geometry</p>
           <div className="ps__wrapbtn">
-            {(["hand", "eyes"] as const).map((t) => (
+            {(["hand", "eyes", "flash"] as const).map((t) => (
               <button key={t} className="btn btn--sm" onClick={() => addLayer(t)}>{t}</button>
             ))}
           </div>
@@ -468,6 +469,14 @@ export default function PostStudio() {
                   <Num label="Axis" value={selected.axis} min={-90} max={90} onChange={(v: number) => update(selected.id, { axis: v } as any)} />
                   <button className={`btn btn--xs${selected.open ? " is-on" : ""}`}
                     onClick={() => update(selected.id, { open: !selected.open } as any)}>open</button>
+                </>
+              )}
+
+              {selected.type === "flash" && (
+                <>
+                  <Num label="Size" value={selected.size} min={80} max={600} onChange={(v: number) => update(selected.id, { size: v } as any)} />
+                  <button className={`btn btn--xs${selected.alive ? " is-on" : ""}`}
+                    onClick={() => update(selected.id, { alive: !selected.alive } as any)}>alive</button>
                 </>
               )}
 
