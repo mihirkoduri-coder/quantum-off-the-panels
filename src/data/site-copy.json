@@ -238,54 +238,73 @@
         "why": "Nothing happened, and nothing was learned. A measurement is not a passive gaze that reveals what was already there — it is a specific question, and without one there is no answer to receive. Uatu's vow only holds while he learns nothing."
       }
     },
-    "twoPathInterference": {
-      "title": "Two-path interference",
+    "bothPaths": {
+      "title": "Both paths",
       "predict": {
-        "question": "Last week, turning a lone qubit's phase changed nothing a measurement could see. Slide the phase control on ONE of two recombining paths here — what happens to the two detectors?",
-        "choiceNothing": "Still nothing — phase stays invisible",
-        "choiceSwap": "They swap abruptly, like a coin landing the other way",
-        "choiceSwing": "They swing smoothly between certainty and 50/50",
-        "choiceRandom": "They go random, with no pattern at all",
-        "because": "Phase was invisible on one path because there was nothing to compare it against. Recombine two paths that picked up different phases, and the difference between them becomes the entire mechanism — interference is just phase, read out through addition."
+        "question": "In week 1 the phase dial did nothing at all. Now the two routes are allowed to meet before anything is measured. What does that same dial do?",
+        "choiceNothing": "Still nothing",
+        "choiceSweep": "Sweeps him from one rod to the other",
+        "choiceBoth": "Sends him to both rods at once",
+        "choiceRandom": "Makes the result random",
+        "because": "Phase was never invisible — it was only invisible to a measurement taken before the routes could meet. Let them meet, and phase decides everything about where he lands."
       },
-      "watchForLive": "the two bars swing smoothly from certain to 50/50 and back as you slide the phase. that swing IS the phase, made visible.",
-      "watchForTagged": "both bars are stuck at 50/50 — slide the phase all you want, the tag already erased the fringe.",
-      "watchForLocked": "one detector fired. that's the one path's worth of certainty this run bought.",
+      "watchFor": "the two dials. Turn them together and nothing happens — only the difference between them is real.",
       "controls": {
-        "phaseLabel": "Phase on path B",
-        "measureButton": "Open both detectors",
-        "tagButton": "Tag which path was taken",
-        "untagButton": "Remove the which-path tag",
-        "lockedNote": "One door fired. There's no path pair left to slide a phase between — reset to send another one through."
-      },
-      "captions": {
-        "lockedTemplate": "door {door}. that's the one i came out of. this time.",
-        "tagged": "you clocked me mid-run. now it's a coin flip — pick a door.",
-        "frontDoor": "front door. every time. no second path to speak of.",
-        "backDoor": "back door. every time. i'll tell you that much for free.",
-        "bothDoors": "both doors. neither door. ask me which and i've got nothing.",
-        "mostlyFront": "mostly the front door. don't push it.",
-        "mostlyBack": "mostly the back door. don't push it."
+        "copyALabel": "Copy A",
+        "copyBLabel": "Copy B",
+        "diffLabel": "Difference that matters",
+        "runButton": "Run",
+        "loopButton": "Loop",
+        "stopLoopButton": "Stop looping",
+        "watchButton": "Watch which route he takes",
+        "stopWatchButton": "Stop watching the route",
+        "pressRun": "Press run"
       },
       "readout": {
-        "pA": "P(A)",
-        "pB": "P(B)",
-        "outcome": "outcome"
+        "predictedD0": "predicted D0",
+        "routes": "routes",
+        "routesBoth": "both open",
+        "routesOne": "one — dials dead"
       },
-      "diagram": {
-        "source": "source",
-        "tagged": "tagged"
+      "diagTabs": {
+        "bloch": "Bloch sphere",
+        "fringe": "Fringe curve",
+        "hide": "Hide"
+      },
+      "diagCaptions": {
+        "bloch": "the state — phase is longitude, odds are height",
+        "fringe": "the fringe — P(D0) against phase difference"
+      },
+      "blochLabels": {
+        "noPhaseLeft": "NO PHASE LEFT",
+        "heightSetsOdds": "HEIGHT NOW SETS THE ODDS",
+        "phaseUnchanged": "PHASE = LONGITUDE · HEIGHT UNCHANGED"
+      },
+      "voice": {
+        "who": "Barry",
+        "watchedLine": "Someone was watching the lower lane, so there was only ever one of me. One of me has nothing to cancel against — the dials might as well be furniture.",
+        "inPhaseLine": "Both of me turned up at the same rod. In step, we just add. Nothing clever about it.",
+        "outOfPhaseLine": "Okay. Both of me sprinted at the other rod and neither of me got there. Half a turn out of step and we cancel — so I land at the one I wasn't aiming for. I didn't vanish. I showed up somewhere else.",
+        "partialLine": "Half in step, so it could've gone either way. Run it again and you might get the other rod."
+      },
+      "hits": {
+        "a": "KRAKK!",
+        "b": "ZAKK!",
+        "c": "THOOM!",
+        "d": "KRA-KOW!"
       },
       "pocket": {
         "label": "What am I looking at?",
-        "p1": "One source, two paths, one recombination point. Path B is the one carrying the phase you're setting — the magenta ring shows it directly, same dial the probability bars use elsewhere on this site.",
-        "p2": "A which-path tag doesn't just hide the interference from you — it removes it from the system. That's why the bars go flat the instant you add the tag, not the instant you check it."
+        "p1": "One Flash reaches the accelerator and doesn't pick a route — he takes both, which is why two blurs leave the splitter. He's moving far too fast to see properly; what you're watching is the light he leaves behind.",
+        "p2": "Each dial delays one copy. That delay is phase. Turn both dials together and nothing happens at all — only the difference between them is real. A phase that everything shares is undetectable in principle, not merely hard to measure.",
+        "p3": "Where the routes meet, the two halves of him add together. In step they reinforce and he lands at one rod every time. Half a turn out of step they cancel — and he lands at the other rod every time. He is never destroyed. Cancelling here means arriving there.",
+        "p4": "Watch the sphere while you turn a dial: the arrow swings around without ever changing height, and height is what sets the odds. That is exactly why phase did nothing in week 1. Only when the routes recombine does the arrow tilt — longitude becomes latitude, and the phase you couldn't see turns into odds you can."
       },
       "violation": {
-        "sfx": "FLATLINE!",
-        "law": "Which-path information kills interference.",
-        "attempted": "tag which path was taken and still see the paths interfere",
-        "why": "The instant anything, anywhere, carries a real record of which path was taken, the two paths stop being one wavefunction to recombine — they're just two separate, non-interfering possibilities now. It didn't matter that no one read the tag yet. The bars flattened the moment the detector existed, not the moment anyone looked at it."
+        "sfx": "GOTCHA!",
+        "law": "You can know the route, or you can have the interference. Never both.",
+        "attempted": "watch which route he takes and still see the copies cancel",
+        "why": "Look at the ring: there's only one of him now. He isn't running both routes, so there aren't two things to add together — and with nothing to add, there is nothing to cancel. The fringe has gone flat and the dials do nothing. Stop watching and he splits again."
       }
     }
   }

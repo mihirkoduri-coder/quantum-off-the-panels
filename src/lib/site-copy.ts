@@ -114,18 +114,21 @@ export interface SiteCopy {
       pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
       violation: { sfx: string; law: string; attempted: string; why: string };
     };
-    twoPathInterference: {
+    bothPaths: {
       title: string;
-      predict: { question: string; choiceNothing: string; choiceSwap: string; choiceSwing: string; choiceRandom: string; because: string };
-      watchForLive: string; watchForTagged: string; watchForLocked: string;
-      controls: { phaseLabel: string; measureButton: string; tagButton: string; untagButton: string; lockedNote: string };
-      captions: {
-        lockedTemplate: string; tagged: string; frontDoor: string; backDoor: string;
-        bothDoors: string; mostlyFront: string; mostlyBack: string;
+      predict: { question: string; choiceNothing: string; choiceSweep: string; choiceBoth: string; choiceRandom: string; because: string };
+      watchFor: string;
+      controls: {
+        copyALabel: string; copyBLabel: string; diffLabel: string; runButton: string;
+        loopButton: string; stopLoopButton: string; watchButton: string; stopWatchButton: string; pressRun: string;
       };
-      readout: { pA: string; pB: string; outcome: string };
-      diagram: { source: string; tagged: string };
-      pocket: { label: string; p1: string; p2: string };
+      readout: { predictedD0: string; routes: string; routesBoth: string; routesOne: string };
+      diagTabs: { bloch: string; fringe: string; hide: string };
+      diagCaptions: { bloch: string; fringe: string };
+      blochLabels: { noPhaseLeft: string; heightSetsOdds: string; phaseUnchanged: string };
+      voice: { who: string; watchedLine: string; inPhaseLine: string; outOfPhaseLine: string; partialLine: string };
+      hits: { a: string; b: string; c: string; d: string };
+      pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
       violation: { sfx: string; law: string; attempted: string; why: string };
     };
   };

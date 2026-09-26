@@ -97,7 +97,7 @@ export const CONCEPTS: Concept[] = [
     character: "The Flash",
     tier: "A",
     prereqs: ["superposition"],
-    sims: ["two-path-interference"],
+    sims: ["both-paths"],
     published: false,
     slug: "week-03-interference",
   },

@@ -128,3 +128,44 @@ export function WatchingEyes({
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// WEEK 3 — the three-tier bolt at the heart of the accelerator, as a
+// frame motif. Same polygon the sim's own track canvas draws (see
+// coreBolt in flash-art.ts) so the panel corner and the ring agree —
+// this is just that same shape as static SVG rather than re-derived.
+// alive: the copies are mid-run. dim: idle, waiting for Run.
+// ─────────────────────────────────────────────────────────────
+
+export function FlashBolt({ size = 150, alive = true }: { size?: number; alive?: boolean }) {
+  const P: [number, number][] = [[0.46, -1.34], [-0.06, -0.58], [0.3, -0.72], [-0.22, 0.04], [0.14, -0.1],
+             [-0.46, 1.34], [0.06, 0.58], [-0.3, 0.72], [0.22, -0.04], [-0.14, 0.1]];
+  const S = 70;
+  const d = "M" + P.map(([x, y]) => `${(x * S).toFixed(1)},${(y * S).toFixed(1)}`).join(" L") + " Z";
+  return (
+    <div className={`fb${alive ? " is-alive" : ""}`} aria-hidden="true">
+      <svg viewBox="-60 -115 120 230" width={size} height={size * (230 / 120)}>
+        <defs>
+          <linearGradient id="fb-g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--yellow)" />
+            <stop offset="100%" stopColor="#ff8a2b" />
+          </linearGradient>
+          <filter id="fb-blur" x="-80%" y="-40%" width="260%" height="180%">
+            <feGaussianBlur stdDeviation="9" />
+          </filter>
+        </defs>
+        <g transform="rotate(-12.6)">
+          <path className="fb__glow" d={d} fill="var(--yellow)" filter="url(#fb-blur)" />
+          <path d={d} fill="url(#fb-g)" stroke="#8c1109" strokeWidth="5" strokeLinejoin="miter" />
+        </g>
+      </svg>
+      <style>{`
+        .fb { pointer-events: none; line-height: 0; }
+        .fb__glow { opacity: 0.12; transition: opacity 400ms ease; }
+        .fb.is-alive .fb__glow { opacity: 0.4; animation: fb-charge 3.2s ease-in-out infinite; }
+        @keyframes fb-charge { 0%,100% { opacity: 0.26; } 50% { opacity: 0.5; } }
+        @media (prefers-reduced-motion: reduce) { .fb.is-alive .fb__glow { animation: none; } }
+      `}</style>
+    </div>
+  );
+}

@@ -4,19 +4,19 @@
  */
 import AmplitudeDial from "./amplitude-dial";
 import WatchersQuestion from "./watchers-question";
-import TwoPathInterference from "./two-path-interference";
+import BothPaths from "./both-paths";
 
 export const SIMS: Record<string, React.ComponentType> = {
   "amplitude-dial": AmplitudeDial,
   "watchers-question": WatchersQuestion,
-  "two-path-interference": TwoPathInterference,
+  "both-paths": BothPaths,
 };
 
 /** Human titles for the gallery. Keep in sync when you add one. */
 export const SIM_TITLES: Record<string, string> = {
   "amplitude-dial": "The amplitude dial",
   "watchers-question": "The Watcher's question",
-  "two-path-interference": "Two-path interference",
+  "both-paths": "Both paths",
 };
 
 /** For the admin's sim directory — every built sim, slug + title, sorted for display. */
