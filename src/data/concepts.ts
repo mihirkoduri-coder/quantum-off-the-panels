@@ -98,7 +98,7 @@ export const CONCEPTS: Concept[] = [
     tier: "A",
     prereqs: ["superposition"],
     sims: ["both-paths"],
-    published: false,
+    published: true,
     slug: "week-03-interference",
   },
   {
