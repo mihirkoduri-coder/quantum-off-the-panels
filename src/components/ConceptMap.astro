@@ -9,28 +9,30 @@
  *      prereqs (see concepts.ts) — a week branches off whichever published
  *      node it actually builds on, it doesn't just queue up next in a row
  *   2. wrap it in <a href="/posts/week-NN-slug"> … </a>, text reads READ →
- *   3. draw a solid edge from each of its live prereqs into it (an elbow
- *      path, not a straight line, reads as a tree rather than a flowchart —
- *      see wk1→wk2 below), and re-add any callback edge that now has both
- *      ends published
+ *   3. draw a solid edge from each of its live prereqs into it, and re-add
+ *      any callback edge that now has both ends published. Two shapes are
+ *      in use for that edge, chosen by hand, not by rule: an elbow (wk1→
+ *      wk2) when the branch needs to change row, a straight line (wk1→wk3)
+ *      when it doesn't. Either way it's a branch off the prereq, not a
+ *      straight continuation of reading order.
  * Node size, position, and every path's coordinates are all literal — move
  * them freely as the tree grows and starts needing its own shape.
  *
  * ── EDGE PHILOSOPHY ────────────────────────────────────────────────────────
- * Solid elbow = a real prereq edge: this week actually builds on that one,
- * drawn as a branch off it rather than assumed from reading order. Dashed
- * arc = a callback: a week that reaches back to a non-adjacent one it
- * doesn't strictly require. There are only three callbacks, once every week
- * is live, and they are the three moments where the arc closes a loop. Do
- * NOT draw every prerequisite as a callback — the full dependency list
- * already lives in concepts.ts and renders as text on each post; this map
- * is for the shape of the tree, not a duplicate of that list. The three
+ * Solid (elbow or straight) = a real prereq edge: this week actually builds
+ * on that one, drawn as a branch off it rather than assumed from reading
+ * order. Dashed arc = a callback: a week that reaches back to a non-adjacent
+ * one it doesn't strictly require. There are only three callbacks, once
+ * every week is live, and they are the three moments where the arc closes a
+ * loop. Do NOT draw every prerequisite as a callback — the full dependency
+ * list already lives in concepts.ts and renders as text on each post; this
+ * map is for the shape of the tree, not a duplicate of that list. The three
  * callback paths (kept for reference, currently unused since their far end
  * isn't published yet — coordinates will need redoing against whatever the
  * tree looks like once they're live):
- *   wk2 interference → wk7 decoherence
+ *   wk3 interference → wk7 decoherence
  *   wk4 entanglement → wk11 two-qubit gates
- *   wk2 interference → wk12 Deutsch–Jozsa
+ *   wk3 interference → wk12 Deutsch–Jozsa
  */
 import { published, CONCEPTS } from "../data/concepts";
 import { copy, format } from "../lib/site-copy";
@@ -72,7 +74,7 @@ const mapLabel = live.length > 0
   </figcaption>
 
   <div class="map__scroll">
-    <svg viewBox="-16 -16 422 372" class="map__svg" role="img" aria-label={mapLabel}>
+    <svg viewBox="-16 -16 512 372" class="map__svg" role="img" aria-label={mapLabel}>
 
       <defs>
         <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
@@ -85,12 +87,15 @@ const mapLabel = live.length > 0
         </marker>
       </defs>
 
-      <!-- ═══ THE TREE ═══ week 2 actually requires week 1 (see concepts.ts
-           prereqs), so it branches off week 1's bottom edge — an elbow, not
-           a straight line, so it reads as "grows out of" rather than "comes
-           after". ═══ -->
+      <!-- ═══ THE TREE ═══ both branch off week 1 (see concepts.ts prereqs —
+           week 2 AND week 3 each list only "superposition"), not off each
+           other, so both edges start at week 1's own rect rather than
+           chaining. Week 2 changes row, so it gets an elbow. Week 3 stays
+           in week 1's row, so a straight line already reads as a branch —
+           no elbow needed to make the point. ═══ -->
       <g class="spine">
         <path d="M110,130 L110,170 L280,170 L280,210" marker-end="url(#tip)" />
+        <line x1="220" y1="65" x2="260" y2="65" marker-end="url(#tip)" />
       </g>
 
       <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
@@ -121,6 +126,17 @@ const mapLabel = live.length > 0
         </g>
       </a>
 
+      <!-- ═══ WEEK 3 ═══ published, branches off week 1 to the right ═══ -->
+      <a href="/posts/week-03-interference">
+        <g class="node is-live">
+          <rect x="260" y="0" width="220" height="130" rx="3" />
+          <text class="n-wk"    x="276" y="28">ISSUE 03</text>
+          <text class="n-title" x="276" y="62" style="font-size:14px">Phase &amp; Interference</text>
+          <text class="n-char"  x="276" y="90">The Flash</text>
+          <text class="n-state" x="276" y="114">READ →</text>
+        </g>
+      </a>
+
     </svg>
   </div>
 </figure>
@@ -133,7 +149,7 @@ const mapLabel = live.length > 0
     margin: 0.3rem 0 0; letter-spacing: -0.01em;
   }
   .map__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .map__svg { width: 100%; max-width: 420px; height: auto; }
+  .map__svg { width: 100%; max-width: 500px; height: auto; }
 
   .spine path, .spine line { stroke: var(--gutter); stroke-width: 2; fill: none; }
   .calls path {
