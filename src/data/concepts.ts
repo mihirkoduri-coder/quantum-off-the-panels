@@ -93,7 +93,7 @@ export const CONCEPTS: Concept[] = [
     week: 3,
     arc: 1,
     title: "Phase & Interference",
-    blurb: "Waves ... Wave functions?",
+    blurb: "Synced up.",
     character: "The Flash",
     tier: "A",
     prereqs: ["superposition"],
