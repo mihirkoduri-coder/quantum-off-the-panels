@@ -27,7 +27,7 @@ export type Tier = "A" | "B" | "C";
  *  bespoke art built for one specific character, not a byproduct of any
  *  sim existing — most weeks won't have one, and that's the expected case,
  *  not a gap to fill in. */
-export type StickerMotif = "hand" | "eyes" | "logo";
+export type StickerMotif = "hand" | "eyes" | "logo" | "flash";
 
 /**
  * An arc is a named tree of concepts — the homepage's concept map renders
@@ -135,6 +135,7 @@ export const CONCEPTS: Concept[] = [
     sims: ["both-paths"],
     published: true,
     slug: "week-03-interference",
+    stickerMotif: "flash",
   },
   {
     id: "measurement",

@@ -1,5 +1,8 @@
 import { useEffect, useRef } from "react";
-import { drawHand, drawEyes, drawLogo, HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL } from "../lib/motif-canvas";
+import {
+  drawHand, drawEyes, drawLogo, drawFlash,
+  HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL, FLASH_NATURAL,
+} from "../lib/motif-canvas";
 import type { StickerMotif } from "../data/concepts";
 import { copy } from "../lib/site-copy";
 
@@ -18,7 +21,7 @@ const PREVIEW_CSS_PX = 140;
 const FIT_FRACTION = 0.82; // inset from the square's edge, so nothing touches the border
 
 const NATURAL: Record<StickerMotif, { w: number; h: number }> = {
-  hand: HAND_NATURAL, eyes: EYES_NATURAL, logo: LOGO_NATURAL,
+  hand: HAND_NATURAL, eyes: EYES_NATURAL, logo: LOGO_NATURAL, flash: FLASH_NATURAL,
 };
 
 /** contain-fit: the largest width (the unit drawHand/drawEyes/drawLogo's
@@ -36,6 +39,7 @@ function drawSticker(ctx: CanvasRenderingContext2D, kind: StickerMotif, canvasSi
   const size = fitWidth(kind, canvasSize * FIT_FRACTION);
   if (kind === "hand") drawHand(ctx, size, true);
   else if (kind === "eyes") drawEyes(ctx, size, true, 0);
+  else if (kind === "flash") drawFlash(ctx, size, true);
   else drawLogo(ctx, size);
   ctx.restore();
 }
