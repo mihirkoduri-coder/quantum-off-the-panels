@@ -15,7 +15,7 @@
   },
   "labels": {
     "issue": "Issue",
-    "arc": "arc 1",
+    "arc": "home",
     "buildsOn": "Builds on",
     "notOutYet": "(not out yet)"
   },
@@ -29,7 +29,7 @@
     "introLabel": "Start here"
   },
   "conceptMap": {
-    "progressTemplate": "Week 2"
+    "progressTemplate": "Week 3"
   },
   "compendium": {
     "heading": "The Compendium",
