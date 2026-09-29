@@ -1,11 +1,14 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
-import { CONCEPTS, ARCS, arcName, allSims, isGrouped } from "../../data/concepts";
+import { CONCEPTS, ARCS, arcName, allSims, isGrouped, byId, type StickerMotif } from "../../data/concepts";
 import { copy, fullSiteTitle } from "../../lib/site-copy";
 import { listSims } from "../../sims/registry";
-import { upsertArc } from "../../lib/concepts-writer";
+import { upsertArc, upsertConcept } from "../../lib/concepts-writer";
 import { commitFile, getFileContent } from "../../lib/github";
+import Sticker from "../../components/Sticker";
+
+const STICKER_MOTIFS = ["hand", "eyes", "logo", "flash"] as const;
 
 const CONCEPTS_PATH = "src/data/concepts.ts";
 
@@ -18,17 +21,19 @@ const usedBy = allSims();
 // middleware.ts guarantees this is set before this page ever renders
 const session = Astro.locals.session!;
 
-// ---- arc create/rename ----
-// The only POST this page handles — everything else here is a link out to
-// its own page (an issue, a sim) or a GET-redirect "new" form, same as
-// those. Arcs are simple enough (an id and a name) not to need either.
+// ---- arc create/rename, and motif assignment ----
+// The only POSTs this page handles — everything else here is a link out
+// to its own page (an issue, a sim) or a GET-redirect "new" form, same as
+// those. Both of these are simple enough (an id plus one field) not to
+// need a whole page of their own.
 let arcError: string | null = null;
+let motifError: string | null = null;
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   const action = form.get("action");
-  const name = ((form.get("name") as string | null) ?? "").trim();
 
   if (action === "rename" || action === "create") {
+    const name = ((form.get("name") as string | null) ?? "").trim();
     if (!name) {
       arcError = "An arc needs a name.";
     } else {
@@ -51,7 +56,39 @@ if (Astro.request.method === "POST") {
       }
     }
   }
+
+  if (action === "motif") {
+    const conceptId = (form.get("conceptId") as string | null) ?? "";
+    const stickerMotif = ((form.get("stickerMotif") as string | null) || undefined) as StickerMotif | undefined;
+    const target = byId(conceptId);
+    if (!target) {
+      motifError = `No concept "${conceptId}" — it may have been renamed or removed.`;
+    } else {
+      try {
+        const currentText = await getFileContent(session.accessToken, CONCEPTS_PATH);
+        if (!currentText) throw new Error("Could not read concepts.ts from the repo");
+        const newText = upsertConcept(currentText, { ...target, stickerMotif });
+        await commitFile({
+          accessToken: session.accessToken,
+          path: CONCEPTS_PATH,
+          content: newText,
+          message: `admin: set "${conceptId}"'s sticker motif to ${stickerMotif ?? "none"}`,
+        });
+        return Astro.redirect("/admin#motifs");
+      } catch (err) {
+        motifError = err instanceof Error ? err.message : "Something went wrong saving this motif.";
+      }
+    }
+  }
 }
+
+// ---- motifs section — every concept, in reading order, so it doubles as
+// a map of "where does each week's sticker come from" rather than just
+// the ones that already have one. Ungrouped drafts included on purpose:
+// picking a motif ahead of publishing is a real, sequence-independent step.
+const motifRows = [...CONCEPTS].sort(
+  (a, b) => (a.week ?? Infinity) - (b.week ?? Infinity) || a.title.localeCompare(b.title),
+);
 
 // ---- issues list, grouped by arc ----
 // isGrouped, not a bare `c.arc === null` check: a concept can have an arc
@@ -221,6 +258,49 @@ const sortedArcs = [...arcGroups.entries()]
       </form>
     </details>
 
+    <details id="motifs" class="section" open>
+      <summary><h2>Motifs &amp; stamps</h2></summary>
+      <p class="dim">
+        Every week, whether it has a built character motif yet, and which
+        one — the stamp sheet shows exactly this once a week's earned. A
+        motif is still real code to build (see src/components/sim/motifs.tsx
+        and motif-canvas.ts); this only points a week at one already built,
+        the same way a sim gets listed on a concept before it's coded.
+      </p>
+      {motifError && <p class="admin__error">Error: {motifError}</p>}
+
+      <ul class="motif-list">
+        {motifRows.map((c) => (
+          <li class={`motif-row${c.published ? " is-live" : ""}`}>
+            <div class="motif-row__preview">
+              {c.stickerMotif
+                ? <Sticker client:visible kind={c.stickerMotif} character={c.character} />
+                : <span class="motif-row__none">none yet</span>}
+            </div>
+            <div class="motif-row__body">
+              <span class="motif-row__wk">
+                {c.week != null ? `${copy.labels.issue} ${String(c.week).padStart(2, "0")}` : "Ungrouped"}
+                {!c.published && " — not published"}
+              </span>
+              <span class="motif-row__title">{c.title || c.id}</span>
+              <span class="motif-row__char">{c.character}</span>
+              <form method="POST" class="motif-row__form">
+                <input type="hidden" name="action" value="motif" />
+                <input type="hidden" name="conceptId" value={c.id} />
+                <select name="stickerMotif">
+                  <option value="" selected={!c.stickerMotif}>none</option>
+                  {STICKER_MOTIFS.map((m) => (
+                    <option value={m} selected={c.stickerMotif === m}>{m}</option>
+                  ))}
+                </select>
+                <button class="btn" type="submit">Save</button>
+              </form>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </details>
+
     <details id="studio" class="section">
       <summary><h2>Studio</h2></summary>
       <p class="dim">
@@ -314,5 +394,42 @@ const sortedArcs = [...arcGroups.entries()]
       border-radius: var(--radius); padding: 0.5rem 0.7rem; font-family: var(--font-body);
     }
     .arc-row .btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
+
+    .motif-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.6rem; }
+    .motif-row {
+      display: flex; gap: 1rem; align-items: flex-start;
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.8rem 1rem; background: var(--ink-2);
+    }
+    .motif-row.is-live { border-color: var(--cyan); }
+    /* Sticker itself renders a fixed 140px canvas plus a download button
+       beneath it (see Sticker.tsx's own PREVIEW_CSS_PX) — this column has
+       to actually fit that, not just leave room for the canvas alone. */
+    .motif-row__preview {
+      flex-shrink: 0; width: 140px; display: grid; justify-items: center; padding-top: 0.2rem;
+    }
+    .motif-row__none {
+      font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--gutter); text-align: center;
+      padding: 3.2rem 0; /* roughly centers the label against the canvas height a real preview would take */
+    }
+    .motif-row__body { flex: 1; display: grid; gap: 0.2rem; min-width: 0; }
+    .motif-row__wk {
+      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--paper-dim);
+    }
+    .motif-row.is-live .motif-row__wk { color: var(--cyan); }
+    .motif-row__title { font-weight: 700; }
+    .motif-row__char { font-style: italic; color: var(--paper-dim); font-size: 0.9rem; }
+    .motif-row__form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
+    .motif-row__form select {
+      background: var(--ink); color: var(--paper); border: var(--panel-line) solid var(--gutter);
+      border-radius: var(--radius); padding: 0.4rem 0.6rem; font-family: var(--font-body); font-size: 0.85rem;
+    }
+    .motif-row__form .btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+    @media (max-width: 30rem) {
+      .motif-row { flex-direction: column; align-items: stretch; }
+      .motif-row__preview { width: 100%; }
+    }
   </style>
 </Base>

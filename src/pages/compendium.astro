@@ -3,7 +3,9 @@ import Base from "../layouts/Base.astro";
 import { published } from "../data/concepts";
 import { copy, fullSiteTitle } from "../lib/site-copy";
 
-const live = published();
+// sorted by week — see stamps.astro's comment on why this can't rely on
+// CONCEPTS' own array order.
+const live = published().sort((a, b) => (a.week ?? 0) - (b.week ?? 0));
 ---
 <Base title={`${copy.compendium.heading} — ${fullSiteTitle()}`}>
   <div class="wrap">

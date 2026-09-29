@@ -9,10 +9,20 @@ import { copy, fullSiteTitle } from "../lib/site-copy";
 // character don't leak onto this page just because a stamp slot exists
 // for it. "published implies grouped" (concepts.ts) means every row here
 // already has a real week number.
-const stamps = CONCEPTS.filter((c) => c.published).map((c) => ({
-  id: c.id, week: c.week!, title: c.title, character: c.character,
-  slug: c.slug, sims: c.sims, stickerMotif: c.stickerMotif,
-}));
+//
+// Sorted by week explicitly — CONCEPTS' own array order is whatever order
+// entries were last written in (the admin edits concepts in place, not by
+// appending), which stopped matching reading order as soon as an issue
+// got edited out of sequence. Every other reading-order listing on the
+// site (the homepage, the concept map, the admin's own issue list)
+// already sorts by week for the same reason; this page and compendium's
+// were the two that didn't.
+const stamps = CONCEPTS.filter((c) => c.published)
+  .sort((a, b) => (a.week ?? 0) - (b.week ?? 0))
+  .map((c) => ({
+    id: c.id, week: c.week!, title: c.title, character: c.character,
+    slug: c.slug, sims: c.sims, stickerMotif: c.stickerMotif,
+  }));
 ---
 <Base title={`${copy.stamps.heading} — ${fullSiteTitle()}`} description={copy.stamps.intro}>
   <div class="wrap" style="padding-bottom:5rem">
