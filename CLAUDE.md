@@ -5,8 +5,16 @@ book claim, with an interactive simulation.
 
 ## Rules
 - src/data/concepts.ts is the source of truth. Edit it before anything else.
-- The concept map (ConceptMap.astro) is hand-authored SVG. Edit coordinates
-  directly. Do not make it generated.
+- The concept map (ConceptMap.astro) is GENERATED, not hand-authored — this
+  reverses an earlier rule. It lays out one git-graph-style tree per arc
+  from each concept's `branchFrom` field (which single concept it visually
+  branches off of — separate from `prereqs`, which can list several) and
+  `week` (lowest week among siblings continues the trunk straight; others
+  get their own row via an elbow, alternating left/right, never upward).
+  Arc names live in the `ARCS` array, admin-editable from /admin's Arcs
+  section. To change where a week branches from, edit its "Branch from"
+  field on /admin/issues/[id] — don't hand-edit ConceptMap.astro's layout
+  for this; only touch that file for the layout ALGORITHM itself.
 - Only show published weeks anywhere reader-facing.
 - Design: cyan = amplitude, magenta = phase, yellow = user input.
   Halftone dot area tracks probability. Ink-navy ground.
@@ -32,8 +40,9 @@ book claim, with an interactive simulation.
   uneditable.
 
 ## Adding a week
-1. Add/publish the entry in src/data/concepts.ts
-2. Publish its node in ConceptMap.astro (add is-live, wrap in <a>, SOON -> READ)
-3. Write src/content/posts/week-NN-slug.mdx
-4. Build the sim in src/sims/, register it in src/sims/registry.ts
-5. Import the sim into the .mdx with client:visible
+1. Add/publish the entry in src/data/concepts.ts, including `branchFrom`
+   (which concept it visually branches off of) — the concept map picks it
+   up automatically, nothing to hand-edit there
+2. Write src/content/posts/week-NN-slug.mdx
+3. Build the sim in src/sims/, register it in src/sims/registry.ts
+4. Import the sim into the .mdx with client:visible

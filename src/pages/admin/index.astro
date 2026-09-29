@@ -1,9 +1,13 @@
 ---
 export const prerender = false;
 import Base from "../../layouts/Base.astro";
-import { CONCEPTS, allSims, isGrouped } from "../../data/concepts";
+import { CONCEPTS, ARCS, arcName, allSims, isGrouped } from "../../data/concepts";
 import { copy, fullSiteTitle } from "../../lib/site-copy";
 import { listSims } from "../../sims/registry";
+import { upsertArc } from "../../lib/concepts-writer";
+import { commitFile, getFileContent } from "../../lib/github";
+
+const CONCEPTS_PATH = "src/data/concepts.ts";
 
 // every built sim, plus which concept(s) currently reference its slug —
 // a sim can be built and sit here unused until it's inserted into a body,
@@ -13,6 +17,41 @@ const usedBy = allSims();
 
 // middleware.ts guarantees this is set before this page ever renders
 const session = Astro.locals.session!;
+
+// ---- arc create/rename ----
+// The only POST this page handles — everything else here is a link out to
+// its own page (an issue, a sim) or a GET-redirect "new" form, same as
+// those. Arcs are simple enough (an id and a name) not to need either.
+let arcError: string | null = null;
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  const action = form.get("action");
+  const name = ((form.get("name") as string | null) ?? "").trim();
+
+  if (action === "rename" || action === "create") {
+    if (!name) {
+      arcError = "An arc needs a name.";
+    } else {
+      const arcId = action === "rename"
+        ? Number(form.get("arcId"))
+        : (ARCS.length > 0 ? Math.max(...ARCS.map((a) => a.id)) : 0) + 1;
+      try {
+        const currentText = await getFileContent(session.accessToken, CONCEPTS_PATH);
+        if (!currentText) throw new Error("Could not read concepts.ts from the repo");
+        const newText = upsertArc(currentText, { id: arcId, name });
+        await commitFile({
+          accessToken: session.accessToken,
+          path: CONCEPTS_PATH,
+          content: newText,
+          message: `admin: ${action === "rename" ? "rename" : "create"} arc ${arcId} ("${name}")`,
+        });
+        return Astro.redirect("/admin#arcs");
+      } catch (err) {
+        arcError = err instanceof Error ? err.message : "Something went wrong saving this arc.";
+      }
+    }
+  }
+}
 
 // ---- issues list, grouped by arc ----
 // isGrouped, not a bare `c.arc === null` check: a concept can have an arc
@@ -42,6 +81,43 @@ const sortedArcs = [...arcGroups.entries()]
       click whatever you want to change. This page is only for what
       genuinely has no page yet to click on.
     </p>
+
+    <details id="arcs" class="section" open>
+      <summary><h2>Arcs</h2></summary>
+      <p class="dim">
+        An arc is a named tree of issues — its name is the heading over its
+        branch of the homepage's concept map, and each issue's own "branch
+        from" (on its own edit page) controls where in that tree it grows
+        off of. An issue can group into an arc number before that arc has a
+        name; it'll show as "Arc N" on the map until you name it here.
+      </p>
+      {arcError && <p class="admin__error">Error: {arcError}</p>}
+
+      {ARCS.length > 0 && (
+        <ul class="arc-list">
+          {ARCS.map((a) => (
+            <li class="arc-row">
+              <form method="POST">
+                <input type="hidden" name="action" value="rename" />
+                <input type="hidden" name="arcId" value={a.id} />
+                <span class="arc-row__id">Arc {a.id}</span>
+                <input type="text" name="name" value={a.name} required />
+                <button class="btn" type="submit">Save</button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form method="POST" class="new-form">
+        <input type="hidden" name="action" value="create" />
+        <label for="new-arc-name">New arc name</label>
+        <div class="row">
+          <input id="new-arc-name" name="name" type="text" placeholder="e.g. Entanglement &amp; Correlation" required />
+          <button class="btn" type="submit">Create</button>
+        </div>
+      </form>
+    </details>
 
     <details id="issues" class="section" open>
       <summary><h2>Issues</h2></summary>
@@ -74,7 +150,7 @@ const sortedArcs = [...arcGroups.entries()]
 
       {sortedArcs.map(([arc, items]) => (
         <>
-          <h3>Arc {arc}</h3>
+          <h3>Arc {arc}{arcName(arc) ? ` — ${arcName(arc)}` : ""}</h3>
           <ul class="issue-list">
             {items.map((c) => (
               <li class={`issue-row${c.published ? " is-live" : ""}`}>
@@ -224,5 +300,19 @@ const sortedArcs = [...arcGroups.entries()]
     .sim-copy { padding: 0.3rem 0.7rem; font-size: 0.75rem; margin-left: auto; }
     .sim-row__meta { margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--paper-dim); }
     .sim-row__meta a { color: var(--paper-dim); }
+
+    .admin__error { border-left: 2px solid var(--magenta); padding-left: 0.9rem; color: var(--magenta); }
+    .arc-list { list-style: none; padding: 0; margin: 0.5rem 0; display: grid; gap: 0.6rem; }
+    .arc-row form {
+      display: flex; align-items: center; gap: 0.7rem;
+      border: var(--panel-line) solid var(--gutter); border-radius: var(--radius);
+      padding: 0.6rem 0.8rem; background: var(--ink-2);
+    }
+    .arc-row__id { font-family: var(--font-mono); font-size: 0.75rem; color: var(--paper-dim); white-space: nowrap; }
+    .arc-row input[type="text"] {
+      flex: 1; background: var(--ink); color: var(--paper); border: var(--panel-line) solid var(--gutter);
+      border-radius: var(--radius); padding: 0.5rem 0.7rem; font-family: var(--font-body);
+    }
+    .arc-row .btn { padding: 0.5rem 0.9rem; font-size: 0.85rem; }
   </style>
 </Base>

@@ -1,164 +1,235 @@
 ---
 /**
- * THE CONCEPT MAP — hand-authored.
+ * THE CONCEPT MAP — generated from concepts.ts, not hand-authored.
  *
- * ── HOW TO EDIT ────────────────────────────────────────────────────────────
- * Unpublished weeks do not get a node here at all — the map only ever shows
- * what a reader can actually open. To publish a week:
- *   1. add its <g class="node is-live"> at a position that reflects its real
- *      prereqs (see concepts.ts) — a week branches off whichever published
- *      node it actually builds on, it doesn't just queue up next in a row
- *   2. wrap it in <a href="/posts/week-NN-slug"> … </a>, text reads READ →
- *   3. draw a solid edge from each of its live prereqs into it, and re-add
- *      any callback edge that now has both ends published. Two shapes are
- *      in use for that edge, chosen by hand, not by rule: an elbow (wk1→
- *      wk2) when the branch needs to change row, a straight line (wk1→wk3)
- *      when it doesn't. Either way it's a branch off the prereq, not a
- *      straight continuation of reading order.
- * Node size, position, and every path's coordinates are all literal — move
- * them freely as the tree grows and starts needing its own shape.
+ * This used to be literal SVG, hand-positioned per node. It's computed now:
+ * every published concept's `branchFrom` (see concepts.ts) says which one
+ * concept it visually grows out of, and the layout below turns that into a
+ * git-graph-style tree — same idea a branching commit graph uses. To
+ * change WHERE something branches from, edit that concept's "Branch from"
+ * field on its own /admin/issues/[id] page. To rename an arc's heading,
+ * use /admin's Arcs section. Nothing here should need hand-editing for a
+ * new week to show up correctly — if it does, that's this layout falling
+ * short of a real case, not a one-off coordinate to nudge.
  *
- * ── EDGE PHILOSOPHY ────────────────────────────────────────────────────────
- * Solid (elbow or straight) = a real prereq edge: this week actually builds
- * on that one, drawn as a branch off it rather than assumed from reading
- * order. Dashed arc = a callback: a week that reaches back to a non-adjacent
- * one it doesn't strictly require. There are only three callbacks, once
- * every week is live, and they are the three moments where the arc closes a
- * loop. Do NOT draw every prerequisite as a callback — the full dependency
- * list already lives in concepts.ts and renders as text on each post; this
- * map is for the shape of the tree, not a duplicate of that list. The three
- * callback paths (kept for reference, currently unused since their far end
- * isn't published yet — coordinates will need redoing against whatever the
- * tree looks like once they're live):
- *   wk3 interference → wk7 decoherence
- *   wk4 entanglement → wk11 two-qubit gates
- *   wk3 interference → wk12 Deutsch–Jozsa
+ * ── LAYOUT RULES ─────────────────────────────────────────────────────────
+ * One arc = one tree = one grid of (column, row) cells, later scaled to
+ * pixels. A concept with no published `branchFrom` (or whose branchFrom
+ * isn't itself published) is a root, starting its own trunk at row 0.
+ *   - Each node's PRIMARY child — the lowest week number among its
+ *     children — continues the trunk: same row, one column to the right,
+ *     a straight arrow. This is "reading order" continuing.
+ *   - Every OTHER child is a real branch: it claims a brand-new row (a
+ *     lane nothing else will ever reuse, so branches can never visually
+ *     collide) and is drawn with an elbow, alternating left/right of its
+ *     parent's own column as more branches accumulate. Never upward —
+ *     a branch's row is always greater than its parent's.
+ * The whole tree's bounding box is computed after layout and used as the
+ * viewBox directly, so a root with branches on both sides ends up with the
+ * trunk somewhere in the middle rather than pinned to the left edge the
+ * way a hand-authored version defaults to.
+ *
+ * Unpublished concepts still don't get a node — the map only ever shows
+ * what a reader can actually open — but a published concept branching off
+ * an unpublished one is treated as its own root instead of being dropped,
+ * so publishing weeks out of order never hides one that's actually live.
  */
-import { published, CONCEPTS } from "../data/concepts";
+import { published, CONCEPTS, arcName, type Concept } from "../data/concepts";
 import { copy, format } from "../lib/site-copy";
 
-// Arc 1 doesn't have a name field in concepts.ts (arcs are just numbers
-// there — see `arc: number | null`), so this is hand-authored the same way
-// the map's own node text is: a real string, not derived, because there's
-// exactly one arc using this file today and giving it a generic naming
-// system before a second arc exists would be solving a problem that
-// doesn't exist yet.
-const ARC_ONE_NAME = "Superposition Basics";
+const NODE_W = 220;
+const NODE_H = 130;
+const COL_GAP = 40;
+const ROW_GAP = 80;
+const STEP_X = NODE_W + COL_GAP;
+const STEP_Y = NODE_H + ROW_GAP;
+const MARGIN = 16;
+/** past this many characters a title needs the smaller size to fit the
+ *  node's width without hand-tuning per node — see "Measurement &
+ *  Collapse" and "Phase & Interference", the two cases this was set against. */
+const LONG_TITLE = 16;
 
-// scoped to arc 1 — issue 0 (arc 0) is the project's intro, not a physics
-// concept, and doesn't belong on this grid. See concepts.ts for why.
-const arc1 = CONCEPTS.filter((c) => c.arc === 1);
-const live = published().filter((c) => c.arc === 1).sort((a, b) => (a.week ?? 0) - (b.week ?? 0));
-const progressText = format(copy.conceptMap.progressTemplate, { count: live.length, total: arc1.length });
-// was hardcoded to name week 1 specifically — a leak in its own right,
-// since it kept claiming "starting with superposition" even while that
-// week went back to a draft and the map had nothing published at all.
-const mapLabel = live.length > 0
-  ? `Concept map for arc one: ${progressText}, starting with ${live[0].title}.`
-  : `Concept map for arc one: ${progressText}.`;
+interface Placed {
+  concept: Concept;
+  col: number;
+  row: number;
+}
+interface Edge {
+  from: Placed;
+  to: Placed;
+  kind: "straight" | "elbow";
+}
+
+/** Lays out one arc's published concepts as a git-graph-style tree, rooted
+ *  at whichever concepts have no published parent. Returns placed nodes
+ *  and edges in local grid units (not yet pixels, not yet shifted to a
+ *  positive viewBox). */
+function layoutArc(concepts: Concept[]): { placed: Placed[]; edges: Edge[] } {
+  const byId = new Map(concepts.map((c) => [c.id, c]));
+  const childrenOf = (id: string) =>
+    concepts
+      .filter((c) => c.branchFrom === id)
+      .sort((a, b) => (a.week ?? Infinity) - (b.week ?? Infinity) || a.title.localeCompare(b.title));
+  const roots = concepts.filter((c) => c.branchFrom === null || !byId.has(c.branchFrom));
+
+  const placed: Placed[] = [];
+  const edges: Edge[] = [];
+  // a monotonically increasing row counter shared across the WHOLE arc, so
+  // two branches anywhere in the tree can never end up sharing a row and
+  // visually colliding, no matter how deep or wide it gets.
+  let nextRow = 0;
+
+  function place(concept: Concept, col: number, row: number): Placed {
+    const self: Placed = { concept, col, row };
+    placed.push(self);
+    const kids = childrenOf(concept.id);
+
+    if (kids.length > 0) {
+      const [primary, ...secondaries] = kids;
+      const primaryPlaced = place(primary, col + 1, row);
+      edges.push({ from: self, to: primaryPlaced, kind: "straight" });
+
+      secondaries.forEach((kid, i) => {
+        nextRow += 1;
+        const side = i % 2 === 0 ? 1 : -1;
+        const rank = Math.floor(i / 2) + 1;
+        const kidPlaced = place(kid, col + side * rank, nextRow);
+        edges.push({ from: self, to: kidPlaced, kind: "elbow" });
+      });
+    }
+
+    return self;
+  }
+
+  roots.forEach((root, i) => {
+    if (i > 0) nextRow += 1; // a second unconnected root starts its own fresh lane
+    place(root, 0, nextRow);
+  });
+
+  return { placed, edges };
+}
+
+/** Straight-line or elbow SVG path between two already-pixel-positioned
+ *  nodes' facing edges. Elbow goes: down from the parent's bottom-center,
+ *  across, down into the child's top-center — never routes upward. */
+function edgePath(from: { x: number; y: number }, to: { x: number; y: number }, kind: "straight" | "elbow"): string {
+  if (kind === "straight") {
+    const y = from.y + NODE_H / 2;
+    return `M${from.x + NODE_W},${y} L${to.x},${y}`;
+  }
+  const midY = from.y + NODE_H + ROW_GAP / 2;
+  const fx = from.x + NODE_W / 2;
+  const tx = to.x + NODE_W / 2;
+  return `M${fx},${from.y + NODE_H} L${fx},${midY} L${tx},${midY} L${tx},${to.y}`;
+}
+
+// ---- one map section per arc that has at least one published concept ----
+// arc 0 (the intro) is deliberately excluded — see concepts.ts for why it
+// isn't one of an arc's numbered weeks.
+const arcIds = [...new Set(CONCEPTS.map((c) => c.arc).filter((a): a is number => a !== null && a !== 0))].sort(
+  (a, b) => a - b,
+);
+
+const sections = arcIds
+  .map((arcId) => {
+    const all = CONCEPTS.filter((c) => c.arc === arcId);
+    const live = published()
+      .filter((c) => c.arc === arcId)
+      .sort((a, b) => (a.week ?? 0) - (b.week ?? 0));
+    if (live.length === 0) return null;
+
+    const { placed, edges } = layoutArc(live);
+    const pixelOf = (p: Placed) => ({ x: p.col * STEP_X, y: p.row * STEP_Y });
+    const pixels = new Map(placed.map((p) => [p.concept.id, pixelOf(p)]));
+
+    const xs = [...pixels.values()].map((p) => p.x);
+    const ys = [...pixels.values()].map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const viewBox = `${minX - MARGIN} ${minY - MARGIN} ${maxX - minX + NODE_W + MARGIN * 2} ${maxY - minY + NODE_H + MARGIN * 2}`;
+
+    const progressText = format(copy.conceptMap.progressTemplate, { count: live.length, total: all.length });
+    const name = arcName(arcId);
+    const label = `Concept map for arc ${arcId}${name ? `, ${name}` : ""}: ${progressText}${
+      live.length > 0 ? `, starting with ${live[0].title}` : ""
+    }.`;
+
+    return {
+      arcId,
+      name,
+      progressText,
+      total: all.length,
+      count: live.length,
+      viewBox,
+      label,
+      nodes: placed.map((p) => ({ concept: p.concept, ...pixels.get(p.concept.id)! })),
+      edges: edges.map((e) => ({
+        d: edgePath(pixels.get(e.from.concept.id)!, pixels.get(e.to.concept.id)!, e.kind),
+      })),
+    };
+  })
+  .filter((s): s is NonNullable<typeof s> => s !== null);
 ---
 
-<figure class="map">
-  <figcaption class="map__cap">
-    <span class="eyebrow">
-      <span class="wk" data-copy-key="labels.arc">{copy.labels.arc}</span>
-      <span class="sep">/</span>
-      <span
-        data-copy-key="conceptMap.progressTemplate"
-        data-copy-template="true"
-        data-copy-raw={copy.conceptMap.progressTemplate}
-        data-copy-vars={JSON.stringify({ count: live.length, total: arc1.length })}
-      >{progressText}</span>
-    </span>
-    <h2 class="map__name">{ARC_ONE_NAME}</h2>
-  </figcaption>
+{
+  sections.map((s) => (
+    <figure class="map">
+      <figcaption class="map__cap">
+        <span class="eyebrow">
+          <span class="wk" data-copy-key="labels.arc">{copy.labels.arc}</span>
+          <span class="sep">/</span>
+          <span
+            data-copy-key="conceptMap.progressTemplate"
+            data-copy-template="true"
+            data-copy-raw={copy.conceptMap.progressTemplate}
+            data-copy-vars={JSON.stringify({ count: s.count, total: s.total })}
+          >{s.progressText}</span>
+        </span>
+        {s.name && <h2 class="map__name">{s.name}</h2>}
+      </figcaption>
 
-  <div class="map__scroll">
-    <svg viewBox="-16 -16 512 372" class="map__svg" role="img" aria-label={mapLabel}>
+      <div class="map__scroll">
+        <svg viewBox={s.viewBox} class="map__svg" role="img" aria-label={s.label}>
+          <defs>
+            <marker id={`tip-${s.arcId}`} viewBox="0 0 8 8" refX="7" refY="4"
+                    markerWidth="5.5" markerHeight="5.5" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="var(--gutter)" />
+            </marker>
+          </defs>
 
-      <defs>
-        <marker id="tip" viewBox="0 0 8 8" refX="7" refY="4"
-                markerWidth="5.5" markerHeight="5.5" orient="auto">
-          <path d="M0,0 L8,4 L0,8 z" fill="var(--gutter)" />
-        </marker>
-        <marker id="tip-call" viewBox="0 0 8 8" refX="7" refY="4"
-                markerWidth="5.5" markerHeight="5.5" orient="auto">
-          <path d="M0,0 L8,4 L0,8 z" fill="var(--magenta)" />
-        </marker>
-      </defs>
+          <g class="spine">
+            {s.edges.map((e) => <path d={e.d} marker-end={`url(#tip-${s.arcId})`} />)}
+          </g>
 
-      <!-- ═══ THE TREE ═══ both branch off week 1 (see concepts.ts prereqs —
-           week 2 AND week 3 each list only "superposition"), not off each
-           other, so both edges start at week 1's own rect rather than
-           chaining. Week 2 changes row, so it gets an elbow. Week 3 stays
-           in week 1's row, so a straight line already reads as a branch —
-           no elbow needed to make the point. ═══ -->
-      <g class="spine">
-        <path d="M110,130 L110,170 L280,170 L280,210" marker-end="url(#tip)" />
-        <line x1="220" y1="65" x2="260" y2="65" marker-end="url(#tip)" />
-      </g>
-
-      <!-- ═══ THE CALLBACKS ═══ nothing yet — see comment above for the three ═══ -->
-      <g class="calls"></g>
-
-      <!-- ═══ WEEK 1 ═══ published, the root of the tree so far ═══ -->
-      <a href="/posts/week-01-superposition">
-        <g class="node is-live">
-          <rect x="0" y="0" width="220" height="130" rx="3" />
-          <text class="n-wk"    x="16" y="28">ISSUE 01</text>
-          <text class="n-title" x="16" y="62">Superposition</text>
-          <text class="n-char"  x="16" y="90">Doctor Manhattan</text>
-          <text class="n-state" x="16" y="114">READ →</text>
-        </g>
-      </a>
-
-      <!-- ═══ WEEK 2 ═══ published, branches off week 1 above ═══ title's
-           long enough to need a smaller size than week 1's got away with —
-           first case of that, and the reason this is a per-node override
-           rather than a shared rule. -->
-      <a href="/posts/week-02-measurement-and-collapse">
-        <g class="node is-live">
-          <rect x="170" y="210" width="220" height="130" rx="3" />
-          <text class="n-wk"    x="186" y="238">ISSUE 02</text>
-          <text class="n-title" x="186" y="270" style="font-size:14px">Measurement &amp; Collapse</text>
-          <text class="n-char"  x="186" y="300">Uatu the Watcher</text>
-          <text class="n-state" x="186" y="324">READ →</text>
-        </g>
-      </a>
-
-      <!-- ═══ WEEK 3 ═══ published, branches off week 1 to the right ═══ -->
-      <a href="/posts/week-03-interference">
-        <g class="node is-live">
-          <rect x="260" y="0" width="220" height="130" rx="3" />
-          <text class="n-wk"    x="276" y="28">ISSUE 03</text>
-          <text class="n-title" x="276" y="62" style="font-size:14px">Phase &amp; Interference</text>
-          <text class="n-char"  x="276" y="90">The Flash</text>
-          <text class="n-state" x="276" y="114">READ →</text>
-        </g>
-      </a>
-
-    </svg>
-  </div>
-</figure>
+          {s.nodes.map(({ concept: c, x, y }) => (
+            <a href={`/posts/${c.slug}`}>
+              <g class="node is-live" transform={`translate(${x} ${y})`}>
+                <rect width={NODE_W} height={NODE_H} rx="3" />
+                <text class="n-wk" x="16" y="28">{copy.labels.issue.toUpperCase()}{" "}{String(c.week).padStart(2, "0")}</text>
+                <text class="n-title" x="16" y="62" style={c.title.length > LONG_TITLE ? "font-size:14px" : undefined}>{c.title}</text>
+                <text class="n-char" x="16" y="90">{c.character}</text>
+                <text class="n-state" x="16" y="114">READ →</text>
+              </g>
+            </a>
+          ))}
+        </svg>
+      </div>
+    </figure>
+  ))
+}
 
 <style>
-  .map { margin: 0; }
+  .map { margin: 0 0 2rem; }
+  .map:last-child { margin-bottom: 0; }
   .map__cap { margin-bottom: 1rem; }
   .map__name {
     font-family: var(--font-head); font-weight: 900; font-size: 1.5rem;
     margin: 0.3rem 0 0; letter-spacing: -0.01em;
   }
   .map__scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .map__svg { width: 100%; max-width: 500px; height: auto; }
+  .map__svg { width: 100%; max-width: 560px; height: auto; }
 
-  .spine path, .spine line { stroke: var(--gutter); stroke-width: 2; fill: none; }
-  .calls path {
-    stroke: var(--magenta);
-    stroke-width: 1.5;
-    fill: none;
-    stroke-dasharray: 4 5;
-    opacity: 0.55;
-  }
+  .spine path { stroke: var(--gutter); stroke-width: 2; fill: none; }
 
   .node rect {
     fill: var(--ink-2);

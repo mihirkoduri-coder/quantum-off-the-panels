@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import Base from "../../../layouts/Base.astro";
-import { byId, type Concept, type Tier } from "../../../data/concepts";
+import { CONCEPTS, ARCS, byId, type Concept, type Tier } from "../../../data/concepts";
 import { upsertConcept } from "../../../lib/concepts-writer";
 import { serializePost, parsePost, type PostFrontmatter } from "../../../lib/mdx";
 import { expandSimShortcodes, collapseSimShortcodes } from "../../../lib/sim-shortcodes";
@@ -54,9 +54,17 @@ if (Astro.request.method === "POST") {
     character: str("character"),
     tier: str("tier") as Tier,
     prereqs: splitList("prereqs"),
+    branchFrom: str("branchFrom") || null,
     sims: splitList("sims"),
     published: publishNow,
     slug,
+    // not a form field — stickerMotif is assigned in code when a motif gets
+    // built for a week (see motifs.tsx), not something to type into a text
+    // box here. Carrying it forward from whatever's already saved means
+    // resubmitting this form can't silently erase it the way omitting it
+    // from this object used to (every full-form save rebuilds the concept
+    // from scratch, so a field with no form input just disappears).
+    stickerMotif: existing?.stickerMotif,
   };
   const frontmatter: PostFrontmatter = {
     conceptId: id,
@@ -119,6 +127,14 @@ if (displayFrontmatter === undefined) {
 // into a reading order, not necessarily now.
 const f = displayFrontmatter;
 const c = displayConcept;
+
+// candidates for "branch from" — every other concept, arc's own root
+// (branchFrom: null) listed first since it's the most common pick for a
+// brand-new entry. Named arcs' own admin section is /admin#arcs; a
+// concept whose current arc number has no ARCS entry yet still works
+// fine here (it just shows as "Arc N" until someone names it there).
+const branchCandidates = CONCEPTS.filter((o) => o.id !== id);
+const currentArcHasName = c?.arc != null && ARCS.some((a) => a.id === c.arc);
 ---
 <Base title={`Admin: ${c?.title ?? id} — ${fullSiteTitle()}`}>
   <div class="wrap admin">
@@ -136,8 +152,25 @@ const c = displayConcept;
           <input type="number" name="week" value={c?.week ?? ""} />
         </label>
         <label>
-          Arc <span class="hint">(leave blank too — a new arc doesn't need the last one finished first)</span>
-          <input type="number" name="arc" value={c?.arc ?? ""} />
+          Arc <span class="hint">(leave blank too — a new arc doesn't need the last one finished first. Name or create arcs from <a href="/admin#arcs">the admin home</a>)</span>
+          <select name="arc">
+            <option value="" selected={c?.arc == null}>— none yet —</option>
+            {ARCS.map((a) => (
+              <option value={a.id} selected={c?.arc === a.id}>Arc {a.id} — {a.name}</option>
+            ))}
+            {c?.arc != null && !currentArcHasName && (
+              <option value={c.arc} selected>Arc {c.arc} (unnamed)</option>
+            )}
+          </select>
+        </label>
+        <label>
+          Branch from <span class="hint">(which concept this one grows off of on the homepage's map — separate from prereqs below, which can list more than one. Leave as "none" for an arc's own root)</span>
+          <select name="branchFrom">
+            <option value="" selected={!c?.branchFrom}>— none (root of its arc) —</option>
+            {branchCandidates.map((o) => (
+              <option value={o.id} selected={c?.branchFrom === o.id}>{o.title || o.id}</option>
+            ))}
+          </select>
         </label>
         <label>Concept title <input type="text" name="conceptTitle" value={c?.title ?? ""} required /></label>
         <label>Blurb <textarea name="blurb" rows="2" required>{c?.blurb ?? ""}</textarea></label>

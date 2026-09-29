@@ -29,6 +29,29 @@ export type Tier = "A" | "B" | "C";
  *  not a gap to fill in. */
 export type StickerMotif = "hand" | "eyes" | "logo";
 
+/**
+ * An arc is a named tree of concepts — the homepage's concept map renders
+ * one of these per arc that has a published concept in it. Just a name
+ * keyed to the same integer id a concept's own `arc` field already points
+ * at; admin-editable from /admin's Arcs section (see arcs-writer.ts).
+ * Not every arc id used in CONCEPTS needs an entry here yet — an unnamed
+ * arc still groups posts and drives the map, it just falls back to "Arc N"
+ * for its heading until someone names it.
+ */
+export interface Arc {
+  id: number;
+  name: string;
+}
+
+export const ARCS: Arc[] = [
+  { id: 1, name: "Superposition Basics" },
+];
+
+export const arcName = (id: number | null): string | null => {
+  if (id === null) return null;
+  return ARCS.find((a) => a.id === id)?.name ?? null;
+};
+
 export interface Concept {
   /** stable id — used for prereq edges and post frontmatter. never change it. */
   id: string;
@@ -44,8 +67,17 @@ export interface Concept {
   character: string;
   /** internal only — never rendered to readers */
   tier: Tier;
-  /** ids this concept builds on */
+  /** ids this concept builds on — the full dependency list, rendered as
+   *  text (the "builds on" banner) on the post itself. Can be several. */
   prereqs: string[];
+  /**
+   * which single concept this one visually branches off of on the
+   * homepage's concept map. Separate from `prereqs` on purpose: a concept
+   * can genuinely depend on two or three others, but a map is a tree, not
+   * a graph, so exactly one of those (or none, for an arc's own root) gets
+   * to be the branch point. null = this is its arc's root/trunk start.
+   */
+  branchFrom: string | null;
   /** sim slugs embedded in this post, in order of appearance. [] = no sim yet. */
   sims: string[];
   published: boolean;
@@ -69,6 +101,7 @@ export const CONCEPTS: Concept[] = [
     character: "The Narrator",
     tier: "C",
     prereqs: [],
+    branchFrom: null,
     sims: [],
     published: true,
     slug: "week-00-intro",
@@ -83,6 +116,7 @@ export const CONCEPTS: Concept[] = [
     character: "Doctor Manhattan",
     tier: "B",
     prereqs: [],
+    branchFrom: null,
     sims: ["amplitude-dial"],
     published: true,
     slug: "week-01-superposition",
@@ -97,6 +131,7 @@ export const CONCEPTS: Concept[] = [
     character: "The Flash",
     tier: "A",
     prereqs: ["superposition"],
+    branchFrom: "superposition",
     sims: ["both-paths"],
     published: true,
     slug: "week-03-interference",
@@ -110,6 +145,7 @@ export const CONCEPTS: Concept[] = [
     character: "Uatu the Watcher",
     tier: "B",
     prereqs: ["superposition"],
+    branchFrom: "superposition",
     sims: ["collapse-lab"],
     published: true,
     slug: "week-02-measurement-and-collapse",
@@ -124,6 +160,7 @@ export const CONCEPTS: Concept[] = [
     character: "Cloak & Dagger",
     tier: "B",
     prereqs: ["measurement", "superposition"],
+    branchFrom: "measurement",
     sims: ["shared-state"],
     published: false,
     slug: "week-04-entanglement",
@@ -137,6 +174,7 @@ export const CONCEPTS: Concept[] = [
     character: "Jean Grey",
     tier: "A",
     prereqs: ["entanglement"],
+    branchFrom: "entanglement",
     sims: ["telepathy-test"],
     published: false,
     slug: "week-05-no-signalling",
@@ -150,6 +188,7 @@ export const CONCEPTS: Concept[] = [
     character: "Rorschach",
     tier: "A",
     prereqs: ["no-signalling"],
+    branchFrom: "no-signalling",
     sims: ["bell-counter"],
     published: false,
     slug: "week-06-bell",
@@ -163,6 +202,7 @@ export const CONCEPTS: Concept[] = [
     character: "Ant-Man",
     tier: "B",
     prereqs: ["measurement", "interference"],
+    branchFrom: "measurement",
     sims: ["leak-rate"],
     published: false,
     slug: "week-07-decoherence",
@@ -176,6 +216,7 @@ export const CONCEPTS: Concept[] = [
     character: "Multiple Man",
     tier: "B",
     prereqs: ["measurement", "superposition"],
+    branchFrom: "measurement",
     sims: ["copy-machine"],
     published: false,
     slug: "week-08-no-cloning",
@@ -189,6 +230,7 @@ export const CONCEPTS: Concept[] = [
     character: "Brainiac",
     tier: "C",
     prereqs: ["superposition", "measurement"],
+    branchFrom: "superposition",
     sims: ["register-view"],
     published: false,
     slug: "week-09-qubits",
@@ -202,6 +244,7 @@ export const CONCEPTS: Concept[] = [
     character: "Mystique",
     tier: "B",
     prereqs: ["qubits"],
+    branchFrom: "qubits",
     sims: ["gate-bench"],
     published: false,
     slug: "week-10-single-gates",
@@ -215,6 +258,7 @@ export const CONCEPTS: Concept[] = [
     character: "Wonder Twins",
     tier: "B",
     prereqs: ["single-gates", "entanglement"],
+    branchFrom: "single-gates",
     sims: ["cnot-bench", "bell-builder"],
     published: false,
     slug: "week-11-two-gates",
@@ -228,6 +272,7 @@ export const CONCEPTS: Concept[] = [
     character: "Batman",
     tier: "A",
     prereqs: ["two-gates", "interference"],
+    branchFrom: "two-gates",
     sims: ["one-query"],
     published: false,
     slug: "week-12-deutsch-jozsa",
