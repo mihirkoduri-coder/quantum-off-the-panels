@@ -131,6 +131,26 @@ export interface SiteCopy {
       pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
       violation: { sfx: string; law: string; attempted: string; why: string };
     };
+    pinItDown: {
+      title: string;
+      predict: { question: string; choiceBoth: string; choiceWorse: string; choiceNoise: string; choiceSame: string; because: string };
+      watchFor: string;
+      controls: {
+        focusLabel: string; focusWordLoose: string; focusWordClosingIn: string; focusWordTight: string; focusWordVeryTight: string;
+        listenButton: string; interceptButton: string; pinButton: string;
+      };
+      readout: { odds: string; speed: string; speedGuess: string; speedVague: string; speedSure: string };
+      diagram: { mainCaption: string };
+      diagTabs: { curves: string; odds: string };
+      diagCaptions: { curves: string; odds: string };
+      voice: {
+        who: string; listenLineDoorway: string; listenLineStorefront: string; listenLineHalfBlock: string;
+        interceptHit: string; interceptMissTight: string; interceptMissLoose: string;
+      };
+      hits: { listen: string; hit: string; miss: string };
+      pocket: { label: string; p1: string; p2: string; p3: string; p4: string };
+      violation: { sfx: string; law: string; attempted: string; why: string };
+    };
   };
 }
 

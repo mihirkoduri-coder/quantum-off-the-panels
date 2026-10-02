@@ -306,6 +306,73 @@
         "attempted": "watch which route he takes and still see the copies cancel",
         "why": "Look at the ring: there's only one of him now. He isn't running both routes, so there aren't two things to add together — and with nothing to add, there is nothing to cancel. The fringe has gone flat and the dials do nothing. Stop watching and he splits again."
       }
+    },
+    "pinItDown": {
+      "title": "A better instrument",
+      "predict": {
+        "question": "Matt can hear a heartbeat through a wall. If he concentrates hard enough to place a man to the inch, what happens to his sense of how fast that man is moving?",
+        "choiceBoth": "He gets both — that's the whole point of the sense",
+        "choiceWorse": "It gets worse, and no better sense would fix it",
+        "choiceNoise": "It gets noisy, but a sharper ear would recover it",
+        "choiceSame": "Nothing happens to it",
+        "because": "And the reason is the part almost every telling gets wrong: it is not that listening jostles him. A man pinned to the inch does not have a speed Matt is failing to hear. He does not have one."
+      },
+      "watchFor": "the light running along the street. That is how fast he is going — crisp when the speed is certain, washed flat when it is not.",
+      "controls": {
+        "focusLabel": "Focus — how tightly he pins the position",
+        "focusWordLoose": "loose",
+        "focusWordClosingIn": "closing in",
+        "focusWordTight": "tight",
+        "focusWordVeryTight": "very tight",
+        "listenButton": "Listen",
+        "interceptButton": "Intercept",
+        "pinButton": "Pin it down exactly"
+      },
+      "readout": {
+        "odds": "his odds",
+        "speed": "speed",
+        "speedGuess": "anyone's guess",
+        "speedVague": "vague",
+        "speedSure": "fairly sure"
+      },
+      "diagram": {
+        "mainCaption": "where he is — and how fast, in the way the light moves"
+      },
+      "diagTabs": {
+        "curves": "The two curves",
+        "odds": "His odds"
+      },
+      "diagCaptions": {
+        "curves": "squeeze one and the other widens",
+        "odds": "his odds of cutting the man off"
+      },
+      "voice": {
+        "who": "Matt",
+        "listenLineDoorway": "Heartbeat, two blocks down. I have him placed to about a doorway.",
+        "listenLineStorefront": "Heartbeat, two blocks down. I have him placed to about a storefront.",
+        "listenLineHalfBlock": "Heartbeat, two blocks down. I have him placed to about half a block.",
+        "interceptHit": "Close enough. Roughly where, roughly how fast — and roughly was enough this time. It will not always be.",
+        "interceptMissTight": "He was right there. I had him to the inch, and no idea how fast, so I jumped to where he had been. My ears are not the problem. There was no second answer to hear.",
+        "interceptMissLoose": "Knew the pace, not the block. Right speed, wrong doorway."
+      },
+      "hits": {
+        "listen": "THMP-THMP",
+        "hit": "GOTCHA!",
+        "miss": "WHIFF!"
+      },
+      "pocket": {
+        "label": "What am I looking at?",
+        "p1": "A wave with one exact wavelength goes on forever — it is everywhere, so it has no location at all. To build something that sits in one place you have to add many wavelengths together, the same way the two routes added last week.",
+        "p2": "And wavelength is momentum. Watch the light travelling along the street: with the focus loose the speed is nearly certain and the brightness sweeps cleanly in one direction. Squeeze the position and that sweep falls apart, because you are now stacking many speeds at once.",
+        "p3": "To cut a man off you need both — where he is tells you where he was, how fast he is going tells you where he will be. Spend everything on one and the other goes wild, which is why there is a best setting somewhere in the middle, and why even there he sometimes misses.",
+        "p4": "None of this is about clumsy instruments. Nobody is jostling anything. A sharply located man does not have a speed Matt is too crude to hear — he does not have one. A better sense changes nothing, and that is the part the comics never say."
+      },
+      "violation": {
+        "sfx": "WHIFF!",
+        "law": "Position and momentum are not both defined at once. This is not about the instrument.",
+        "attempted": "pin him down exactly and still know how fast he is going",
+        "why": "Look at the street: he is in one doorway now, exactly. And look at the light running along it — it has stopped moving in any direction at all, because there is no longer a single speed for it to move at. Matt did not fail to hear the second answer. There was no second answer. A sharper sense, a better ear, a finer anything, changes nothing."
+      }
     }
   }
 }

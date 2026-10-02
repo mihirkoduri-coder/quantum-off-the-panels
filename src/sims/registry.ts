@@ -5,11 +5,13 @@
 import AmplitudeDial from "./amplitude-dial";
 import WatchersQuestion from "./watchers-question";
 import BothPaths from "./both-paths";
+import PinItDown from "./pin-it-down";
 
 export const SIMS: Record<string, React.ComponentType> = {
   "amplitude-dial": AmplitudeDial,
   "watchers-question": WatchersQuestion,
   "both-paths": BothPaths,
+  "pin-it-down": PinItDown,
 };
 
 /** Human titles for the gallery. Keep in sync when you add one. */
@@ -17,6 +19,7 @@ export const SIM_TITLES: Record<string, string> = {
   "amplitude-dial": "The amplitude dial",
   "watchers-question": "The Watcher's question",
   "both-paths": "Both paths",
+  "pin-it-down": "A better instrument",
 };
 
 /** For the admin's sim directory — every built sim, slug + title, sorted for display. */
