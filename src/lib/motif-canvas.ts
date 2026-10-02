@@ -1,11 +1,12 @@
 /**
  * Canvas renderers for the site's character motifs (src/components/sim/
- * motifs.tsx's GlowHand, WatchingEyes, and FlashBolt) plus the QP logo
- * mark, shared with the Studio (src/components/admin/studio-core.ts) and,
- * for hand/eyes/logo so far, the public stamp sheet's downloadable
- * stickers (src/components/StampSheet.tsx). One copy of the dot data and
- * drawing code — extracted here specifically so a second consumer didn't
- * mean a second, driftable copy of any of them.
+ * motifs.tsx's GlowHand, WatchingEyes, and FlashBolt, plus week 4's perched
+ * figure, which never got an SVG/React twin in motifs.tsx and lives only
+ * here and in src/sims/dd-art.ts) plus the QP logo mark — shared with the
+ * Studio (src/components/admin/studio-core.ts) and the public stamp sheet's
+ * downloadable stickers (src/components/StampSheet.tsx). One copy of the
+ * dot data and drawing code — extracted here specifically so a second
+ * consumer didn't mean a second, driftable copy of any of them.
  *
  * These colours are the dark theme's values, hardcoded rather than read
  * from CSS custom properties: a canvas fillStyle can't resolve a var(),
@@ -14,6 +15,7 @@
  */
 
 import { W_NATURAL, W_OUTLINE, W_LID, W_LIGHT, nearestAngle, type Dot } from "../components/sim/watcher-dots";
+import { DD_DOTS, DD_W, DD_H } from "../sims/dd-art";
 
 const CYAN = "#22C4F0";
 const YELLOW = "#FFD23F";
@@ -24,6 +26,8 @@ const INK2 = "#131829";
 const GUTTER = "#2B3358";
 const ORANGE = "#ff8a2b";
 const BOLT_STROKE = "#8c1109";
+const DD_INK = "#0b0e1a";   // dd-art.ts's INK.ink — the dark ring behind each dot
+const DD_RED = "#d6283a";  // dd-art.ts's INK.dd
 
 export const HAND_NATURAL = { w: 401, h: 284 };
 export const EYES_NATURAL = W_NATURAL;
@@ -34,6 +38,7 @@ export const LOGO_NATURAL = { w: 130.2, h: 100 };
 // viewBox is already centred on (0,0), unlike the other three motifs, so
 // drawFlash below skips the translate-to-centre step they all need.
 export const FLASH_NATURAL = { w: 120, h: 230 };
+export const DEVIL_NATURAL = { w: DD_W, h: DD_H };
 
 // GlowHand's exact dot field, extracted from its baked <circle> list rather
 // than retraced — this is a photo trace, not a generated pattern, so there
@@ -170,6 +175,26 @@ export function drawLogo(ctx: CanvasRenderingContext2D, size: number) {
   ctx.beginPath(); ctx.arc(136, 26, 3.6, 0, Math.PI * 2); ctx.fill();
   ctx.beginPath(); ctx.arc(168, 174, 3.6, 0, Math.PI * 2); ctx.fill();
 
+  ctx.restore();
+}
+
+// Week 4's perched figure (src/sims/dd-art.ts's drawPerch) — DD_DOTS
+// imported directly from that module rather than copied a third time,
+// unlike the hand/eyes data above (both predate this shared module, and
+// WatchingEyes' dots already live in their own shared watcher-dots.ts for
+// the same reason). Traced from Mihir's artwork, so it's ported verbatim
+// with no retracing or regeneration. Each dot gets its own dark ink ring —
+// a blurred halo behind the figure wasn't enough to separate red ink from
+// a red ground, and strengthening it left a visible dark disc on the page.
+export function drawDevil(ctx: CanvasRenderingContext2D, size: number) {
+  const s = size / DEVIL_NATURAL.w;
+  ctx.save();
+  ctx.scale(s, s);
+  ctx.translate(-DEVIL_NATURAL.w / 2, -DEVIL_NATURAL.h / 2); // centre on the layer origin
+  ctx.fillStyle = DD_INK;
+  DD_DOTS.forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r + 0.85, 0, Math.PI * 2); ctx.fill(); });
+  ctx.fillStyle = DD_RED;
+  DD_DOTS.forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
   ctx.restore();
 }
 

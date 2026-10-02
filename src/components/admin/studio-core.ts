@@ -9,8 +9,8 @@
  * a 1080-wide baseline — both target sizes are 1080 wide, so they carry over.
  */
 import {
-  drawHand, drawEyes, drawLogo, drawFlash,
-  HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL, FLASH_NATURAL,
+  drawHand, drawEyes, drawLogo, drawFlash, drawDevil,
+  HAND_NATURAL, EYES_NATURAL, LOGO_NATURAL, FLASH_NATURAL, DEVIL_NATURAL,
 } from "../../lib/motif-canvas";
 
 export const PALETTE = {
@@ -93,9 +93,13 @@ export interface EyesLayer extends Base { type: "eyes"; size: number; open: bool
 /** src/components/sim/motifs.tsx's FlashBolt. Same fixed-opacity treatment
  *  as HandLayer, for the same reason — a static export can't breathe. */
 export interface FlashLayer extends Base { type: "flash"; size: number; alive: boolean; }
+/** src/sims/dd-art.ts's drawPerch (week 4's perched figure) — a single
+ *  traced pose with no live/dim or open/closed state to toggle, so unlike
+ *  HandLayer/EyesLayer/FlashLayer above it only needs `size`. */
+export interface DevilLayer extends Base { type: "daredevil"; size: number; }
 export type Layer =
   | TextLayer | ImageLayer | LogoLayer | BracketLayer | RuleLayer | BurstLayer | PanelLayer | StarLayer
-  | HandLayer | EyesLayer | FlashLayer;
+  | HandLayer | EyesLayer | FlashLayer | DevilLayer;
 
 export interface Halftone {
   on: boolean;
@@ -381,6 +385,11 @@ function drawLayer(
     case "flash": {
       drawFlash(ctx, l.size, l.alive);
       const h = l.size * (FLASH_NATURAL.h / FLASH_NATURAL.w);
+      return { x: -l.size / 2, y: -h / 2, w: l.size, h };
+    }
+    case "daredevil": {
+      drawDevil(ctx, l.size);
+      const h = l.size * (DEVIL_NATURAL.h / DEVIL_NATURAL.w);
       return { x: -l.size / 2, y: -h / 2, w: l.size, h };
     }
     case "panel": {
